@@ -17,7 +17,7 @@ export default function(client) {
         if(message.content.startsWith('sudo'))
         {
             // ? sudo <#id> <content>
-            const id        = /<#(\d+)>/g.exec(message.content.slice(5))[1] || message.channelId;
+            const id        = /<#(\d+)>/g.exec(message.content.slice(5))?.at(1) || message.channelId;
             const content   = message.content.slice(5).replace(`<#${id}>`, '').trim();
             
             /**

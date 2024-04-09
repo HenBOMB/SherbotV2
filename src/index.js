@@ -13,6 +13,15 @@ await Server.findOrCreate({
     }
 });
 
+var closed = false;
+
+async function halt() {
+    if(closed) return;
+    closed = true;
+    await Sequelize.sync({ alter: true });
+    await Sequelize.close();
+}
+
 const client = new Client({
     intents: [
         'GuildMembers',
@@ -22,29 +31,27 @@ const client = new Client({
     ]
 });
 
-process.on('SIGUSR1', () => {
-	Sequelize.sync({ alter: true });
-    Sequelize.close();
+process.on('SIGUSR1', async () => {
+	halt();
+    console.log('SIGUSR1');
 });
 
-process.on('SIGUSR2', () => {
-	Sequelize.sync({ alter: true });
-    Sequelize.close();
+process.on('SIGUSR2', async () => {
+	halt();
+    console.log('SIGUSR2');
 });
 
-process.on('SIGINT', () => {
-	Sequelize.sync({ alter: true });
-    Sequelize.close();
+process.on('SIGINT', async () => {
+	halt();
+    console.log('SIGINT');
 });
 
-process.on('exit', () => {
-	Sequelize.sync({ alter: true });
-    Sequelize.close();
+process.on('exit', async () => {
+	halt();
+    console.log('exit');
 });
 
 process.on('uncaughtException', (e) => {
-	Sequelize.sync({ alter: true });
-    Sequelize.close();
 	console.error(e);
 	console.trace();
 });
