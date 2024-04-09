@@ -5,7 +5,9 @@ export default function(client) {
     client.on('messageCreate', async message => {
         const content = message.content;
 
-        // ? No filtering for admins.
+        if(!message.member || message.member.user.bot) return;
+
+        // ? No filtering if you can kick.
         if(message.member.roles.cache.find(role => role.permissions.has('KickMembers'))) return;
 
         if(content.includes('https://discord.gg'))

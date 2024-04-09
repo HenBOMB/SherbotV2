@@ -24,22 +24,27 @@ const client = new Client({
 
 process.on('SIGUSR1', () => {
 	Sequelize.sync({ alter: true });
+    Sequelize.close();
 });
 
 process.on('SIGUSR2', () => {
 	Sequelize.sync({ alter: true });
+    Sequelize.close();
 });
 
 process.on('SIGINT', () => {
 	Sequelize.sync({ alter: true });
+    Sequelize.close();
 });
 
 process.on('exit', () => {
 	Sequelize.sync({ alter: true });
+    Sequelize.close();
 });
 
 process.on('uncaughtException', (e) => {
 	Sequelize.sync({ alter: true });
+    Sequelize.close();
 	console.error(e);
 	console.trace();
 });

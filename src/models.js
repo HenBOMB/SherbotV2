@@ -2,6 +2,8 @@
 
 import { Sequelize as Seq, DataTypes } from 'sequelize';
 
+// ! https://www.freesqldatabase.com/account/
+
 export const Sequelize = new Seq({ 
 	dialect: 'mysql',  
 	host: process.env.db_host,

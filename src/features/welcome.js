@@ -7,6 +7,7 @@ export default function(client) {
     const WELCOMES = fs.readFileSync('src/assets/welcome.no', 'utf8').split('\n');
 
     client.on('guildMemberAdd', async member => {
+        if(member.user.bot) return;
         if(member.guild.id !== '670107546480017409') return;
 
         await member.roles.add('670108333834764288');
@@ -16,13 +17,13 @@ export default function(client) {
         await welcomeChannel.send({ embeds: [
             new EmbedBuilder()
                 .setColor(0xBE0000)
-                .setTitle(WELCOMES[Math.floor(Math.random() * WELCOMES.length)].replace(/%user%/g, member.displayName))
-                .setDescription(`Welcome ${member} to The Art of Deduction — Sherlock Holmes 🎉`)
+                .setTitle(WELCOMES[Math.floor(Math.random() * WELCOMES.length)].replace(/%user%/g, member.user.globalName))
+                .setDescription(`Welcome ${member} to ${member.guild.name.replace('|','—')} 🎉`)
                 .setThumbnail(member.user.displayAvatarURL())
                 .setTimestamp()
                 .setFooter({
-                    text: `${member.displayName}`, 
-                    icon_url : member.user.displayAvatarURL()
+                    text: `${member.user.globalName}`, 
+                    icon_url : member.guild.iconURL()
                 })
             ]
         });

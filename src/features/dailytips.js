@@ -29,15 +29,15 @@ export default function(client) {
         });
         
         await channel.send({ embeds: [ new EmbedBuilder().setColor(0xabefb3).setImage(TIPS[server.dataValues.tip]) ] })
-        .then(async message => {
-            await message.react('👍');
-            await message.react('👎');
-        });
+            .then(async message => {
+                await message.react('👍');
+                await message.react('👎');
+            });
     };
     
     const currentUTC = new Date();
     const timeUntil10UTC = 
-        (24 - currentUTC.getUTCHours() + 7) % 24 * 3600000 // 1000 GMT+3 = 1300 UTC
+        (24 - currentUTC.getUTCHours() + 12) % 24 * 3600000 // 1000 GMT+3 = 1300 UTC
         - currentUTC.getUTCMinutes() * 60000
         - currentUTC.getUTCSeconds() * 1000
         - currentUTC.getUTCMilliseconds();
