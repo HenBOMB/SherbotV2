@@ -1,0 +1,92 @@
++%title%
+body=A king with no queen, sons, or daughters decides to work out a way of choosing his next in line. He gives all the children in the kingdom a single seed and says that whoever has the largest, most beautiful plant will inherit his throne. When the day comes, all the children present gargantuan plants, but he decides to choose a little girl with an empty plant pot as his successor. Why? 
+answer=The king gave all the children fake seeds which wouldn’t grow - this little girl was the only one who didn’t pretend the seed grew.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Hand-planting-651d614ed318e__700.jpg
++%title%
+body=A man is in court for killing his wife. In the closing statements, the man’s lawyer surprises everyone when he announces “His wife was just missing. Everyone looks at those doors. His wife is going to walk in those doors in about 30 seconds.” The entire court is silent and the jury stares at the door as the lawyer and the defendant staring at them. After a couple of minutes, the lawyer says “See! If you were so sure he killed his wife, you wouldn’t be watching that door!” The jury goes into deliberation and comes back almost immediately with a guilty verdict. Why did the jury convict him?
+answer=The defendant (man charged for killing his wife) wasn’t looking at the door. He knew his wife wasn’t coming.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Court-651d6217469a3__700.jpg
++Casette Player
+body=A man was found dead with a cassette recorder in one hand and a gun in his other hand. When the police came in, they immediately pressed the play button on the cassette. They heard the man say, “I have nothing else to live for. I can’t go on.” Then there was the sound of a gunshot. After listening to the cassette tape, the police knew that it was not a suicide, but a homicide. How did they know? 
+answer= If the man shot himself while he was recording, how did he rewind the cassette tape so that the play button worked immediately?
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Cassette-recorder-651d664552b46__700.jpg
++Long Drop
+body=A dead body is found at the bottom of a multistory building. Seeing the position of the body, it is evident that the person jumped from one of the floors, committing suicide. A homicide detective is called to look after the case. He goes to the first floor and walks into the room facing the direction in which the body was found. He opens the window in that direction and flips a coin towards the floor. Then he goes to the second floor and repeats the process. He keeps on doing this until he reaches the last floor. Then, when he climbs down he tells the team that it is a murder, not suicide. How did he come to know that it was a murder? 
+answer=None of the windows were left open. If the person jumped, who closed the window?
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Body-on-ground-651d64dd6e998__700.jpg
++%title%
+body=A Japanese ship was leaving the port and on its way to open sea. The captain went to go oil some parts of the ship and took his ring off so it wouldn’t get damaged. He left it on the table next to his bunk. When he returned, it was missing. He had suspected three crew members could be guilty and asked them what they had been doing for the ten minutes that he had been gone. The cook said, “I was in the kitchen preparing tonight’s dinner.” The engineer said, “I was working in the engine room making sure everything was running smoothly.” The seaman said, “I was on the mast correcting the flag because someone had attached it upside down by mistake.” The captain immediately knew who it was. How? 
+answer=The seaman. It was a Japanese ship and a Japanese flag is white with a single red dot in the middle. It can’t be hung upside down.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Ship-651d6cbcc0569__700.jpg
++%title%
+body=Dave and Brad, two popular politicians, met at a club to discuss the overthrow of their party leader. They each ordered a vodka on the rocks. Brad downed his and ordered another. He then drank his second in a gulp and decided to wait before he ordered a third. Meanwhile, Dave, who was sipping his drink, suddenly fell forward dead. Both men were set up for assassination. Why did Dave die and Brad live? 
+answer=Both Dave and Brad were given drinks with poisoned ice cubes. Brad drank his drinks so quickly that the ice didn't have time to melt and release the poison.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Glass-with-ice-651d708f7423e__700.jpg
++Crafty Ransom
+body=A rich man's son was kidnapped. The ransom note told him to bring a valuable diamond to a phone booth in the middle of a public park. Plainclothes police officers surrounded the park, intending to follow the criminal or his messenger. The rich man arrived at the phone booth and followed instructions but the police were powerless to prevent the diamond from leaving the park and reaching the crafty villain. What did he do? 
+answer= This is a true story from Taiwan. When the rich man reached the phone booth he found a carrier pigeon in a cage. It had a message attached telling the man to put the diamond in a small bag which was around the pigeon's neck and to release the bird. When the man did this the police were powerless to follow the bird as it returned across the city to its owner.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Diamond-651e57da7e75f__700.jpg
++Smuggler
+body=Every day, a woman was seen crossing the border carrying bags of sand on a motorbike. After some time, the border police become suspicious and stopped her, but found she only had sand on her, so they let her go. What was the woman smuggling across the border?
+answer=The woman weas smuggling motorbikes.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Sand-651e5e8196a0f__700.jpg
++The Chemist
+body=A renowned chemist is found dead in his lab. There is no clear evidence except a piece of paper lying by the body. The paper is blank other than the name of five elements scrawled across it hastily: – Nickel – Carbon – Oxygen – Lanthanum – Sulfur The guard reported that three people visited the chemist that day – his sister, Laura; his colleague, Nicolas; and his wife, Tessa. The criminal was arrested immediately. Who was it? 
+answer=The list of chemicals was a clue; their abbreviations spell out the murderer’s name, Ni-C-O-La-S
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Test-tubes-651e5f2d047c5__700.jpg
++%title%
+body=A man murders his wife with a knife in their car. Nobody is around to see this. He throws her out of the car being careful not to leave any fingerprints on her body. Next, he throws the knife off of a cliff into a valley where it will never be found and he goes home. An hour later the police call him and tell him that his wife has been murdered and he needs to come to the scene of the crime immediately. As soon as he arrives, he is arrested. How did they know he did it? 
+answer=The police did not tell him the location of the crime scene but he arrived at the correct place.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Car-651e5fe82c201__700.jpg
++Office Problems
+body=A man was killed in his office. At the time of murder, there were only four people in the office: Bill, Tom, Harry, and Mike. When police interrogated them, they gave the following statements. Bill: “Tom did it.” Tom: “Bill did it.” Harry: “Tom’s telling the truth.” Mike: “Harry’s not lying.” After analysis, the police found out that only one person was telling the truth and the rest were lying. Can you analyse the statements and determine the killer? 
+answer=Tom is the killer and Bill spoke the truth. If Bill was the killer, both Tom and Harry will be telling the truth. If Harry was the killer, none of the statements will be true. If Mike was the killer, none of the statements will be true.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Office-651e621762215__700.jpg
++Early Bird
+body=A man is found dead one Saturday morning. He was killed while his wife was sleeping. The wife tells the police all that she knows. She tells them that the cook was cooking breakfast, the maid was cleaning and the butler was getting the mail. The police immediately arrest the person who is responsible. Who is responsible and why?
+answer=The wife is responsible. The reason is simple – she was supposed to be sleeping but she knew all that had happened.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Breakfast-table-651e64ee5113c__700.jpg
++Death's Envelope
+body=A man is discovered dead sitting at his desk, alone in the locked office. He did not commit suicide and there were no weapons in the room. The only clue is a sealed envelope on the desk in front of him. How did he die? 
+answer=The envelope glue was poisoned and when the man licked the envelope to seal it, he died.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Sealed-envelope-651e7d65ec9ea__700.jpg
++Man in Winter
+body=On a cold winter day, there was a man standing in front of someone’s house. He didn’t move until the spring, and the owner didn’t mind. Eventually, the man left. Who was he?
+answer=A snowman.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/House-in-winter-651e8120e2429__700.jpg
++Who's There?
+body=Why did a woman call the police over a man who knocked on her door and claimed that he thought the room was his? 
+answer= If it was his room, he wouldn’t have knocked.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Knocking-door-651e8213e082d__700.jpg
++Family Murder
+body=A woman has incontrovertible proof in court that her husband was murdered by her sister. The judge declares, “This is the strangest case I’ve ever seen. Though it’s a cut-and-dried case, this woman cannot be punished.” How can this possibly be? 
+answer=The sisters are Siamese (conjoined) twins.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Court-2-651e82d5d2ec2__700.jpg
++Cipher Plate
+body=Detective Ixolite was investigating a murder. It was a difficult case, and Ixolite was completely stumped until he noticed a message sent to him by the killer cunningly hidden in a newspaper advertisement selling car license plates. Detective Ixolite thought about it for a while, and when he had solved the puzzle, immediately arrested the guilty man. This is the newspaper advert (car license plates for sale) that Inspector Ixolite saw. Car License Plates For Sale: W 05 NWO H 13 HSR O 05 EBM D 08 UNE U 10 HTY N 04 BRE N 16 TTE I 26 LHC T 10 AEE I 26 CNA X 22 VDA How did Ixolite know the advert was a clue for him? Solve the code and determine who Ixolite arrested. 
+answer=The first bit, as the first letter of each plate spells WHODUNNIT IX (A challenge to our detective.) If you read the last three letters in each plate from the bottom up and right to left you to get “ADVANCE EACH LETTER BY THE NUMBER SHOWN”, so advance W by 5 to get B, H by 13 to get U, and so on until you spell BUTLER DID IT.
+image=https://www.boredpanda.com/blog/wp-content/uploads/2023/10/Newspaper-on-table-651e84ab56762__700.jpg
++Egged
+body=You are a junior detective investigating a case. Boys at an apartment complain that every day, they have an egg spinning competition with only raw eggs, and every day one particular boy wins. The boys want you to find out how. You are observing the boy spinning an egg when suddenly it drops to the floor. The apartment clerk casually hands him a broom to clean it up, as if it happens every day. You now know why the boy always wins the daily competition. How? 
+answer=The clerk handed the boy a broom, so the egg the boy was spinning must have been hard-boiled. If the egg was raw, the clerk would have handed the boy a mop.
+image=https://coleridgeprimary.net/wp-content/uploads/2020/04/Eggs20_FT.jpg
++Dinner Date
+body=A woman shoots her husband and then holds him underwater for 5 minutes. They then go out and enjoy a romantic dinner. How? 
+answer=The woman shoots her husband with a film camera (takes a picture) and then develops it (holds it underwater).
+image=https://www.insidehook.com/wp-content/uploads/2021/08/dinner_date.jpg
++Rainbow Agents
+body=Agents Yellow, Red, and Green each have a green badge, a yellow badge, and a red badge, but none of them has a badge color that matches their name. They met when called to a conference at headquarters. The Agent with the Green badge said “I have a license to kill!” to which Agent Red replied sarcastically: “What, time?” What color is each Agent’s badge? 
+answer=Note that it’s the agent with the Green badge and not Agent Green talking to Agent Red. As the agent with the green badge has spoken to Agent Red, we know that Agent Red doesn’t have a green badge. We already know he doesn’t have a red badge. Therefore he has a yellow badge. The agent with the green badge cannot be Agent Red, nor can he be Agent Green, therefore he is Agent Yellow. So Agent Yellow has a Green badge, and Agent Red has a yellow badge, meaning Agent Green must have a red badge.
+image=https://static1.srcdn.com/wordpress/wp-content/uploads/2023/08/a-number-of-agent-smiths-standing-together-in-the-matrix.jpg
++Collision
+body=Two cars were involved in an accident in the center of town. The man who was driving a little green car, had overtaken a big black car. The driver had misjudged the distance between him and the on-coming traffic and had to swerve back in, causing the black car to swerve and crash into a shop window. When the occupants of the cars were examined everyone in the green car was okay, but in the black car was one dead man. However, the driver of the green car was not charged with manslaughter, why was this so? 
+answer=The black car was a hearse and was on its way to a funeral.
+image=https://d.newsweek.com/en/full/2134845/car-crash-stock-image.jpg
++Walk in the Park
+body=A crime has been committed on Main Street. The main suspect is a man named Simon Bates. It was said that a man had been walking along the pathway when he was suddenly shot in the stomach. The suspect had brown hair, blue eyes, and wore a baggy Armani just like Simon Bates’. Simon was asked to tell the story right from the beginning. “Well,” said Simon, “I was just hanging around the park when I saw this man walking along the pathway. Suddenly, a guy came up from behind him and shot him! I ran home as fast as I could. The policemen asked him to give a description of the murderer. “He had a red mustache, red hair, and a baggy Armani suit on.” “I think this man is telling a lie,” said one of the policemen. How did he know? 
+answer=How can the murderer shoot him in the stomach if he came up behind the man?
+image=https://images.pond5.com/empty-pathway-city-park-foggy-footage-093528328_iconl.jpeg
++%title%
+body=
+answer=
+image=

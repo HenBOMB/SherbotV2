@@ -6,10 +6,11 @@ await Sequelize.sync({ alter: true });
 
 await Server.findOrCreate({
     where: {
-        id: '670107546480017409'
+        id: '670107546480017409',
     },
     defaults: {
-        id: '670107546480017409'
+        id: '670107546480017409',
+        tip: 42,
     }
 });
 
