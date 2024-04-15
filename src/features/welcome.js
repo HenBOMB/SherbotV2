@@ -16,7 +16,7 @@ export default function(client) {
 
         await welcomeChannel.send({ embeds: [
             new EmbedBuilder()
-                .setColor(0xBE0000)
+                .setColor(client.botcolor)
                 .setTitle(WELCOMES[Math.floor(Math.random() * WELCOMES.length)].replace(/%user%/g, member.user.globalName))
                 .setDescription(`Welcome ${member} to ${member.guild.name.replace('|','—')} 🎉`)
                 .setThumbnail(member.user.displayAvatarURL())
@@ -30,7 +30,7 @@ export default function(client) {
 
         await member.user.send({ embeds: [
             new EmbedBuilder()
-                .setColor(0xBE0000)
+                .setColor(client.botcolor)
                 .setTitle(`Verification Required`)
                 .setThumbnail('https://cdn-icons-png.flaticon.com/512/1779/1779281.png')
                 .setDescription(`

@@ -1,5 +1,4 @@
 (await import('dotenv')).config();
-
 import { Sequelize as Seq, DataTypes } from 'sequelize';
 
 export const Sequelize = new Seq({ 

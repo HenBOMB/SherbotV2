@@ -23,16 +23,15 @@ export default function(client) {
 
         server.set('tip', server.dataValues.tip + 1);
         server.save();
-
-        await channel.send('<@&740693917514727431>').then(message => {
-            setTimeout(() => message.delete(), 3000);
-        });
         
         await channel.send({ embeds: [ new EmbedBuilder().setColor(0xabefb3).setImage(TIPS[server.dataValues.tip]) ] })
             .then(async message => {
                 await message.react('👍');
                 await message.react('👎');
             });
+
+        const sent = await channel.send('<@&740693917514727431>');
+        setTimeout(() => sent.delete(), 3000);
     };
     
     const currentUTC = new Date();

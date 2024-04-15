@@ -1,3 +1,5 @@
+(await import('dotenv')).config();
+
 import { Client } from 'discord.js';
 import { Sequelize, Server } from './models.js';
 import Features from './features.js';
@@ -21,6 +23,7 @@ async function halt() {
     closed = true;
     await Sequelize.sync({ alter: true });
     await Sequelize.close();
+    await client.destroy();
 }
 
 const client = new Client({
@@ -34,28 +37,27 @@ const client = new Client({
 
 process.on('SIGUSR1', async () => {
 	halt();
-    console.log('SIGUSR1');
 });
 
 process.on('SIGUSR2', async () => {
 	halt();
-    console.log('SIGUSR2');
 });
 
 process.on('SIGINT', async () => {
 	halt();
-    console.log('SIGINT');
 });
 
 process.on('exit', async () => {
 	halt();
-    console.log('exit');
 });
 
 process.on('uncaughtException', (e) => {
+    console.log('Uncaught Error');
 	console.error(e);
-	console.trace();
+	// console.trace();
 });
+
+client.botcolor = 0xBE0000;
 
 client.login(process.env.token).then(success => {
     console.clear();
