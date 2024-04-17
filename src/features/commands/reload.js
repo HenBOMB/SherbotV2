@@ -29,7 +29,7 @@ export default {
 			const appid = interaction.client.application.id;
 
 			const msg = await interaction.reply({ content: 'Reloading, please wait..', ephemeral: true });
-
+			
 			await rest.get(Routes.applicationCommands(appid)).then(async commands => {
 				msg.edit(`Reloading: 1/${interaction.client.commands.size+1}`);
 				

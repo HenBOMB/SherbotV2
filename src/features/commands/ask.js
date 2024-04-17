@@ -94,10 +94,18 @@ class NPC {
 		})
 		.then(res => {
 			if(!res.data.status) return false;
-			console.log('RESULT:', res.data.result);
-			// const command = res.data.result.match(/\/(\w+)/)[1];
-			return () => {
-				return hook.send(/"(.+)"/.exec(res.data.result)[1]);
+			// "([\w, ?]+)"
+			const msg = /"(.+?)"/.exec(res.data.result)[1];
+			const cmd = /"\/(\w+?)"/.exec(res.data.result);
+			const rp = /"\*(.+?)\*"/.exec(res.data.result);
+			console.log('+-response-+');
+			console.log(res.data.result);
+			// console.log(rp);
+			// console.log(cmd);
+			return {
+				cmd: cmd? cmd[1] : null,
+				rp: rp? rp[1] : null,
+				cb: () => hook.send(msg)
 			};
 		})
 		.catch(err => {
@@ -120,7 +128,7 @@ const Bart = new NPC(
 		'is a wealthy and eccentric millionaire known for his passion for collecting rare artifactsis',
 		'is flamboyant personality and mischievous provocateur as much as for his undeniable technical virtuosity',
 		'is analytical, logical, and imaginative',
-		'responds with very short, intimidating answers',
+		'responds with short, intimidating answers',
 	],
 	[
 		'The time is 20:00, 1 hour before the dinner.',
@@ -152,6 +160,7 @@ export default {
 			.addChoices(...[
 				'What are you doing?', 
 				'I know what you did.',
+				'You wont get away with this',
 			].map(text => { return { name: text, value: text } }))
 			.setDescription('Message to ask.')
 			.setRequired(false)
@@ -167,44 +176,65 @@ export default {
 	async execute(interaction) {
 		const choice 	= interaction.options.get('suspect', true).value;
 		const npc		= SUSPECTS[choice];
+		/**
+		 * @type {TextChannel}
+		 */
+		const channel	= interaction.channel;
+		const ourName	= interaction.member.displayName;
 
-		if(!npc)
-		{
-			await interaction.reply({ content: `There is no suspect named ${choice}.`, ephemeral: true });
-			return;
-		}
+		if(!npc) return interaction.reply({ content: `There is no suspect named ${choice}.`, ephemeral: true });
 		
-		const ourSentence 	= interaction.options.get('message', false)?.value || interaction.options.get('custom', false)?.value;
+		const ourSentence = interaction.options.get('message', false)?.value || interaction.options.get('custom', false)?.value;
 
-		if(!ourSentence)
-		{
-			await interaction.reply({ content: `You must ask something!`, ephemeral: true });
-			return;
-		}
+		if(!ourSentence) return interaction.reply({ content: `You must ask something!`, ephemeral: true });
 
-		const channel		= interaction.channel;
-        const loadMsg		= await interaction.reply({ content: 'Generating response..', ephemeral: true });
-		const ourName 		= interaction.member.displayName;
-
-		const sendResponse 	= await npc.respond(
+		var response = npc.respond(
 			ourName, 
 			ourSentence,
 			channel
 		);
 		
-		await loadMsg.delete();
+		const bot = channel.guild.members.cache.get('712429527321542777');
 
-		if(!sendResponse) throw 'Failed to fetch response, error ^';
+		await interaction.deferReply({ ephemeral: true });
+		await interaction.deleteReply();
+		interaction.replied = true;
 
-		const hook = await channel.fetchWebhooks().then(hooks => hooks.find(hook => hook.name.includes(ourName))) 
-		|| await channel.createWebhook({
-			name: ourName,
-			avatar: interaction.user.displayAvatarURL(),
-			reason: 'Added character user hook ' + ourName
-		}).catch(() => null);
+		bot.setNickname(npc.name);
 
-		await hook.send(ourSentence);
+		// ? Send our message
+		(
+			await channel.fetchWebhooks().then(hooks => hooks.find(hook => hook.name.includes(ourName))) || 
+			await channel.createWebhook({
+				name: ourName,
+				avatar: interaction.user.displayAvatarURL(),
+				reason: 'Added character user hook ' + ourName
+			}).catch(() => null)
+		).send(ourSentence);
 
-		await sendResponse();
+		await new Promise(res => setTimeout(res, 2000));
+
+		await channel.sendTyping();
+
+		await new Promise(res => setTimeout(res, 4000));
+
+		response = await response;
+
+		if(!response) throw 'Failed to fetch response, error ^';
+
+		// const now = Date.now();
+
+		channel.send('ㅤ').then(msg => msg.delete().then(() => {
+				// console.log('X:', (Date.now() - now) / 1000);
+			})
+		);
+
+		// * sync..?
+		await new Promise(res => setTimeout(res, 288)); // X - Y
+		await response.cb();
+
+		// console.log('Y:', (Date.now() - now) / 1000);
+
+		await bot.setNickname('Sherbot');
 	},
 };
