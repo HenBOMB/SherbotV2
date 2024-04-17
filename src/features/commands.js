@@ -10,15 +10,16 @@ export default async function(client) {
      * @type {Collection}
      */
     client.commands = new Collection();
-    const body = [];
+    const guilds = { };
     
     for (const file of fs.readdirSync('src/features/commands').filter(file => file.endsWith('.js'))) 
     {
         try {
             const command = (await import(`./commands/${file}`)).default;
             client.commands.set(command.data.name, command);
-            body.push(command.data);
-            console.log('   ✓', `/${file.slice(0,-3)}`);
+            const guild = command.guild? await client.fetchGuildPreview(command.guild).catch(() => null) : null;
+            if(guild) guilds[guild.id] = [...(guilds[guild.id]||[]), command.data];
+            console.log('   ✓', `/${file.slice(0,-3)} (${guild?.name || 'any'})`);
         } catch (error) {
             console.log('   ✗', `/${file.slice(0,-3)}`);
             console.log(error);
@@ -28,17 +29,18 @@ export default async function(client) {
     const rest = new REST().setToken(process.env.token);
 
     try {
-        await rest.put(
-            Routes.applicationGuildCommands('712429527321542777', '643440133881856019'),
-            { body },
-        );
+        for(const key of Object.keys(guilds))
+        {
+            await rest.put(
+                Routes.applicationGuildCommands(client.application.id, key),
+                { body: guilds[key] },
+            );
+        }
         console.log(`   Sync ${client.commands.size} commands.`);
     } catch (error) {
         console.log(`   Failed to put ${client.commands.size} commands.`);
         console.error(error);
     }
-
-    Events.butt
 
     client.on(Events.InteractionCreate, async interaction => {
         try 

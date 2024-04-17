@@ -28,10 +28,13 @@ async function halt() {
 
 const client = new Client({
     intents: [
+        'Guilds',
+        'GuildBans',
         'GuildMembers',
         'GuildMessages',
+        'GuildWebhooks',
+        'GuildIntegrations',
         'MessageContent',
-        'Guilds',
     ]
 });
 
