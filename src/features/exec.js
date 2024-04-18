@@ -7,7 +7,7 @@ export default function(client) {
     client.on('messageCreate', async message => {
         if(message.author.id !== '348547981253017610') return;
 
-        const match = /exc [ \n]+```js+(.+)```+/s.exec(message.content);
+        const match = /exc[ \n]+```js(.+)```+/s.exec(message.content);
 
         if(!match) return;
 
