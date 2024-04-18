@@ -1,6 +1,5 @@
 import fs from 'fs';
 import { Events } from 'discord.js';
-import { stdout } from 'process';
 
 /**
  * @typedef {import('discord.js').Events} Events

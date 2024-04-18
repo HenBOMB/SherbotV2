@@ -6,9 +6,6 @@ import { Collection, REST, Routes, Events, InteractionType } from 'discord.js';
  * @param {import('discord.js').Client} client
  */
 export default async function(client) {
-    /**
-     * @type {Collection}
-     */
     client.commands = new Collection();
     const guilds = { };
     
@@ -16,9 +13,16 @@ export default async function(client) {
     {
         try {
             const command = (await import(`./commands/${file}`)).default;
-            client.commands.set(command.data.name, command);
+            if(!command)
+            {
+                throw 'Command has no export.';
+            }
             const guild = command.guild? await client.fetchGuildPreview(command.guild).catch(() => null) : null;
-            if(guild) guilds[guild.id] = [...(guilds[guild.id]||[]), command.data];
+            if(command.data) 
+            {
+                client.commands.set(command.data.name, command);
+                if(guild) guilds[guild.id] = [...(guilds[guild.id]||[]), command.data];
+            }
             console.log('   ✓', `/${file.slice(0,-3)} (${guild?.name || 'any'})`);
         } catch (error) {
             console.log('   ✗', `/${file.slice(0,-3)}`);

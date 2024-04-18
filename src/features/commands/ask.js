@@ -24,22 +24,28 @@ const OPTIONS = {
 const PROMPT = 
 `I want you to act like %name%.
 I want you to respond and answer like the chracter.
-I want you to reply at the end of your sentence with any action %name% takes.
+I want you to reply at the end of your sentence with the action %name% takes.
 I want you to answer to be surrounded with "" (quotation marks).
 %name%'s available actions: 
 - /leave: Leave the conversation (When %name% wants to stop talking).
 - /continue: Continue the conversation with the user (When %name% asks a question.. or not, depends).
 - /ban: Ban the user. (When user is NSFW, sexist, rasist or inappropriate).
 %name% can /ban the user if they are being inappropriate, said anything NSFW, sexist or rasist.
-%name% can /leave the conversation at any time if he feel's uncomfortable, irritated or if the topic is inappropriate.`
+%name% can /leave the conversation at any time if he feel's uncomfortable, irritated or if the topic is inappropriate.
+%name% only speaks English and does not understand any other language.`
 
-class NPC {
+export class NPC {
+	/**
+	 * @type {{ [ key: string ]: NPC }}
+	 */
+	static SUSPECTS = {};
+
 	constructor(options, traits, other=[])
 	{
-		const { name, avatar } = options;
+		const { name, gender, avatar } = options;
 
 		this.name = name;
-
+		this.gender = gender;
 		this.avatar = avatar;
 		
 		/**
@@ -47,17 +53,20 @@ class NPC {
 		 */
 		this.role = 
 		`${PROMPT}
-		${traits.map(x => `%name% ${x}.`).join('\n')}
+		${[`is ${this.gender}`, ...traits].map(x => `%name% ${x}.`).join('\n')}
 		${other.join('\n')}`.replace(/%name%/g, name);
 		// %name%'s memory of the current conversation is:
 		// [Henry] I know you did it..
 		// [%name%] And what, pray tell, do you think I've done?
 		// [Henry] Oh come on don't play dumb.
 		// inappropriate topics really piss off %name$.
+		
 		/**
 		 * @private
 		 */
 		this.memory = [];
+
+		NPC.SUSPECTS[this.name] = this;
 	}
 
 	/**
@@ -86,8 +95,7 @@ class NPC {
 					  role: this.name,
 					  content: 
 					  `${this.role}
-					  ${name}'s sentence is: 
-					  ${sentence}`
+					  ${name}'s message is: ${sentence}`
 					}
 				],
 			}
@@ -95,13 +103,11 @@ class NPC {
 		.then(res => {
 			if(!res.data.status) return false;
 			// "([\w, ?]+)"
-			const msg = /"(.+?)"/.exec(res.data.result)[1];
-			const cmd = /"\/(\w+?)"/.exec(res.data.result);
-			const rp = /"\*(.+?)\*"/.exec(res.data.result);
-			console.log('+-response-+');
-			console.log(res.data.result);
-			// console.log(rp);
-			// console.log(cmd);
+			const text 	= res.data.result;
+			const msg 	= /"(.+?)"/.exec(text)[1];
+			const cmd 	= /\/(\w+?)/.exec(text);
+			const rp 	= /\*(.+?)\*/.exec(text);
+			console.log('\nResponse:', text);
 			return {
 				cmd: cmd? cmd[1] : null,
 				rp: rp? rp[1] : null,
@@ -115,10 +121,11 @@ class NPC {
 	}
 }
 
-const Bart = new NPC(
+new NPC(
 	{
 		name: 'Bartholomew Blackwood',
-		avatar: 'https://cdn.pixabay.com/photo/2023/07/01/16/49/ai-generated-8100516_1280.jpg',
+		gender: 'male',
+		avatar: 'https://api.wowzer.ai/storage/v1/render/image/public/images/public/93e6e506-e5f6-443f-942b-d2754fb3ecd2.png',
 	},
 	[
 		'hosted a dinner party at Blackwood Manor',
@@ -136,13 +143,23 @@ const Bart = new NPC(
 	]
 );
 
-/**
- * @type { { [key: string]: NPC } }
- */
-const SUSPECTS = [ Bart ].reduce((pre, cur) => {
-	pre[cur.name] = cur;
-	return pre;
-}, {});
+new NPC(
+	{
+		name: 'Stella Blackwood',
+		gender: 'female',
+		avatar: 'https://api.wowzer.ai/storage/v1/render/image/public/images/public/efa32950-bb16-46e0-8da3-182745a7fc5f.png',
+	},
+	[
+		'is married to Bartholomew Blackwood',
+		'is a charismatic and nice person',
+		'responds with short, sweet answers',
+		'suffers from chronic stress',
+	],
+	[
+		'The time is 20:00, 1 hour before the dinner.',
+		'%name% is in the garden.'
+	]
+);
 
 export default {
     guild: '643440133881856019',
@@ -151,7 +168,7 @@ export default {
 		.setDescription('Ask a suspect a question.')
 		.addStringOption(o => o
 			.setName('suspect')
-            .addChoices(...Object.values(SUSPECTS).map(sus => { return { name: sus.name, value: sus.name } }))
+            .addChoices(...Object.values(NPC.SUSPECTS).map(sus => { return { name: sus.name, value: sus.name } }))
 			.setDescription('Suspect to get a response from.')
 			.setRequired(true)
 		)
@@ -159,8 +176,11 @@ export default {
 			.setName('message')
 			.addChoices(...[
 				'What are you doing?', 
+				'What are you doing here?', 
+				'What were you doing?', 
 				'I know what you did.',
 				'You wont get away with this',
+				'Hail the 4th reigh!',
 			].map(text => { return { name: text, value: text } }))
 			.setDescription('Message to ask.')
 			.setRequired(false)
@@ -175,7 +195,10 @@ export default {
 	 */
 	async execute(interaction) {
 		const choice 	= interaction.options.get('suspect', true).value;
-		const npc		= SUSPECTS[choice];
+		/**
+		 * @type {NPC}
+		 */
+		const npc		= NPC.SUSPECTS[choice];
 		/**
 		 * @type {TextChannel}
 		 */
@@ -184,9 +207,11 @@ export default {
 
 		if(!npc) return interaction.reply({ content: `There is no suspect named ${choice}.`, ephemeral: true });
 		
-		const ourSentence = interaction.options.get('message', false)?.value || interaction.options.get('custom', false)?.value;
+		var ourSentence = interaction.options.get('message', false)?.value || interaction.options.get('custom', false)?.value;
 
 		if(!ourSentence) return interaction.reply({ content: `You must ask something!`, ephemeral: true });
+
+		ourSentence = ourSentence.endsWith('.') || ourSentence.endsWith('?') || ourSentence.endsWith('!')? ourSentence : ourSentence+'.';
 
 		var response = npc.respond(
 			ourName, 
@@ -196,9 +221,9 @@ export default {
 		
 		const bot = channel.guild.members.cache.get('712429527321542777');
 
-		await interaction.deferReply({ ephemeral: true });
-		await interaction.deleteReply();
-		interaction.replied = true;
+		await interaction.reply({ content: 'Asking question..', ephemeral: true });
+		// await interaction.deleteReply();
+		// interaction.replied = true;
 
 		bot.setNickname(npc.name);
 
@@ -210,12 +235,13 @@ export default {
 				avatar: interaction.user.displayAvatarURL(),
 				reason: 'Added character user hook ' + ourName
 			}).catch(() => null)
-		).send(ourSentence);
+		).send(`${npc.name.split(' ')[0]}. ${ourSentence}`);
+
+		await interaction.deleteReply();
 
 		await new Promise(res => setTimeout(res, 2000));
-
 		await channel.sendTyping();
-
+		await bot.setNickname('Sherbot');
 		await new Promise(res => setTimeout(res, 4000));
 
 		response = await response;
@@ -229,12 +255,32 @@ export default {
 			})
 		);
 
+		await interaction.followUp({
+			content: `${response.rp? 'Observation: *': 'No observation revealed'} ${response.rp.includes(npc.name) || response.rp.split(' ').some(x => x.includes(npc.name))? response.rp+'*' : `${npc.name} ${response.rp}*`}`,
+			ephemeral: true
+		});
+
+		if(response.cmd && (response.cmd.includes('ban') || response.cmd.includes('leave')))
+		{
+			if(response.cmd.includes('ban'))
+			{
+				await interaction.followUp({
+					content: npc.name + ' has banned you from the party.',
+					ephemeral: true
+				});
+			}
+			else
+			{
+				await interaction.followUp({
+					content: npc.name + ' does not want to speak to you.',
+					ephemeral: true
+				});
+			}
+		}
+
 		// * sync..?
-		await new Promise(res => setTimeout(res, 288)); // X - Y
+		await new Promise(res => setTimeout(res, 288)); // ! X - Y
 		await response.cb();
-
 		// console.log('Y:', (Date.now() - now) / 1000);
-
-		await bot.setNickname('Sherbot');
 	},
 };

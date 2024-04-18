@@ -26,3 +26,21 @@ export const Server = Sequelize.define(
   		timestamps: false
 	}
 );
+
+// export const Character = Sequelize.define(
+// 	'Character', {
+// 		id: {
+// 			type: DataTypes.STRING,
+// 			primaryKey: true,
+// 			allowNull: false,
+// 		},
+// 		name: {
+// 			type: DataTypes.STRING,
+// 			allowNull: false,
+// 		}
+// 	}, {
+//   		timestamps: false
+// 	}
+// );
+
+// Server.hasMany()
