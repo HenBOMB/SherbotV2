@@ -1,26 +1,6 @@
 import axios from "axios";
 import { GuildMember, TextChannel } from "discord.js";
 
-// const OPTIONS = {
-// 	method: 'POST',
-// 	url: 'https://open-ai21.p.rapidapi.com/chatbotapi',
-// 	headers: {
-// 		'content-type': 'application/json',
-// 		'X-RapidAPI-Key': '7e9353ff96msh3df3c16bd72b93fp18d49fjsn132fdefd5328',
-// 		'X-RapidAPI-Host': 'open-ai21.p.rapidapi.com'
-// 	},
-// 	data: {
-// 		bot_id: 'OEXJ8qFp5E5AwRwymfPts90vrHnmr8yZgNE171101852010w2S0bCtN3THp448W7kDSfyTf3OpW5TUVefz',
-// 		user_id: '',
-// 		// ? 0.1 prompts a more focused and expected answer, while 0.8 encourages a more creative response
-// 		temperature: 0.9, 
-// 		top_k: 3,
-// 		top_p: 0.5,
-// 		max_tokens: 256,
-// 		model: 'matag2.0'
-// 	}
-// };
-
 const OPTIONS = {
     method: 'POST',
     url: 'https://cheapest-gpt-4-turbo-gpt-4-vision-chatgpt-openai-ai-api.p.rapidapi.com/v1/chat/completions',
@@ -36,13 +16,16 @@ const OPTIONS = {
     }
 };
 
+// ! - I want your action to be the action that %name% would take.
+// ~ + I want you to log the action %name% will take at the end of your message.
+
 const PROMPT = 
 `I want you to act like %name%.
 I want you to respond and answer like the chracter.
 I want you to respond and roleplay like the chracter.
 I want your answer be between "" (quotation marks).
-I want your roleplay to be between ** (asterisks).
-I want your action to be the action that %name% would take.
+I want your roleplay to be between * (asterisks).
+I want you to log the action %name% will take at the end of your message.
 %name%'s available actions: 
 - /leave: Leave the conversation (When %name% wants to stop talking).
 - /ban: Ban the User from the party.
@@ -76,9 +59,10 @@ export class NPC {
      * @param {{ name: string, alias: string[], avatar: string, gender: string? }} options 
      * @param {string[]} traits 
      * @param {string[]} [other=[]] 
+     * @param {(msg: string) => string} [filter] 
      * @returns {NPC}
      */
-	constructor(options, traits, other=[])
+	constructor(options, traits, other=[], filter)
 	{
         if(this.gender) traits = [`is ${this.gender}`, ...traits];
 
@@ -86,6 +70,7 @@ export class NPC {
 		this.alias  = options.alias;
 		this.avatar = options.avatar;
 		this.gender = options.gender;
+		this.filter = filter || (x => x);
         this._focused = '-1';
 		
 		/**
@@ -151,8 +136,8 @@ export class NPC {
 		.then(res => {
 			// const text 	= res.data.result;
 			const text 	= res.data.choices[0].message.content;
-			const cmd 	= /\/(\w+?)/.exec(text);
-			const msg 	= /"(.+?)"/.exec(text.replace(/\/(\w+?)/,''))[1];
+			const cmd 	= /\/(\w+)/.exec(text);
+			const msg 	= this.filter(/"(.+?)"/.exec(text)[1].replace(/\/(\w+)/,''));
 			const rp 	= /\*(.+?)\*/.exec(text);
 			console.log('Response:', text || res.data);
 			return (text && {
@@ -162,6 +147,10 @@ export class NPC {
                         channel.id, `[${us.name}] ${msg}`
                     );
                     us.setFocus(asker);
+                    if(cmd && (cmd.includes('leave') || cmd.includes('ban')))
+                    {
+                        this._focused = '-1';
+                    }
                 }),
 				cmd: cmd? cmd[1] : null,
 				rp: rp? rp[1] : null

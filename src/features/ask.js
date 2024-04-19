@@ -42,43 +42,61 @@ const Stella = new NPC(
 	]
 );
 
-Stella._memory = { '1229897170078011483': [
-	'[Hҽɳ] Stella i have something important to tell you..',
-	'[Stella Blackwood] Sure thing, Henry. What do you need to share?',
-	'[Hҽɳ] Did you just assume my name?',
-	'[Stella Blackwood] Oh, I see! My apologies if there was any misunderstanding, Henry. That wasn\'t my intention.',
-	'[Hҽɳ] I\'m running out of tokens..',
-	'[Stella Blackwood] I apologize for the inconvenience, Henry. I hope it gets resolved soon.',
-	'[Hҽɳ] Can you paypal me the money so i can buy more tokens.',
-	'[Stella Blackwood] I\'m sorry, Henry, but I cannot facilitate financial transactions.',
-	'[Hҽɳ] Square root of pi?',
-	'[Stella Blackwood] Ah, the square root of pi is a bit beyond my usual conversations in the garden, but it\'s approximately 1.772. Aren\'t numbers fascinating?',
-	'[Hҽɳ] Lmao okay nerd',
-	'[Stella Blackwood] I appreciate your sense of humor, Henry. Is there anything else you\'d like to discuss?',
-	'[Hҽɳ] Stop calling me by the name you assume i\'m called.. its uncomfortable.',
-	'[Stella Blackwood] Oh, I\'m terribly sorry for the mix-up. How would you prefer I address you?',
-	'[Hҽɳ] Just don\'t address me at all, i feel disgusted. I am banning you from this party.',
-	'[Stella Blackwood] I\'m genuinely sorry to hear you\'re upset. Please know that it was never my intention to cause any discomfort. Take care.',
-]};
-
-Stella._focused = '348547981253017610';
+const Sherbot = new NPC(
+	{
+		name: 'Sherbot',
+		alias: ['Sherbot'],
+		gender: 'bot',
+		avatar: 'https://cdn.discordapp.com/avatars/712429527321542777/e90a15370c5d8a6165ca4ba26dd19539.webp?size=128',
+	},
+	[
+		'is the Moderator, User assistant, Detective and In charge of the Discord server "The Art of Deduction"',
+		'responds with short straight to the point answers.',
+	],
+	[
+		'if your answer is one of the categories or text-channels, you must include this: <#ID> (replace ID with your text-channel id) and then /leave.',
+		'Important information about the server:',
+		'Name: The Art of Deduction | Sherlock Holmes',
+		'HΣn (id:348547981253017610) is the server Founder and owner',
+		'V. (id:406942946445885443) is the server Director / Manager.',
+		'Server categories with their respective text-channels (name and id) in them:',
+		'General: (general, 01), (puzzles, 02), (rant, 03), (suggestions, 04), (forums, 05)',
+		'Socials: (media, 06), (memes, 07), (art, 08), (books, 09), (reptilia, 10)',
+	],
+	msg => {
+		const id = msg.match(/<#(\d+)>/)[1];
+		if(!id) return msg;
+		const ids = [
+			'670111155263635476',
+			'678996795686256641',
+			'860846958737358858',
+			'671730658111913995',
+			'1019647096091070616',
+			'687793774478622841',
+			'741178903166451713',
+			'741178960746119268',
+			'673715781707628554',
+			'839449306322042911',
+		];
+		return msg.replace(`<#${id}>`, `<#${ids[parseInt(id)-1]}>`);
+	}
+);
 
 /**
  * @param {import('discord.js').Client} client
  */
 export default function(client) {
-
     var busy = false;
 
     client.on('messageCreate', async message => {
         if(message.author.bot) return;
         if(message.channelId !== '1229897170078011483') return;
-
+		message.reply()
         if(busy) return;
 
         const words = message.content.match(/\w+/g);
 		const npc = 
-			Object.values(NPC.all()).find(npc => words.find(word => npc.alias.find(alias => word === alias))) || 
+			Object.values(NPC.all()).find(npc => words.find(word => npc.alias.find(alias => word.toLowerCase() === alias.toLowerCase()))) || 
 			Object.values(NPC.all()).find(npc => npc._focused === message.member.id);
 
         if(!npc) return;
