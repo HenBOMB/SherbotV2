@@ -11,8 +11,8 @@ const OPTIONS = {
     },
     data: {
         model: 'gpt-4-turbo-preview',
-        max_tokens: 60,
-        temperature: 0.9
+        max_tokens: 200,
+        temperature: 0.92
     }
 };
 
@@ -23,17 +23,17 @@ const PROMPT =
 `I want you to act like %name%.
 I want you to respond and answer like the chracter.
 I want you to respond and roleplay like the chracter.
-I want your answer be between "" (quotation marks).
-I want your roleplay to be between * (asterisks).
-I want you to log the action %name% will take at the end of your message.
+I want you to choose an action to take.
+I want your answer to be in this format: "answer" *roleplay* /action.
 %name%'s available actions: 
-- /leave: Leave the conversation (When %name% wants to stop talking).
-- /ban: Ban the User from the party.
-- /continue: Continue the conversation with the user (When %name% asks a question.. or not, depends).
-- /skip: Choose to not reply to the user but, still continue the conversation.
-%name% can /leave if User is inappropriate or %name% or User stops the conversation.
-%name% can /ban if User is inappropriate, implying NSFW, sexist or rasist comments.
-%name% can /skip if User's message is not meant for %name%, and instead for someone else.
+- /leave: Leave the conversation and dont talk to %asker% anymore.
+- /ban: Ban %asker% from the party.
+- /continue: Continue the conversation with the %asker%.
+- /skip: Leave the conversation and and dont say anything.
+%name% can /leave if %asker% is inappropriate or %name% or %asker% stops the conversation.
+%name% can /continue if %name% asks a question.
+%name% can /ban if %asker% is inappropriate, implying NSFW, sexist or rasist comments.
+%name% can /skip if %asker%'s message is not meant for %name%, and instead for someone else.
 %name% only speaks English and does not understand any other language.`
 
 export class NPC {
@@ -62,10 +62,11 @@ export class NPC {
      * @param {(msg: string) => string} [filter] 
      * @returns {NPC}
      */
-	constructor(options, traits, other=[], filter)
+	constructor(options, traits=[], other=[], filter)
 	{
         if(this.gender) traits = [`is ${this.gender}`, ...traits];
 
+		this.id     = options.id || null;
 		this.name   = options.name;
 		this.alias  = options.alias;
 		this.avatar = options.avatar;
@@ -100,21 +101,21 @@ export class NPC {
 	async respond(asker, sentence, channel) 
 	{
         const us = this;
-        const hook = await channel.fetchWebhooks().then(hooks => hooks.find(hook => hook.name.includes(this.name))) 
+        const hook = us.id? null : await channel.fetchWebhooks().then(hooks => hooks.find(hook => hook.name.includes(us.name))) 
 		|| await channel.createWebhook({
-			name: this.name,
-			avatar: this.avatar,
-			reason: 'Added character npc hook ' + this.name
+			name: us.name,
+			avatar: us.avatar,
+			reason: 'Added character npc hook ' + us.name
 		}).catch(() => null);
 
-		if(!hook) return null;
+		if(!hook && !us.id) return null;
 
         const memory = us.getMemory(channel.id);
         const prompt = [
             us._role, 
-            memory && memory.length? `\n${us.name}'s memory of the current conversation is:\n${memory.join('\n')}` : null,
+            memory && memory.length? `${us.name}'s remembers what others said before:\n${memory.join('\n')}` : null,
             //`User ${asker.displayName}'s ${memory?.find(line => line.includes(asker.displayName))? 'last' : 'first'} message is: ${sentence}`
-        ].filter(Boolean).join('\n');
+        ].filter(Boolean).join('\n').replace(/%asker%/g, asker.displayName);
         // console.log('\nPrompt:', prompt);
 
 		return axios.request({
@@ -134,22 +135,22 @@ export class NPC {
 			}
 		})
 		.then(res => {
-			// const text 	= res.data.result;
 			const text 	= res.data.choices[0].message.content;
-			const cmd 	= /\/(\w+)/.exec(text);
-			const msg 	= this.filter(/"(.+?)"/.exec(text)[1].replace(/\/(\w+)/,''));
-			const rp 	= /\*(.+?)\*/.exec(text);
 			console.log('Response:', text || res.data);
-			return (text && {
-				cb: () => hook.send(msg).then(() => {
+			const cmd 	= /\/(\w+)/.exec(text);
+            const msg 	= us.filter(/"(.+?)"/.exec(text.replace(/\/(\w+)/,''))[1]);
+			const rp 	= /\*(.+?)\*/.exec(text);
+            const final = `${msg}`;//${rp[1]? `\n${rp[1].startsWith('*')?'':'*'}${rp[1]}${rp[1].endsWith('*')?'':'*'}` : ''}`;
+            return (text && {
+				cb: () => (us.id? channel.send(final) : hook.send(final)).then(() => {
                     us.addMemory(
-                        channel.id, `[${asker.displayName}] ${sentence}`, 
-                        channel.id, `[${us.name}] ${msg}`
+                        channel.id, `- ${asker.displayName}: ${sentence}`, 
+                        // channel.id, `- "${final}"`
                     );
                     us.setFocus(asker);
-                    if(cmd && (cmd.includes('leave') || cmd.includes('ban')))
+                    if(cmd && (cmd.includes('skip') || cmd.includes('leave') || cmd.includes('ban')))
                     {
-                        this._focused = '-1';
+                        us._focused = '-1';
                     }
                 }),
 				cmd: cmd? cmd[1] : null,

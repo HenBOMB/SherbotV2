@@ -44,6 +44,7 @@ const Stella = new NPC(
 
 const Sherbot = new NPC(
 	{
+		id: '712429527321542777',
 		name: 'Sherbot',
 		alias: ['Sherbot'],
 		gender: 'bot',
@@ -82,6 +83,21 @@ const Sherbot = new NPC(
 	}
 );
 
+const Monk = new NPC(
+	{
+		name: 'Adrian Monk',
+		alias: ['Adrian', 'Monk'],
+		gender: 'male',
+		avatar: 'https://sportshub.cbsistatic.com/i/2023/10/09/0c7e79b1-0eeb-4273-846f-c3b73e4cf4a2/monk-reboot-tony-shalhoub-header.jpg',
+	},
+	[
+		'is ALWAYS responds with short answers',
+		'is a real person and knows nothing about generative models or AI',
+		'mimics the personallity and trais of Adrian Monk, from the netflix series',
+		'talks like the more realisitc human-like person ever, not like an AI',
+	],
+);
+
 /**
  * @param {import('discord.js').Client} client
  */
@@ -89,15 +105,14 @@ export default function(client) {
     var busy = false;
 
     client.on('messageCreate', async message => {
-        if(message.author.bot) return;
-        if(message.channelId !== '1229897170078011483') return;
-		message.reply()
-        if(busy) return;
+        if(busy || message.author.bot || message.channelId !== '1229897170078011483') return;
 
         const words = message.content.match(/\w+/g);
-		const npc = 
-			Object.values(NPC.all()).find(npc => words.find(word => npc.alias.find(alias => word.toLowerCase() === alias.toLowerCase()))) || 
-			Object.values(NPC.all()).find(npc => npc._focused === message.member.id);
+		const npc = Object.values(NPC.all())
+			.find(npc => 
+				npc._focused === message.member.id || 
+				npc.alias.find(alias => words.find(word => word.toLowerCase() === alias.toLowerCase()))
+			);
 
         if(!npc) return;
 		
@@ -105,7 +120,7 @@ export default function(client) {
 		const content = message.content;
 		const member = message.member;
 
-		if(content.length < 10) return;
+		if(content.length < 7) return;
 
         var response = npc.respond(
 			member, 
@@ -132,8 +147,15 @@ export default function(client) {
             return;
         }
 
-		channel.send('ㅤ').then(msg => msg.delete());
-		await new Promise(res => setTimeout(res, 288)); // ! X - Y
+		if(!npc.id)
+		{
+			await bot.setNickname(npc.name);
+			channel.send('ㅤ').then(msg => {
+				msg.delete().then(() => bot.setNickname('Sherbot'));
+			});
+			await new Promise(res => setTimeout(res, 288)); // ! X - Y
+		}
+		
 		await response.cb();
 
         busy = false;

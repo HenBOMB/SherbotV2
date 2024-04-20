@@ -2,8 +2,15 @@
  * @param {import('discord.js').Client} client
  */
 export default function(client) {
+    var prev = '';
+
     client.on('messageCreate', async message => {
-        console.log(`[?] ${message.author.displayName}: ${message.content}`);
+        console.log(
+            (prev === message.guildId? `` : `-> ${message.guild.name}\n`)
+            + `[${message.channel.name}] ${message.author.displayName}: ${message.content}`
+        );
+
+        prev = message.guildId;
 
         if(!message.member || message.author.bot) return;
 
