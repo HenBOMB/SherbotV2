@@ -34,53 +34,44 @@ I want your answer to be in this format: "answer" *roleplay* /action.
 %name% can /continue if %name% asks a question.
 %name% can /ban if %asker% is inappropriate, implying NSFW, sexist or rasist comments.
 %name% can /skip if %asker%'s message is not meant for %name%, and instead for someone else.
-%name% only speaks English and does not understand any other language.`
+%name% only speaks English and does not understand any other language.
+%name% does not know anything about Generative Models or AI or ChatBots.
+%name% does not know they are in a Murder Mystery game and does not mention it ever.
+`;
 
-export class NPC {
-	/**
-	 * @type {{ [ key: string ]: NPC }}
-     * @private
-	 */
-	static _all = {};
-
-    static get(name) {
-        return this._all[name];
-    }
-
-    static all() {
-        return this._all;
-    }
-
-    static sets(cb) {
-        this._all = Object.values(this._all).reduce(cb, {});
-    }
-
+export default class NPC {
     /**
+     * @param {import('./index').default} mm - Murder Mystery
      * @param {{ name: string, alias: string[], avatar: string, gender: string? }} options 
      * @param {string[]} traits 
      * @param {string[]} [other=[]] 
      * @param {(msg: string) => string} [filter] 
      * @returns {NPC}
      */
-	constructor(options, traits=[], other=[], filter)
+	constructor(mm, options, traits=[], other=[], filter)
 	{
-        if(this.gender) traits = [`is ${this.gender}`, ...traits];
-
+        this.traits = traits? traits : [];
+        this.other  = other? other : [];
+		this.filter = filter? filter : (x => x);
+        
+        this.mm     = mm;
 		this.id     = options.id || null;
 		this.name   = options.name;
 		this.alias  = options.alias;
 		this.avatar = options.avatar;
 		this.gender = options.gender;
-		this.filter = filter || (x => x);
         this._focused = '-1';
+        this._busy    = false;
+
+        if(this.gender) traits = [`is ${this.gender}`, ...traits];
 		
 		/**
 		 * @private
 		 */
 		this._role = [
             PROMPT, 
-            traits.map(x => `%name% ${x}.`).join('\n'),
-            other.join('\n')
+            this.traits.map(x => `%name% ${x}.`).join('\n'),
+            this.other.join('\n')
         ].join('\n').replace(/%name%/g, this.name);
 
 		/**
@@ -88,8 +79,6 @@ export class NPC {
 		 * @private
 		 */
 		this._memory = { };
-
-		NPC._all[this.name] = this;
 	}
 
 	/**
@@ -100,6 +89,9 @@ export class NPC {
 	 */
 	async respond(asker, sentence, channel) 
 	{
+        if(this._busy) return null;
+        
+        this._busy = true;
         const us = this;
         const hook = us.id? null : await channel.fetchWebhooks().then(hooks => hooks.find(hook => hook.name.includes(us.name))) 
 		|| await channel.createWebhook({
@@ -135,7 +127,8 @@ export class NPC {
 			}
 		})
 		.then(res => {
-			const text 	= res.data.choices[0].message.content;
+            us._busy = false;
+            const text 	= res.data.choices[0].message.content;
 			console.log('Response:', text || res.data);
 			const cmd 	= /\/(\w+)/.exec(text);
             const msg 	= us.filter(/"(.+?)"/.exec(text.replace(/\/(\w+)/,''))[1]);
@@ -158,6 +151,7 @@ export class NPC {
 			}) || null;
 		})
 		.catch(err => {
+            us._busy = false;
 			console.error(err);
 			return null;
 		});
@@ -165,7 +159,7 @@ export class NPC {
 
     setFocus(asker) {
 		// ? reset previous focus
-        NPC.sets((pre, cur) => { 
+        this.mm.editNpcs((pre, cur) => { 
             if(cur._focused === asker.id) cur._focused = '-1'; 
             pre[cur.name] = cur; 
             return pre; 

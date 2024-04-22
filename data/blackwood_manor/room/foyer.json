@@ -1,0 +1,9 @@
+{
+    "name": "foyer",
+    "order": 1,
+    "topic": "The grand entrance hall of the mansion, featuring a large staircase with a hanging chandelier. The walls adorned with priceless paintings, a minibar can be seen in the far right of the Foyer.",
+    "timestamps": {
+        "2000": "You find Bartholomew at the minibar, having a double scotch."
+    },
+    "search": "You take a look around and find 5 presents on top of a wall table, all labeled: \"Bartholomew Blackwood\", except for one: \"Stella Blackwood\"."
+}
