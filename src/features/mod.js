@@ -19,7 +19,7 @@ export default function(client) {
             if(kicked)
             {
                 return await client.channels.fetch('1026319776630456421').then(channel => {
-                    channel.send(`Kicked ${kicked.displayName}, sent a discord invite link. <@348547981253017610>`);
+                    channel.send(`Kicked ${kicked.user.displayName}, sent a discord invite link. <@348547981253017610>`);
                 });
             }
             else

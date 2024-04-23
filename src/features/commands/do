@@ -1,0 +1,27 @@
+// import fs from "fs";
+// import { 
+// 	SlashCommandBuilder, 
+// 	CommandInteraction, 
+// 	ActionRowBuilder, 
+// 	ButtonBuilder, 
+// 	ButtonStyle, 
+// 	EmbedBuilder, 
+// 	StringSelectMenuBuilder, 
+// 	StringSelectMenuOptionBuilder, 
+// 	Message
+// } from 'discord.js';
+
+// export default {
+// 	role: ''
+// 	data: new SlashCommandBuilder()
+// 		.setName('do')
+//         .setDescription('Do something..'),
+
+// 	/**
+// 	 * @param {CommandInteraction} interaction 
+// 	 */
+// 	async execute(interaction) {
+// 		interaction.reply('Tits');
+// 	},
+
+// };

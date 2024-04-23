@@ -1,6 +1,6 @@
 import fs from 'fs';
 import NPC from './npc.js';
-import { CategoryChannel, ChannelType, Client, Colors, Message, OverwriteType, PermissionFlagsBits, SortOrderType } from 'discord.js';
+import { ChannelType, Client, Colors, Guild, Message, OverwriteType, PermissionFlagsBits, Role, TextChannel } from 'discord.js';
 import Player from './player.js';
 
 export default class MurderMystery {
@@ -20,10 +20,6 @@ export default class MurderMystery {
         /**
          * @private
          */
-        this._banned = [];
-        /**
-         * @private
-         */
         this._ignore = []
         /**
          * @private
@@ -40,14 +36,29 @@ export default class MurderMystery {
         this._messageCreate = null;
 
         /**
+         * @type {string[]}
          * @private
          */
         this.rooms = []
 
         /**
+         * @type {Role}
+         * @private
+         */
+        this.role = null;
+
+        /**
          * @private
          */
         this.dir = `data/${this.name.replace(/ +/g, '_').toLowerCase()}`;
+
+        if(!fs.existsSync(this.dir+'/_settings.json')) throw 'Missing Murder Mystery settings.';
+
+        /**
+         * @type {{ name: string, role: string, guild: string, players: string[], bans: string[] }}
+         * @private
+         */
+        this.settings = JSON.parse(fs.readFileSync(this.dir+'/_settings.json', 'utf8'));
 
         this.setup(client);
     }
@@ -57,34 +68,32 @@ export default class MurderMystery {
      * @private
      */
     async setup(client) {
-        if(!fs.existsSync(this.dir+'/settings.json')) throw 'Missing Murder Mystery settings.';
-
-        const settings = JSON.parse(fs.readFileSync(this.dir+'/settings.json', 'utf8'));
-        const reason = settings.name + ' Murder Mystery Root Category';
-        const guild = await client.guilds.fetch(settings.guild);
-        const role = guild.roles.cache.find(role => role.name === settings.role) 
-            || guild.roles.create({ 
-                name: settings.role, 
+        const reason = this.settings.name + ' Murder Mystery Root Category';
+        const guild = await client.guilds.fetch(this.settings.guild);
+        this.role = guild.roles.cache.find(role => role.name === this.settings.role) 
+            || await guild.roles.create({ 
+                name: this.settings.role, 
                 color: Colors.Gold, 
                 hoist : false,
                 mentionable: false,
                 reason,
             });
-        const category = guild.channels.cache.find(channel => channel.name === settings.name && channel.type === ChannelType.GuildCategory) 
+        const category = guild.channels.cache.find(channel => channel.name === this.settings.name && channel.type === ChannelType.GuildCategory) 
             || await guild.channels.create(
                 { 
-                    name: settings.name, 
+                    name: this.settings.name, 
                     reason,
                     type: ChannelType.GuildCategory,
                     position: 0,
                 });
         
         const rooms = fs.readdirSync(this.dir+'/room');
+        this.rooms = [];
 
         for (let i = 0; i < rooms.length; i++) 
         {
             const room = JSON.parse(fs.readFileSync(this.dir+'/room/'+rooms[i], 'utf8'));
-            const channel = guild.channels.cache.find(channel => channel.name === room.name) 
+            const channel = guild.channels.cache.find(channel => channel.name === room.name && channel.parentId === category.id) 
                 || await guild.channels.create({
                     name: room.name,
                     position: room.order? room.order - 1 : (i + 1),
@@ -97,35 +106,40 @@ export default class MurderMystery {
                             deny: [...(room.hidden? [ PermissionFlagsBits.ViewChannel ] : []), PermissionFlagsBits.SendMessages ]
                         },
                         {
-                            id: role.id,
+                            id: this.role.id,
                             type: OverwriteType.Role,
                             allow: [ PermissionFlagsBits.SendMessages ],
                         },
                     ]
                 });
-            if(!this.rooms.includes(channel.id)) this.rooms.push(channel.id);
+            this.rooms.push(channel.id);
         }
     }
 
     /**
-     * Update user permissions in the rooms: TODO
      * @param {Client} client 
      * @private
      */
-    async refresh(client) {
-        const settings = JSON.parse(fs.readFileSync(this.dir+'/settings.json', 'utf8'));
-        const guild = await client.guilds.fetch(settings.guild);
-        /**
-         * @type {CategoryChannel}
-         */
-        const category = guild.channels.cache.find(channel => channel.name === settings.name && channel.type === ChannelType.GuildCategory);
+    // TODO: untested
+    async refresh() {
+        const guild = this.getGuild();
 
         for(const player of Object.values(this._players))
         {
-            for(const room of category.children.cache.values())
+            for(const room of this.getChannels())
             {
+                // ? For those banned, remove all perms
+                if(this.isBanned(player.id))
+                {
+                    const perms = room.permissionsFor(player.id);
+                    perms?.has('SendMessages') && perms.remove('SendMessages');
+                    continue;
+                }
+                // ? For hidden rooms, add only those players who've found it
                 if(!room.permissionsFor(guild.roles.everyone.id).has('ViewChannel') || !player.discovered.includes(room.name)) continue;
-                room.permissionsFor(player.id).add(PermissionFlagsBits.ViewChannel);
+                const perms = room.permissionsFor(player.id);
+                !perms.has(PermissionFlagsBits.ViewChannel) && perms.add(PermissionFlagsBits.ViewChannel);
+                // ? -
             }
         }
     }
@@ -137,35 +151,37 @@ export default class MurderMystery {
             this._messageCreate = null;
         }
 
+        const us = this;
         /**
          * @param {Message<boolean>} message
          */
-        this._messageCreate = async function (message) {
+        us._messageCreate = async function (message) {
+            if(!message.member) return; // ? webhook
+
+            const user = message.member.user;
+
             if(message.author.bot || 
-                this._banned.includes(message.member.id) ||
-                this._ignore.includes(message.member.id) || 
-                !this.rooms.includes(message.channelId) || 
-                !this._players[message.member.displayName]) return;
-    
-            // ! block banned users
+                message.guildId !== us.settings.guild || 
+                us.isBanned(message, user.id) ||
+                us._ignore.includes(user.id) || 
+                !us.rooms.includes(message.channelId) || 
+                !us._players[user.displayName]) return;
     
             const words = message.content.match(/\w+/g);
-            const npc = Object.values(this._npcs)
-                .find(npc => 
-                    npc._focused === message.member.id || 
-                    npc.alias.find(alias => words.find(word => word.toLowerCase() === alias.toLowerCase()))
-                );
+            const npc = Object.values(us._npcs).find(npc => 
+                npc._focused === user.id || 
+                npc.alias.find(alias => words.find(word => word.toLowerCase() === alias.toLowerCase()))
+            );
     
             if(!npc) return;
             
             const channel = message.channel;
             const content = message.content;
-            const member = message.member;
     
             if(content.length < 7) return;
     
             var response = npc.respond(
-                member, 
+                user, 
                 content,
                 channel
             );
@@ -177,7 +193,10 @@ export default class MurderMystery {
             await channel.sendTyping();
             await new Promise(res => setTimeout(res, 4000));
     
-            response = await response;
+            response = await response.catch(err => {
+                console.error(err);
+                return null;
+            });
     
             if(!response)
             {
@@ -198,25 +217,60 @@ export default class MurderMystery {
 
             if(response.cmd.includes('ban'))
             {
-                this._banned.push(member.id);
+                us.ban(user.id);
             }
 
             if(response.cmd.includes('leave'))
             {
-                this._ignore.push(member.id);
+                us._ignore.push(user.id);
             }
         }
 
-        const us = this;
-        us.client.on('messageCreate', this._messageCreate);
+        us.client.on('messageCreate', us._messageCreate);
+    }
+
+    // TODO: 
+    destroy() {
+        // ? destroy all channels, data, everything, or maybe encode it all into 1
+        throw 'TODO: destroy()';
     }
     
+    // TODO: UNTESTED
     stop() {
         if(this._messageCreate)
         {
             this.client.removeListener('messageCreate', this._messageCreate);
             this._messageCreate = null;
         }
+    }
+
+    // TODO: UNTESTED
+    async ban(id) {
+        if(this.isBanned(id)) return;
+        this._banned.push(id);
+        const member = await this.getGuild().members.fetch(id);
+        await member.roles.remove(this.role);
+        this.settings.bans.push(member.id);
+        this.saveSettings();
+        await this.refresh();
+    }
+
+    isBanned(id) {
+        return this.settings.bans.includes(id);
+    }
+
+    /**
+     * @returns {Guild}
+     */
+    getGuild() {
+        return this.client.guilds.cache.get(this.settings.guild);
+    }
+
+    /**
+     * @returns {TextChannel[]}
+     */
+    getChannels() {
+        return this.getGuild().channels.cache.find(c => c.name === this.settings.name).children;
     }
 
     /**
@@ -255,4 +309,8 @@ export default class MurderMystery {
     editNpcs(fn) {
         this._npcs = Object.values(this._npcs).reduce(fn, {});
     }   
+
+    saveSettings() {
+        fs.writeFileSync(this.dir+'/_settings.json', JSON.stringify(this.settings, null, 2));
+    }
 }
