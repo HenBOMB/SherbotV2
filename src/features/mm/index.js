@@ -1,6 +1,6 @@
 import fs from 'fs';
 import NPC from './npc.js';
-import { ChannelType, Client, Colors, Guild, Message, OverwriteType, PermissionFlagsBits, Role, TextChannel } from 'discord.js';
+import { CategoryChannel, ChannelType, Client, Colors, EmbedBuilder, Guild, Message, OverwriteType, PermissionFlagsBits, Role, TextChannel } from 'discord.js';
 import Player from './player.js';
 
 export default class MurderMystery {
@@ -70,6 +70,7 @@ export default class MurderMystery {
     async setup(client) {
         const reason = this.settings.name + ' Murder Mystery Root Category';
         const guild = await client.guilds.fetch(this.settings.guild);
+
         this.role = guild.roles.cache.find(role => role.name === this.settings.role) 
             || await guild.roles.create({ 
                 name: this.settings.role, 
@@ -78,25 +79,27 @@ export default class MurderMystery {
                 mentionable: false,
                 reason,
             });
+        /**
+         * @type {CategoryChannel}
+         */
         const category = guild.channels.cache.find(channel => channel.name === this.settings.name && channel.type === ChannelType.GuildCategory) 
-            || await guild.channels.create(
-                { 
+            || await guild.channels.create({ 
                     name: this.settings.name, 
                     reason,
                     type: ChannelType.GuildCategory,
                     position: 0,
                 });
-        
+
         const rooms = fs.readdirSync(this.dir+'/room');
         this.rooms = [];
 
         for (let i = 0; i < rooms.length; i++) 
         {
             const room = JSON.parse(fs.readFileSync(this.dir+'/room/'+rooms[i], 'utf8'));
-            const channel = guild.channels.cache.find(channel => channel.name === room.name && channel.parentId === category.id) 
-                || await guild.channels.create({
+            const channel = category.children.cache.find(channel => channel.name === room.name) 
+                || await category.children.create({
                     name: room.name,
-                    position: room.order? room.order - 1 : (i + 1),
+                    position: room.order? room.order : (i + 2),
                     topic: room.topic,
                     parent: category.id,
                     permissionOverwrites: [
@@ -114,6 +117,20 @@ export default class MurderMystery {
                 });
             this.rooms.push(channel.id);
         }
+
+        this.admin = category.children.cache.find(c => c.name === '🔒┃admin')
+            || await category.children.create(
+                { 
+                    name: '🔒┃admin', 
+                    reason: `Admin channel for ${this.name} Murder Mystery`,
+                    permissionOverwrites: [
+                        {
+                            id: guild.roles.everyone.id,
+                            type: OverwriteType.Role,
+                            deny: [ PermissionFlagsBits.ViewChannel ]
+                        }
+                    ]
+                });
     }
 
     /**
@@ -160,6 +177,8 @@ export default class MurderMystery {
 
             const user = message.member.user;
 
+            if(message.content.length < 7) return;
+
             if(message.author.bot || 
                 message.guildId !== us.settings.guild || 
                 us.isBanned(message, user.id) ||
@@ -168,21 +187,27 @@ export default class MurderMystery {
                 !us._players[user.displayName]) return;
     
             const words = message.content.match(/\w+/g);
+
+            if(!words[0].toLowerCase() === 'hey')
+            {
+                return;
+            }
+
             const npc = Object.values(us._npcs).find(npc => 
                 npc._focused === user.id || 
                 npc.alias.find(alias => words.find(word => word.toLowerCase() === alias.toLowerCase()))
             );
+
+            if(!npc || !npc.alias.find(alias => words[1].toLowerCase() === alias.toLowerCase()))
+            {
+                return;
+            }
     
-            if(!npc) return;
-            
             const channel = message.channel;
-            const content = message.content;
-    
-            if(content.length < 7) return;
     
             var response = npc.respond(
                 user, 
-                content,
+                message.content,
                 channel
             );
             
@@ -193,17 +218,21 @@ export default class MurderMystery {
             await channel.sendTyping();
             await new Promise(res => setTimeout(res, 4000));
     
-            response = await response.catch(err => {
-                console.error(err);
-                return null;
-            });
+            response = await response;
     
-            if(!response)
+            if(response.code)
             {
-                await bot.setNickname('Sherbot');
-                return;
+                // ? filtered response, ban the user
+                if(response.code === 500)
+                {
+                    us.ban(user.id, npc.name, message);
+                    await message.delete();
+                }
+
+                return await bot.setNickname('Sherbot');
             }
     
+            // ? aka: Sherbot
             if(!npc.id)
             {
                 await bot.setNickname(npc.name);
@@ -217,7 +246,7 @@ export default class MurderMystery {
 
             if(response.cmd.includes('ban'))
             {
-                us.ban(user.id);
+                us.ban(user.id, npc.name, message);
             }
 
             if(response.cmd.includes('leave'))
@@ -229,13 +258,12 @@ export default class MurderMystery {
         us.client.on('messageCreate', us._messageCreate);
     }
 
-    // TODO: 
+    // TODO
     destroy() {
-        // ? destroy all channels, data, everything, or maybe encode it all into 1
+        // ? destroy all channels, data, everything, or maybe encode it all into 1 file
         throw 'TODO: destroy()';
     }
     
-    // TODO: UNTESTED
     stop() {
         if(this._messageCreate)
         {
@@ -245,16 +273,48 @@ export default class MurderMystery {
     }
 
     // TODO: UNTESTED
-    async ban(id) {
+    /**
+     * @param {Snowflake} userId - User to ban from the Murder Mystery
+     * @param {string} who - Name of whos banning the user.
+     * @param {string|Message} reason - Reason for banning the user.
+     * @returns {void}
+     */
+    async ban(id, who, reason) {
         if(this.isBanned(id)) return;
-        this._banned.push(id);
         const member = await this.getGuild().members.fetch(id);
         await member.roles.remove(this.role);
         this.settings.bans.push(member.id);
         this.saveSettings();
         await this.refresh();
+
+        const Reason = typeof reason === 'string'? reason : `After what you said: "${reason.content.slice(reason.content.match(/\w+/g).slice(0, 2).reduce((a,b)=>a+b.length, 3))}".`;
+        
+        // ? send dm
+        await member.user.send({ embeds: [ 
+            new EmbedBuilder()
+                .setColor(`#D2042D`)
+                .setTitle(`You have been kicked.`)
+                .setDescription(`${Reason}\n${who} had you immediately escorted to the exit and kicked out of the party.`)
+                .setFooter({ text: 'You are not allowed back in until further notice.' })
+                .setTimestamp()
+            ]});
+            
+        // ? send log to admins
+        await this.admin.send({ embeds: [ 
+            new EmbedBuilder()
+                .setColor(`#D2042D`)
+                .setTitle(`${member.displayName} has been kicked.`)
+                .setDescription(`**Kicker**: ${who}.\n**Reason**: ${Reason}${typeof reason === 'string'?'':`\n[Jump to message](${reason.url()})`}`)
+                .setFooter({ text: `ID: ${member.id}` })
+                .setThumbnail(member.user.displayAvatarURL())
+                .setTimestamp()
+            ]});
     }
 
+    /**
+     * @param {Snowflake} userId - User to check for ban
+     * @returns {Boolean}
+     */
     isBanned(id) {
         return this.settings.bans.includes(id);
     }
@@ -270,7 +330,7 @@ export default class MurderMystery {
      * @returns {TextChannel[]}
      */
     getChannels() {
-        return this.getGuild().channels.cache.find(c => c.name === this.settings.name).children;
+        return this.getGuild().channels.cache.find(c => c.name === this.settings.name).children.cache.filter(c => c.id !== this.getAdmin());
     }
 
     /**
@@ -304,7 +364,7 @@ export default class MurderMystery {
     }
     
     /**
-     * @param {(pre:{},cur:NPC) => NPC} fn 
+     * @param {(pre: {}, cur: NPC) => NPC} fn 
      */
     editNpcs(fn) {
         this._npcs = Object.values(this._npcs).reduce(fn, {});

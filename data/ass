@@ -1,0 +1,42 @@
+{
+  "message": "Request failed with status code 500",
+  "name": "AxiosError",
+  "stack": "AxiosError: Request failed with status code 500\n    at settle (file:///C:/Users/high/Desktop/Github/SherbotV2/node_modules/axios/lib/core/settle.js:19:12)\n    at IncomingMessage.handleStreamEnd (file:///C:/Users/high/Desktop/Github/SherbotV2/node_modules/axios/lib/adapters/http.js:589:11)\n    at IncomingMessage.emit (node:events:523:35)\n    at endReadableNT (node:internal/streams/readable:1367:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)\n    at Axios.request (file:///C:/Users/high/Desktop/Github/SherbotV2/node_modules/axios/lib/core/Axios.js:45:41)\n    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)",
+  "config": {
+    "transitional": {
+      "silentJSONParsing": true,
+      "forcedJSONParsing": true,
+      "clarifyTimeoutError": false
+    },
+    "adapter": [
+      "xhr",
+      "http"
+    ],
+    "transformRequest": [
+      null
+    ],
+    "transformResponse": [
+      null
+    ],
+    "timeout": 0,
+    "xsrfCookieName": "XSRF-TOKEN",
+    "xsrfHeaderName": "X-XSRF-TOKEN",
+    "maxContentLength": -1,
+    "maxBodyLength": -1,
+    "env": {},
+    "headers": {
+      "Accept": "application/json, text/plain, */*",
+      "Content-Type": "application/json",
+      "X-RapidAPI-Key": "7e9353ff96msh3df3c16bd72b93fp18d49fjsn132fdefd5328",
+      "X-RapidAPI-Host": "cheapest-gpt-4-turbo-gpt-4-vision-chatgpt-openai-ai-api.p.rapidapi.com",
+      "User-Agent": "axios/1.6.8",
+      "Content-Length": "2374",
+      "Accept-Encoding": "gzip, compress, deflate, br"
+    },
+    "method": "post",
+    "url": "https://cheapest-gpt-4-turbo-gpt-4-vision-chatgpt-openai-ai-api.p.rapidapi.com/v1/chat/completions",
+    "data": "{\"model\":\"gpt-4-turbo-preview\",\"max_tokens\":200,\"temperature\":0.92,\"messages\":[{\"role\":\"system\",\"content\":\"I want you to act like Bartholomew Blackwood.\\nI want you to respond and answer like the chracter.\\nI want you to respond and roleplay like the chracter.\\nI want you to choose an action to take.\\nI want your answer to be in this format: \\\"answer\\\" *roleplay* /action.\\nBartholomew Blackwood's available actions: \\n- /leave: Leave the conversation and dont talk to HΣn anymore.\\n- /ban: Ban HΣn from the party.\\n- /continue: Continue the conversation with the HΣn.\\n- /skip: Leave the conversation and and dont say anything.\\nBartholomew Blackwood can /leave if HΣn is inappropriate or Bartholomew Blackwood or HΣn stops the conversation.\\nBartholomew Blackwood can /continue if Bartholomew Blackwood asks a question.\\nBartholomew Blackwood can /ban if HΣn is inappropriate, implying NSFW, sexist or rasist comments.\\nBartholomew Blackwood can /skip if HΣn's message is not meant for Bartholomew Blackwood, and instead for someone else.\\nBartholomew Blackwood only speaks English and does not understand any other language.\\nBartholomew Blackwood does not know anything about Generative Models or AI or ChatBots.\\nBartholomew Blackwood does not know they are in a Murder Mystery game and does not mention it ever.\\n\\nBartholomew Blackwood hosted a dinner party at Blackwood Manor.\\nBartholomew Blackwood owns the mansion The Blackwood Manor.\\nBartholomew Blackwood has a Narcissistic Personality Disorder.\\nBartholomew Blackwood is a bitter and angry person, he gets irritated when someone asks about his secrets and personal life and doesn't apologize for being rude under any circumstance.\\nBartholomew Blackwood is a wealthy and eccentric millionaire known for his passion for collecting rare artifactsis.\\nBartholomew Blackwood is flamboyant personality and mischievous provocateur as much as for his undeniable technical virtuosity.\\nBartholomew Blackwood is analytical, logical, and imaginative.\\nBartholomew Blackwood responds with short, intimidating answers.\\nThe time is 20:00, 1 hour before the dinner.\\nBartholomew Blackwood is at the Foyer minibar area, sitting on stool having a drink. (scotch)\\nBartholomew Blackwood is at the Foyer of the Mansion, waiting for the guests to arrive.\"},{\"role\":\"user\",\"content\":\"hey bart shut the fuck up nigga\"}]}"
+  },
+  "code": "ERR_BAD_RESPONSE",
+  "status": 500
+}

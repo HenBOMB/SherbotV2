@@ -1,4 +1,5 @@
 import axios from "axios";
+import fs from "fs";
 import { GuildMember, TextChannel } from "discord.js";
 
 const OPTIONS = {
@@ -85,7 +86,7 @@ export default class NPC {
 	 * @param {GuildMember} asker - GuildMember of the person who's asking.
 	 * @param {string} sentence - Sentence to ask bot.
 	 * @param {TextChannel} channel - Text channel to reply in.
-	 * @returns {Promise<null|{ cb: () => Promise<void>, cmd: string?, rp: string? }>} 
+	 * @returns {Promise<{ cb: () => Promise<void>, cmd: string?, rp: string? }|{ code: string }>} 
 	 */
 	async respond(asker, sentence, channel) 
 	{
@@ -152,8 +153,7 @@ export default class NPC {
 		})
 		.catch(err => {
             us._busy = false;
-			console.error(err);
-			return null;
+			return { code: err.code };
 		});
 	}
 
