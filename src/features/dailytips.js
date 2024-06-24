@@ -17,7 +17,8 @@ export default function(client) {
 
             const guild = client.guilds.cache.get(id) || await client.guilds.fetch(id);
             const channel = guild.channels.cache.get(tip_channel) || await guild.channels.fetch(tip_channel);
-            let tip_url = TIPS[tip];
+
+            let tip_url = TIPS[(tip + 1) > TIPS.length? 0 : tip];
             let tips_ = tip_url.split(',');
 
             if(tips_.length > 1) {
@@ -25,7 +26,7 @@ export default function(client) {
 
                 if(sub_tips[id] >= tips_.length) {
                     // ! No more tips..
-                    if(tip+1 > TIPS.length) {
+                    if((tip + 1) > TIPS.length) {
                         tip_url = TIPS[0];
                         model.set('tip', 0);
                     } 
