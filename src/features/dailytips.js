@@ -21,21 +21,12 @@ export default function(client) {
             let tips_ = tip_url.split(',');
 
             if(tips_.length > 1) {
-                if(!sub_tips[id]) sub_tips[id] = -1;
-                sub_tips[id] += 1;
+                sub_tips[id] = (sub_tips[id] || -1) + 1;
+
                 if(sub_tips[id] >= tips_.length) {
                     tip_url = TIPS[tip+1];
-
                     // ! No more tips..
                     if(!tip_url) tip_url = TIPS[0];
-
-                    tips_ = tip_url.split(',');
-
-                    if(tips_.length > 1) {
-                        sub_tips[id] = 0;
-                        tip_url = tips_[0];
-                    }
-
                     model.set('tip', tip + 1);
                     await model.save();
                 }
@@ -69,7 +60,7 @@ export default function(client) {
         - currentUTC.getUTCSeconds() * 1000
         - currentUTC.getUTCMilliseconds();
 
-    const sub_tips = {};
+    var sub_tips = {};
     setTimeout(() => {
         sendTip(sub_tips).then(x => sub_tips = x);
         setInterval(() => sendTip(), 86400000);
