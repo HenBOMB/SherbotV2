@@ -21,13 +21,23 @@ export default function(client) {
             let tips_ = tip_url.split(',');
 
             if(tips_.length > 1) {
-                sub_tips[id] = (sub_tips[id] || -1) + 1;
+                sub_tips[id] = (typeof sub_tips[id] === 'number'? sub_tips[id] : -1) + 1;
 
                 if(sub_tips[id] >= tips_.length) {
-                    tip_url = TIPS[tip+1];
                     // ! No more tips..
-                    if(!tip_url) tip_url = TIPS[0];
-                    model.set('tip', tip + 1);
+                    if(tip+1 > TIPS.length) {
+                        tip_url = TIPS[0];
+                        model.set('tip', 0);
+                    } 
+                    else {
+                        tip_url = TIPS[tip+1];
+                        tips_ = tip_url.split(',');
+                        if(tips_.length > 1) {
+                            sub_tips[id] = 0;
+                            tip_url = tips_[0];
+                        }
+                        model.set('tip', tip+1);
+                    }
                     await model.save();
                 }
                 else {
@@ -37,14 +47,17 @@ export default function(client) {
             else {
                 if(sub_tips[id]) delete sub_tips[id];
                 model.set('tip', tip + 1);
-                await model.save();
             }
 
-            await channel.send({ embeds: [ new EmbedBuilder().setColor(0xabefb3).setImage(tip_url) ] })
-                .then(async message => {
-                    await message.react('👍');
-                    await message.react('👎');
-                })
+            await channel.send({ embeds: [ 
+                new EmbedBuilder()
+                    .setColor(0xabefb3)
+                    .setImage(tip_url) 
+                ] 
+            }).then(async message => {
+                await message.react('👍');
+                await message.react('👎');
+            })
             
             const role = guild.roles.cache.find(x => x.name.toLowerCase().includes('daily tips'));
             if(role) await deduction.send(`<@&${role.id}>`).then(msg => setTimeout(() => msg.delete(), 3000));
