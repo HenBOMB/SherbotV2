@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 /**
  * @param {import('discord.js').Client} client
  */
@@ -5,10 +7,15 @@ export default function(client) {
     var prev = '';
 
     client.on('messageCreate', async message => {
-        console.log(
-            (prev === message.guildId? `` : `-> ${message.guild.name}\n`)
-            + `[${message.channel.name}] ${message.author.displayName}: ${message.content}`
-        );
+        if(message.content) {
+            const log =  (prev === message.guildId? `` : `-> ${message.guild.name}\n`)
+                + `[${message.channel.name}] ${message.author.displayName}: ${message.content}`;
+            // fs.appendFileSync('data/msgs.no', log+'\n')
+            console.log(log);
+        }
+        else {
+            return;
+        }
 
         prev = message.guildId;
 

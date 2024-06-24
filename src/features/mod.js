@@ -38,8 +38,10 @@ export default function(client) {
                 content.includes('What is your favorite field of study?')) && content.includes('deduct')
             )
             {
-                await message.react(['✅','👍'][Math.floor(Math.random()*2)]);
-                await message.member.roles.add('906128248193306635');
+                setTimeout(async () => {
+                    await message.react(['✅','👍'][Math.floor(Math.random()*2)]);
+                    await message.member.roles.add('906128248193306635');
+                }, 9000);
             }
         }
         // ? 🙋┃introductions

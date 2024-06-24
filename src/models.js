@@ -20,12 +20,24 @@ export const Server = Sequelize.define(
 		},
 		tip: {
 			type: DataTypes.INTEGER,
-			defaultValue: 0,
+			allowNull: true,
+			defaultValue: null,
+		},
+		tip_channel: {
+			type: DataTypes.STRING,
+			allowNull: true,
+			defaultValue: null,
 		}
 	}, {
   		timestamps: false
 	}
 );
+
+await Server.findOrCreate({
+	id: '1129016938996187168', 
+	tip: 0,
+	tip_channel: '1174494459812134983'
+})
 
 // export const Character = Sequelize.define(
 // 	'Character', {
