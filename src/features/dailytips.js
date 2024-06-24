@@ -48,6 +48,7 @@ export default function(client) {
             else {
                 if(sub_tips[id]) delete sub_tips[id];
                 model.set('tip', tip + 1);
+                await model.save();
             }
 
             await channel.send({ embeds: [ 
@@ -76,7 +77,7 @@ export default function(client) {
 
     var sub_tips = {};
     setTimeout(() => {
-        sendTip(sub_tips).then(x => sub_tips = x);
-        setInterval(() => sendTip(), 86400000);
+        sendTip(sub_tips).then(x => sub_tips = x).catch(console.log);
+        setInterval(() => sendTip(sub_tips).then(x => sub_tips = x).catch(console.log), 86400000);
     }, timeUntil10UTC);
 }
