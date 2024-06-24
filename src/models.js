@@ -1,5 +1,5 @@
 (await import('dotenv')).config();
-import { Sequelize as Seq, DataTypes } from 'sequelize';
+import { Sequelize as Seq, DataTypes, where } from 'sequelize';
 
 export const Sequelize = new Seq({ 
 	dialect: 'mysql',  
@@ -33,11 +33,18 @@ export const Server = Sequelize.define(
 	}
 );
 
-await Server.findOrCreate({
-	id: '1129016938996187168', 
-	tip: 0,
-	tip_channel: '1174494459812134983'
-})
+await Server.sync({ alter: true });
+
+await Server.findOrCreate(({
+	where: { id: '1129016938996187168' },
+	defaults: {
+		id: '1129016938996187168', 
+		tip: 0,
+		tip_channel: '1174494459812134983'
+	}
+}));
+
+await Server.sync({ alter: true });
 
 // export const Character = Sequelize.define(
 // 	'Character', {

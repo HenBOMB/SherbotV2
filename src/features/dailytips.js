@@ -8,6 +8,7 @@ const TIPS = fs.readFileSync('src/assets/tips.no', 'utf8').split('\n');
  * @param {import('discord.js').Client} client
  */
 export default function(client) {
+
     const sendTip = async (sub_tips) => {
         for(const model of await Server.findAll()) {
             const { id, tip, tip_channel } = model.dataValues;
