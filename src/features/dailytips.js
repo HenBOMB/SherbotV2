@@ -13,10 +13,10 @@ export default function(client) {
         for(const model of await Server.findAll()) {
             const { id, tip, tip_channel } = model.dataValues;
 
-            if(!tip || !tip_channel) continue;
+            if(tip === null || !tip_channel) continue;
 
-            const guild = client.guilds.cache.get(id) || await client.guilds.fetch(id);
-            const channel = guild.channels.cache.get(tip_channel) || await guild.channels.fetch(tip_channel);
+            const guild = client.guilds?.cache?.get(id) || await client.guilds.fetch(id);
+            const channel = guild.channels?.cache?.get(tip_channel) || await guild.channels.fetch(tip_channel);
 
             let tip_url = TIPS[(tip + 1) > TIPS.length? 0 : tip];
             let tips_ = tip_url.split(',');
@@ -61,8 +61,8 @@ export default function(client) {
                 await message.react('👎');
             })
             
-            const role = guild.roles.cache.find(x => x.name.toLowerCase().includes('daily tips'));
-            if(role) await deduction.send(`<@&${role.id}>`).then(msg => setTimeout(() => msg.delete(), 3000));
+            // const role = guild.roles.cache.find(x => x.name.toLowerCase().includes('daily tips'));
+            // if(role) await deduction.send(`<@&${role.id}>`).then(msg => setTimeout(() => msg.delete(), 3000));
         }
 
         return sub_tips;
