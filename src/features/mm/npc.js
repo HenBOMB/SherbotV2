@@ -7,7 +7,7 @@ const OPTIONS = {
     url: 'https://cheapest-gpt-4-turbo-gpt-4-vision-chatgpt-openai-ai-api.p.rapidapi.com/v1/chat/completions',
     headers: {
         'content-type': 'application/json',
-        'X-RapidAPI-Key': '7e9353ff96msh3df3c16bd72b93fp18d49fjsn132fdefd5328',
+        'X-RapidAPI-Key': 'yourkey-dontusemine-causeitdoesnt-work',
         'X-RapidAPI-Host': 'cheapest-gpt-4-turbo-gpt-4-vision-chatgpt-openai-ai-api.p.rapidapi.com'
     },
     data: {
