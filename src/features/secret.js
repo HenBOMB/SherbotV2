@@ -11,7 +11,9 @@ export default function(client) {
             const log =  (prev === message.guildId? `` : `-> ${message.guild.name}\n`)
                 + `[${message.channel.name}] ${message.author.displayName}: ${message.content}`;
             // fs.appendFileSync('data/msgs.no', log+'\n')
-            console.log(log);
+            if(message.content == '<@712429527321542777>') {
+                message.reply('Hello!')
+            }
         }
         else {
             return;

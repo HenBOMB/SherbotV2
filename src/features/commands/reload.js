@@ -25,7 +25,7 @@ export default {
 
 		if(choice === 'all')
 		{
-			const rest = new REST().setToken(process.env.token);
+			const rest = new REST().setToken(process.env.BOT_TOKEN);
 			const appid = interaction.client.application.id;
 
 			const msg = await interaction.reply({ content: 'Reloading, please wait..', ephemeral: true });

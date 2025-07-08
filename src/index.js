@@ -4,26 +4,19 @@ import { Client } from 'discord.js';
 import { Sequelize, Server } from './models.js';
 import Features from './features.js';
 
-await Sequelize.sync({ alter: true });
-
-await Server.findOrCreate({
-    where: {
-        id: '670107546480017409',
-    },
-    defaults: {
-        id: '670107546480017409',
-        tip: 42,
-    }
-});
-
 var closed = false;
 
 async function halt() {
-    if(closed) return;
+    if(closed) {
+        console.log('Already halting..')
+        return;
+    }
+    console.log('Halted')
     closed = true;
     await Sequelize.sync({ alter: true });
     await Sequelize.close();
     await client.destroy();
+    process.exit();
 }
 
 const client = new Client({
@@ -62,7 +55,7 @@ process.on('uncaughtException', (e) => {
 
 client.botcolor = 0xBE0000;
 
-client.login(process.env.token).then(success => {
+client.login(process.env.BOT_TOKEN).then(success => {
     console.clear();
     console.log('>>> Sherbot logged in.');
     Features.run(client);

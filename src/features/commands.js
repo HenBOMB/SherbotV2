@@ -30,7 +30,7 @@ export default async function(client) {
         }
     }
 
-    const rest = new REST().setToken(process.env.token);
+    const rest = new REST().setToken(process.env.BOT_TOKEN);
 
     try {
         for(const key of Object.keys(guilds))
