@@ -20,7 +20,7 @@
             ],
             "home_office": [
                 "miranda",
-                "rachel",
+                "elena",
                 "yuki"
             ],
             "kitchen": [
@@ -44,7 +44,7 @@
         "digital_logs": {
             "03:15": "Biometric access: Alex Rivera - server room (authorized)",
             "03:22": "Network spike detected - external connection attempt blocked",
-            "03:30": "Biometric access: Rachel Kim - home office (authorized)",
+            "03:30": "Biometric access: Elena Vance - home office (authorized)",
             "03:35": "Security camera loop detected - hallway cam 3",
             "03:40": "Biometric access: ADMIN_OVERRIDE - server room",
             "03:45": "Backup corruption initiated - source: internal",
@@ -56,7 +56,7 @@
             "03:00": "All guests asleep in respective rooms (thermal imaging)",
             "03:15": "Alex enters server room, exits at 03:19",
             "03:22": "Exterior: car parked on street (plates obscured)",
-            "03:30": "Rachel exits guest room, goes to home office",
+            "03:30": "Elena exits guest room, goes to home office",
             "03:35": "Hallway cam 3 shows loop (4 min gap)",
             "03:40": "Server room door opens (no visible person - ADMIN_OVERRIDE used)",
             "03:47": "Lights flicker throughout house",
@@ -69,7 +69,7 @@
                 "03:19": "guest_room_2",
                 "03:47": "guest_room_2"
             },
-            "rachel": {
+            "elena": {
                 "03:00": "guest_room_1",
                 "03:30": "home_office",
                 "03:45": "home_office",
@@ -109,7 +109,7 @@
             "mysterious_car": "Registered to shell company, traced to Marcus's hidden LLC"
         }
     },
-    "solution": "rachel",
+    "solution": "elena",
     "accomplice": "alex",
     "complexity_modifiers": {
         "accomplice_system": true,
@@ -127,7 +127,7 @@
                 "alex",
                 "rivera"
             ],
-            "avatar": "https://i.imgur.com/placeholder12.png",
+            "avatar": "https://i.ibb.co/20N6XXtn/male-tech-02.webp",
             "gender": "male",
             "isGuilty": false,
             "isAccomplice": true,
@@ -151,7 +151,7 @@
                 },
                 {
                     "id": "disabled_safety",
-                    "text": "disabled the server rack safety protocols at 3:15 as Rachel asked, thought it was for maintenance",
+                    "text": "disabled the server rack safety protocols at 3:15 as Elena asked, thought it was for maintenance",
                     "trigger": {
                         "requiresEvidence": [
                             "digital_logs_03:15",
@@ -162,7 +162,7 @@
                             "disabled",
                             "server",
                             "maintenance",
-                            "rachel",
+                            "elena",
                             "asked"
                         ],
                         "minPressure": 45
@@ -170,12 +170,12 @@
                 },
                 {
                     "id": "unknowing_accomplice",
-                    "text": "Rachel told him Miranda wanted the safety off for an upgrade, he had no idea it was for murder",
+                    "text": "Elena told him Miranda wanted the safety off for an upgrade, he had no idea it was for murder",
                     "trigger": {
                         "requiresEvidence": [
                             "digital_logs_03:15",
                             "secret_disabled_safety",
-                            "secret_rachel_manipulated"
+                            "secret_elena_manipulated"
                         ],
                         "keywords": [
                             "accomplice",
@@ -183,7 +183,7 @@
                             "tricked",
                             "manipulated",
                             "upgrade",
-                            "rachel"
+                            "elena"
                         ],
                         "minPressure": 50
                     }
@@ -214,20 +214,20 @@
                 "genuinely shocked when confronted about role"
             ],
             "resistance_level": "moderate",
-            "tells": "touches neck when lying about Rachel"
+            "tells": "touches neck when lying about Elena"
         },
         {
-            "id": "rachel",
-            "name": "Rachel Kim",
+            "id": "elena",
+            "name": "Elena Vance",
             "alias": [
-                "rachel",
-                "kim"
+                "elena",
+                "vance"
             ],
-            "avatar": "https://i.imgur.com/placeholder13.png",
+            "avatar": "https://i.ibb.co/k2GC4qhp/female-tech-04.webp",
             "gender": "female",
             "isGuilty": true,
             "alibi": "I was in the home office working on the investor presentation. I have the edit logs to prove it. The presentation was due at 9 AM.",
-            "motive": "VP of Product, Miranda stole her AI algorithm and took sole credit, costing Rachel millions",
+            "motive": "VP of Product, Miranda stole her AI algorithm and took sole credit, costing Elena millions",
             "secrets": [
                 {
                     "id": "stolen_algorithm",
@@ -327,7 +327,7 @@
                     "text": "edit logs were automated script, she wasn't actually at computer during murder",
                     "trigger": {
                         "requiresEvidence": [
-                            "locations_rachel_03:30",
+                            "locations_elena_03:30",
                             "digital_logs_03:30"
                         ],
                         "keywords": [
@@ -359,7 +359,7 @@
                 "devon",
                 "marsh"
             ],
-            "avatar": "https://i.imgur.com/placeholder14.png",
+            "avatar": "https://i.ibb.co/gbN5TmF2/female-tech-01.webp",
             "gender": "non-binary",
             "isGuilty": false,
             "alibi": "I couldn't sleep so I was making tea in the kitchen. I heard the power surge and ran to check. I... found her and called 911.",
@@ -381,15 +381,15 @@
                     }
                 },
                 {
-                    "id": "saw_rachel",
-                    "text": "saw Rachel in the hallway at 3:38 during the camera loop gap, but Rachel convinced them they were mistaken",
+                    "id": "saw_elena",
+                    "text": "saw Elena in the hallway at 3:38 during the camera loop gap, but Elena convinced them they were mistaken",
                     "trigger": {
                         "requiresEvidence": [
                             "security_footage_03:35",
-                            "locations_rachel_03:30"
+                            "locations_elena_03:30"
                         ],
                         "keywords": [
-                            "rachel",
+                            "elena",
                             "hallway",
                             "saw",
                             "3:38",
@@ -401,7 +401,7 @@
                 },
                 {
                     "id": "nervous_911",
-                    "text": "was so panicked during 911 call they forgot to mention seeing Rachel, feel guilty now",
+                    "text": "was so panicked during 911 call they forgot to mention seeing Elena, feel guilty now",
                     "trigger": {
                         "keywords": [
                             "911",
@@ -409,7 +409,7 @@
                             "panicked",
                             "mention",
                             "guilty",
-                            "rachel"
+                            "elena"
                         ],
                         "minPressure": 25
                     }
@@ -431,7 +431,7 @@
                 "yuki",
                 "tanaka"
             ],
-            "avatar": "https://i.imgur.com/placeholder15.png",
+            "avatar": "https://i.ibb.co/k2GC4qhp/female-tech-02.webp",
             "gender": "female",
             "isGuilty": false,
             "alibi": "I was asleep in the master bedroom. Miranda and I had been dating for six months. I was supposed to move in next week.",
@@ -526,7 +526,7 @@
                 "priya",
                 "sharma"
             ],
-            "avatar": "https://i.imgur.com/placeholder16.png",
+            "avatar": "https://i.ibb.co/TB848021/female-tech-03.webp",
             "gender": "female",
             "isGuilty": false,
             "alibi": "I was asleep. I'm the company lawyer, I was here to finalize acquisition documents in the morning. I slept through everything.",
@@ -563,14 +563,14 @@
                     }
                 },
                 {
-                    "id": "knew_rachel_motive",
-                    "text": "knew about the stolen algorithm, Miranda consulted her on blocking Rachel's lawsuit",
+                    "id": "knew_elena_motive",
+                    "text": "knew about the stolen algorithm, Miranda consulted her on blocking Elena's lawsuit",
                     "trigger": {
                         "requiresEvidence": [
-                            "secret_rachel_stolen_algorithm"
+                            "secret_elena_stolen_algorithm"
                         ],
                         "keywords": [
-                            "rachel",
+                            "elena",
                             "algorithm",
                             "lawsuit",
                             "knew",
@@ -597,7 +597,7 @@
                 "marcus",
                 "zhao"
             ],
-            "avatar": "https://i.imgur.com/placeholder17.png",
+            "avatar": "https://i.ibb.co/21BjKNtf/male-tech-01.webp",
             "gender": "male",
             "isGuilty": false,
             "alibi": "I was in the wine cellar selecting bottles for tomorrow's investor meeting. The collection is worth $2M, it requires careful handling.",
@@ -692,14 +692,14 @@
     },
     "solution_requirements": {
         "must_identify": [
-            "rachel_as_killer",
+            "elena_as_killer",
             "alex_as_unknowing_accomplice"
         ],
         "must_connect": [
             "alex_disabled_safety",
-            "rachel_used_admin_override",
-            "rachel_planted_camera_loop",
-            "rachel_corrupted_backups"
+            "elena_used_admin_override",
+            "elena_planted_camera_loop",
+            "elena_corrupted_backups"
         ],
         "minimum_evidence": [
             "digital_logs_03:15",
@@ -708,7 +708,7 @@
             "physical_evidence_server_rack",
             "devon_witness_testimony"
         ],
-        "inference_chain": "Alex disabled safety → Rachel used override to enter → Camera loop hid her approach → She electrocuted Miranda → Corrupted backups to hide motive → Alex didn't know he was helping"
+        "inference_chain": "Alex disabled safety → Elena used override to enter → Camera loop hid her approach → She electrocuted Miranda → Corrupted backups to hide motive → Alex didn't know he was helping"
     },
     "red_herrings": [
         "yuki_corporate_spy",
@@ -726,7 +726,7 @@
             "Planted evidence (camera loop, fake edit logs)",
             "Unreliable witness (Devon's suppressed memory)",
             "Requires 5-step inference chain to solve",
-            "Expert-level suspect resistance (Rachel)"
+            "Expert-level suspect resistance (Elena)"
         ]
     }
 }
