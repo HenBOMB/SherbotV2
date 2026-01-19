@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Murder Mystery - Dev Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0f0f0f',
+                            800: '#1a1a1a',
+                            700: '#252525',
+                            600: '#333333'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .glass {
+            background: rgba(30, 30, 30, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .composure-bar {
+            background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #22c55e 100%);
+        }
+
+        .pulse-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-dark-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="glass sticky top-0 z-50 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">🔍</span>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Murder Mystery Dashboard
+            </h1>
+        </div>
+        <div id="connectionStatus" class="flex items-center gap-2 text-sm">
+            <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span>
+            <span class="text-gray-400">Disconnected</span>
+        </div>
+    </header>
+
+    <main class="p-6 max-w-7xl mx-auto">
+        <!-- No Game State -->
+        <div id="noGame" class="text-center py-20">
+            <div class="text-6xl mb-4">🕵️</div>
+            <h2 class="text-2xl font-semibold text-gray-300 mb-2">No Active Game</h2>
+            <p class="text-gray-500">Start a murder mystery game with <code
+                    class="bg-dark-700 px-2 py-1 rounded">/mm start</code></p>
+        </div>
+
+        <!-- Game Dashboard -->
+        <div id="gameDashboard" class="hidden space-y-6">
+            <!-- Game Status Bar -->
+            <section class="glass rounded-xl p-6">
+                <div class="flex flex-wrap gap-6 items-center justify-between">
+                    <div>
+                        <h2 id="caseName" class="text-2xl font-bold text-white">The Blackwood Murder</h2>
+                        <p id="casePhase" class="text-gray-400">Phase: <span
+                                class="text-purple-400">Investigating</span></p>
+                    </div>
+                    <div class="flex gap-8">
+                        <div class="text-center">
+                            <div id="timeRemaining" class="text-3xl font-bold text-amber-400">--:--</div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">Time Left</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="points" class="text-3xl font-bold text-green-400">--</div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">Points</div>
+                        </div>
+                        <div class="text-center">
+                            <div id="participants" class="text-3xl font-bold text-blue-400">--</div>
+                            <div class="text-xs text-gray-500 uppercase tracking-wider">Players</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Suspects Grid -->
+            <section>
+                <h3 class="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                    <span>👥</span> Suspects
+                </h3>
+                <div id="suspectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Suspect cards inserted here -->
+                </div>
+            </section>
+
+            <!-- Bottom Row: Evidence + Events -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Discovered Evidence -->
+                <section class="glass rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                        <span>📁</span> Discovered Evidence
+                    </h3>
+                    <div id="evidenceList" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 italic">No evidence discovered yet</p>
+                    </div>
+                </section>
+
+                <!-- Event Feed -->
+                <section class="glass rounded-xl p-6">
+                    <h3 class="text-lg font-semibold text-gray-300 mb-4 flex items-center gap-2">
+                        <span>📜</span> Event Log
+                    </h3>
+                    <div id="eventFeed" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500 italic">No events yet</p>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Socket.IO connection
+        const socket = io();
+
+        // DOM elements
+        const connectionStatus = document.getElementById('connectionStatus');
+        const noGame = document.getElementById('noGame');
+        const gameDashboard = document.getElementById('gameDashboard');
+        const suspectsGrid = document.getElementById('suspectsGrid');
+        const evidenceList = document.getElementById('evidenceList');
+        const eventFeed = document.getElementById('eventFeed');
+
+        // Connection status
+        socket.on('connect', () => {
+            connectionStatus.innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-green-500 pulse-dot"></span>
+                <span class="text-gray-400">Connected</span>
+            `;
+        });
+
+        socket.on('disconnect', () => {
+            connectionStatus.innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-red-500 pulse-dot"></span>
+                <span class="text-gray-400">Disconnected</span>
+            `;
+        });
+
+        // State update
+        socket.on('state', (state) => {
+            if (!state) {
+                noGame.classList.remove('hidden');
+                gameDashboard.classList.add('hidden');
+                return;
+            }
+
+            noGame.classList.add('hidden');
+            gameDashboard.classList.remove('hidden');
+
+            // Update header
+            document.getElementById('caseName').textContent = state.caseName;
+            document.getElementById('casePhase').innerHTML = `Phase: <span class="text-purple-400">${state.phase}</span>`;
+
+            // Time remaining
+            const mins = Math.floor(state.timeRemaining / 60);
+            const secs = state.timeRemaining % 60;
+            document.getElementById('timeRemaining').textContent =
+                `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+
+            document.getElementById('points').textContent = state.points;
+            document.getElementById('participants').textContent = state.participantCount;
+
+            // Suspects
+            renderSuspects(state.suspects);
+
+            // Evidence
+            renderEvidence(state.discoveredEvidence);
+        });
+
+        // Single event
+        socket.on('event', (event) => {
+            addEventToFeed(event);
+        });
+
+        // Batch events
+        socket.on('events', (events) => {
+            eventFeed.innerHTML = '';
+            events.forEach(e => addEventToFeed(e));
+        });
+
+        function renderSuspects(suspects) {
+            suspectsGrid.innerHTML = suspects.map(s => `
+                <div class="glass rounded-xl p-4 ${s.isGuilty ? 'ring-2 ring-red-500/50' : ''}">
+                    <div class="flex items-center gap-3 mb-4">
+                        <img src="${s.avatar}" alt="${s.name}" 
+                             class="w-12 h-12 rounded-full bg-dark-600 object-cover"
+                             onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(s.name)}&background=333&color=fff'">
+                        <div>
+                            <h4 class="font-semibold text-white">${s.name}</h4>
+                            <p class="text-xs text-gray-500">
+                                ${s.revealedSecrets.length}/${s.totalSecrets} secrets revealed
+                                ${s.isBusy ? '<span class="text-amber-400 ml-2">● Responding...</span>' : ''}
+                            </p>
+                        </div>
+                        ${s.isGuilty ? '<span class="ml-auto text-red-400 text-xs font-medium uppercase">Killer</span>' : ''}
+                    </div>
+                    
+                    <!-- Composure -->
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-400">Composure</span>
+                            <span class="${s.composure > 50 ? 'text-green-400' : s.composure > 25 ? 'text-amber-400' : 'text-red-400'}">${s.composure}%</span>
+                        </div>
+                        <div class="h-2 bg-dark-900 rounded-full overflow-hidden">
+                            <div class="composure-bar h-full rounded-full transition-all duration-500" 
+                                 style="width: ${s.composure}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Defensiveness -->
+                    <div class="mb-3">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-gray-400">Defensiveness</span>
+                            <span class="text-purple-400">${s.defensiveness}%</span>
+                        </div>
+                        <div class="h-2 bg-dark-900 rounded-full overflow-hidden">
+                            <div class="h-full rounded-full bg-purple-500 transition-all duration-500" 
+                                 style="width: ${s.defensiveness}%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Secrets & Triggers -->
+                    <details class="mt-3 pt-3 border-t border-gray-700">
+                        <summary class="text-xs text-gray-400 cursor-pointer hover:text-gray-300">
+                            🔐 Secret Triggers (${s.secrets?.length || 0})
+                        </summary>
+                        <div class="mt-2 space-y-3">
+                            ${(s.secrets || []).map(sec => `
+                                <div class="p-2 rounded ${sec.revealed ? 'bg-red-900/30 border border-red-800' : 'bg-dark-800 border border-gray-700'}">
+                                    <div class="flex items-start gap-2 mb-2">
+                                        <span class="text-sm">${sec.revealed ? '🔓' : '🔒'}</span>
+                                        <span class="text-xs ${sec.revealed ? 'text-red-300' : 'text-gray-300'}">${sec.text}</span>
+                                    </div>
+                                    <div class="pl-5 space-y-1">
+                                        ${sec.trigger.requiresEvidence.length > 0 ? `
+                                            <div class="flex flex-wrap gap-1">
+                                                <span class="text-xs text-gray-500">Evidence:</span>
+                                                ${sec.trigger.requiresEvidence.map(e => `
+                                                    <span class="text-xs px-1.5 py-0.5 rounded ${sec.trigger.hasRequiredEvidence ? 'bg-green-900/50 text-green-300' : 'bg-gray-800 text-gray-400'}">${e}</span>
+                                                `).join('')}
+                                                ${sec.trigger.hasRequiredEvidence ? '<span class="text-green-400 text-xs">✓</span>' : '<span class="text-gray-500 text-xs">✗</span>'}
+                                            </div>
+                                        ` : ''}
+                                        ${sec.trigger.keywords.length > 0 ? `
+                                            <div class="flex flex-wrap gap-1">
+                                                <span class="text-xs text-gray-500">Keywords:</span>
+                                                ${sec.trigger.keywords.slice(0, 5).map(k => `<span class="text-xs px-1.5 py-0.5 rounded bg-blue-900/50 text-blue-300">${k}</span>`).join('')}
+                                                ${sec.trigger.keywords.length > 5 ? `<span class="text-xs text-gray-500">+${sec.trigger.keywords.length - 5}</span>` : ''}
+                                            </div>
+                                        ` : ''}
+                                        <div class="text-xs text-gray-500">
+                                            Pressure needed: <span class="text-amber-400">${sec.trigger.minPressure}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </details>
+                </div>
+            `).join('');
+        }
+
+        function renderEvidence(evidence) {
+            if (!evidence || evidence.length === 0) {
+                evidenceList.innerHTML = '<p class="text-gray-500 italic">No evidence discovered yet</p>';
+                return;
+            }
+            evidenceList.innerHTML = evidence.map(e => `
+                <div class="flex items-center gap-2 text-sm py-1">
+                    <span class="text-green-400">✓</span>
+                    <span class="text-gray-300">${formatEvidence(e)}</span>
+                </div>
+            `).join('');
+        }
+
+        function formatEvidence(evidence) {
+            return evidence
+                .replace(/_/g, ' ')
+                .replace(/^(dna|footage|location)/, m => m.toUpperCase() + ':');
+        }
+
+        function addEventToFeed(event) {
+            const icons = {
+                interrogation: '💬',
+                tool_use: '🔧',
+                secret_revealed: '🔓',
+                game_start: '🎮',
+                game_end: '🏁'
+            };
+
+            const time = new Date(event.timestamp).toLocaleTimeString();
+            const el = document.createElement('div');
+            el.className = 'flex items-start gap-2 text-sm py-1 border-b border-gray-800';
+            el.innerHTML = `
+                <span>${icons[event.type] || '📌'}</span>
+                <span class="text-gray-500 shrink-0">${time}</span>
+                <span class="text-gray-300">${event.message}</span>
+            `;
+
+            eventFeed.insertBefore(el, eventFeed.firstChild);
+
+            // Keep only last 50 visible
+            while (eventFeed.children.length > 50) {
+                eventFeed.removeChild(eventFeed.lastChild);
+            }
+        }
+    </script>
+</body>
+
+</html>

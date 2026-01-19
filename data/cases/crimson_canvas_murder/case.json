@@ -1,0 +1,505 @@
+{
+    "id": "crimson_canvas_murder",
+    "name": "The Crimson Canvas",
+    "description": "Renowned artist Vivienne Rousseau was found dead in her private gallery at 10:45 PM during an exclusive art unveiling. Her final masterpiece is missing. Six people had access that night. One of them is the killer.",
+    "victim": {
+        "name": "Vivienne Rousseau",
+        "cause": "Blunt force trauma (sculpture to the head)",
+        "description": "Celebrated contemporary artist worth millions, known for cutting controversial pieces and ruthless business practices."
+    },
+    "murderTime": "22:45",
+    "murderLocation": "private_gallery",
+    "evidence": {
+        "dna": {
+            "private_gallery": [
+                "vivienne",
+                "isabella",
+                "dante"
+            ],
+            "storage_room": [
+                "kai",
+                "vivienne"
+            ],
+            "main_gallery": [
+                "sienna",
+                "camille",
+                "julian"
+            ],
+            "studio": [
+                "dante",
+                "vivienne"
+            ],
+            "vault": [
+                "vivienne",
+                "isabella"
+            ]
+        },
+        "footage": {
+            "21:00": "All guests arrive for the private unveiling",
+            "21:30": "Champagne toast in main gallery",
+            "22:00": "Vivienne shows guests around, leaves to prepare unveiling",
+            "22:20": "Isabella seen entering vault area",
+            "22:30": "Kai spotted near storage room with large bag",
+            "22:40": "Person in black coat enters private gallery (partial view)",
+            "22:45": "Lights flicker in private gallery",
+            "22:50": "Dante discovers body, screams for help"
+        },
+        "locations": {
+            "isabella": {
+                "22:00": "main_gallery",
+                "22:20": "vault",
+                "22:35": "restroom",
+                "22:45": "main_gallery"
+            },
+            "kai": {
+                "22:00": "main_gallery",
+                "22:15": "storage_room",
+                "22:30": "storage_room",
+                "22:45": "loading_dock"
+            },
+            "dante": {
+                "22:00": "studio",
+                "22:25": "private_gallery",
+                "22:45": "private_gallery",
+                "22:50": "private_gallery"
+            },
+            "sienna": {
+                "22:00": "main_gallery",
+                "22:20": "main_gallery",
+                "22:45": "sculpture_hall"
+            },
+            "camille": {
+                "22:00": "main_gallery",
+                "22:15": "main_gallery",
+                "22:45": "wine_cellar"
+            },
+            "julian": {
+                "22:00": "main_gallery",
+                "22:20": "balcony",
+                "22:45": "main_gallery"
+            }
+        }
+    },
+    "solution": "kai",
+    "suspects": [
+        {
+            "id": "isabella",
+            "name": "Isabella Chen",
+            "alias": [
+                "isabella",
+                "bella",
+                "chen"
+            ],
+            "avatar": "https://i.imgur.com/placeholder6.png",
+            "gender": "female",
+            "isGuilty": false,
+            "alibi": "I was in the restroom when it happened. I had been reviewing authentication documents in the vault earlier.",
+            "motive": "Art dealer, Vivienne threatened to expose her sale of forgeries",
+            "secrets": [
+                {
+                    "id": "forgeries",
+                    "text": "has been selling forged Rousseau pieces for years",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "dna_vault"
+                        ],
+                        "keywords": [
+                            "fake",
+                            "forgery",
+                            "authentication",
+                            "vault",
+                            "documents",
+                            "real",
+                            "genuine"
+                        ],
+                        "minPressure": 35
+                    }
+                },
+                {
+                    "id": "blackmail",
+                    "text": "Vivienne was blackmailing her for $500,000",
+                    "trigger": {
+                        "keywords": [
+                            "blackmail",
+                            "money",
+                            "payment",
+                            "threaten",
+                            "expose",
+                            "500000"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "saw_kai",
+                    "text": "saw Kai arguing with Vivienne two days ago about the missing painting",
+                    "trigger": {
+                        "keywords": [
+                            "kai",
+                            "argument",
+                            "fight",
+                            "painting",
+                            "saw",
+                            "witness"
+                        ],
+                        "minPressure": 20
+                    }
+                }
+            ],
+            "traits": [
+                "is sophisticated and calculating",
+                "speaks with precision",
+                "defensive about her business",
+                "nervous around vault topics"
+            ]
+        },
+        {
+            "id": "kai",
+            "name": "Kai Morrison",
+            "alias": [
+                "kai",
+                "morrison"
+            ],
+            "avatar": "https://i.imgur.com/placeholder7.png",
+            "gender": "non-binary",
+            "isGuilty": true,
+            "alibi": "I was in the storage room cataloging pieces for transport. The loading dock crew can verify I went outside around 10:45.",
+            "motive": "Former protégé, Vivienne stole their original artwork and claimed it as her own masterpiece",
+            "secrets": [
+                {
+                    "id": "stolen_art",
+                    "text": "Vivienne's final masterpiece was actually Kai's original work",
+                    "trigger": {
+                        "keywords": [
+                            "masterpiece",
+                            "original",
+                            "stole",
+                            "plagiarism",
+                            "artwork",
+                            "credit",
+                            "created"
+                        ],
+                        "minPressure": 40
+                    }
+                },
+                {
+                    "id": "in_gallery",
+                    "text": "was actually in the private gallery at 22:40, the person in the black coat",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "footage_22:40",
+                            "location_kai_22:30"
+                        ],
+                        "keywords": [
+                            "black",
+                            "coat",
+                            "gallery",
+                            "22:40",
+                            "footage",
+                            "person",
+                            "where"
+                        ],
+                        "minPressure": 45
+                    }
+                },
+                {
+                    "id": "took_painting",
+                    "text": "took the masterpiece after killing Vivienne to reclaim their stolen work",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "footage_22:30",
+                            "dna_storage_room"
+                        ],
+                        "keywords": [
+                            "painting",
+                            "missing",
+                            "bag",
+                            "took",
+                            "stole",
+                            "reclaim"
+                        ],
+                        "minPressure": 50
+                    }
+                }
+            ],
+            "traits": [
+                "is intense and passionate about art",
+                "becomes emotional when discussing their work",
+                "evasive about their relationship with Vivienne",
+                "fidgets with paint-stained hands"
+            ]
+        },
+        {
+            "id": "dante",
+            "name": "Dante Russo",
+            "alias": [
+                "dante",
+                "russo"
+            ],
+            "avatar": "https://i.imgur.com/placeholder8.png",
+            "gender": "male",
+            "isGuilty": false,
+            "alibi": "I was setting up lighting in the private gallery. I found her... there was so much blood.",
+            "motive": "Gallery curator, Vivienne was replacing him after 15 years",
+            "secrets": [
+                {
+                    "id": "fired",
+                    "text": "Vivienne was firing him the day after the unveiling",
+                    "trigger": {
+                        "keywords": [
+                            "fired",
+                            "replacement",
+                            "job",
+                            "curator",
+                            "replace",
+                            "termination"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "affair",
+                    "text": "having an affair with Sienna, who Vivienne despised",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "dna_studio"
+                        ],
+                        "keywords": [
+                            "sienna",
+                            "affair",
+                            "relationship",
+                            "romantic",
+                            "secret",
+                            "together"
+                        ],
+                        "minPressure": 30
+                    }
+                },
+                {
+                    "id": "heard_argument",
+                    "text": "heard Kai shouting 'You stole everything from me!' at Vivienne the night before",
+                    "trigger": {
+                        "keywords": [
+                            "heard",
+                            "argument",
+                            "kai",
+                            "shouting",
+                            "yesterday",
+                            "night before"
+                        ],
+                        "minPressure": 20
+                    }
+                }
+            ],
+            "traits": [
+                "is visibly shaken and traumatized",
+                "speaks quietly",
+                "protective of the gallery's reputation",
+                "seems genuinely devastated"
+            ]
+        },
+        {
+            "id": "sienna",
+            "name": "Sienna Blackwood",
+            "alias": [
+                "sienna",
+                "blackwood"
+            ],
+            "avatar": "https://i.imgur.com/placeholder9.png",
+            "gender": "female",
+            "isGuilty": false,
+            "alibi": "I was admiring the sculptures in the hall. I needed space from all the pretentious chatter.",
+            "motive": "Rival artist, Vivienne sabotaged her career and stole her gallery representation",
+            "secrets": [
+                {
+                    "id": "sabotage",
+                    "text": "Vivienne destroyed her career by spreading lies about her artistic integrity",
+                    "trigger": {
+                        "keywords": [
+                            "sabotage",
+                            "career",
+                            "lies",
+                            "reputation",
+                            "destroyed",
+                            "ruined"
+                        ],
+                        "minPressure": 30
+                    }
+                },
+                {
+                    "id": "bankrupt",
+                    "text": "is nearly bankrupt due to Vivienne's interference",
+                    "trigger": {
+                        "keywords": [
+                            "money",
+                            "bankrupt",
+                            "financial",
+                            "broke",
+                            "debt"
+                        ],
+                        "minPressure": 20
+                    }
+                },
+                {
+                    "id": "kai_friend",
+                    "text": "is close friends with Kai and knows about the stolen artwork",
+                    "trigger": {
+                        "keywords": [
+                            "kai",
+                            "friend",
+                            "stolen",
+                            "artwork",
+                            "knows",
+                            "aware"
+                        ],
+                        "minPressure": 35
+                    }
+                }
+            ],
+            "traits": [
+                "is bitter and sarcastic",
+                "openly dislikes Vivienne",
+                "defensive about her career",
+                "sharp-tongued"
+            ]
+        },
+        {
+            "id": "camille",
+            "name": "Camille Laurent",
+            "alias": [
+                "camille",
+                "laurent"
+            ],
+            "avatar": "https://i.imgur.com/placeholder10.png",
+            "gender": "female",
+            "isGuilty": false,
+            "alibi": "I was selecting wine for the after-party in the cellar. I heard nothing.",
+            "motive": "Vivienne's ex-wife, bitter divorce with contested assets",
+            "secrets": [
+                {
+                    "id": "divorce",
+                    "text": "Vivienne cheated her out of millions in their divorce settlement",
+                    "trigger": {
+                        "keywords": [
+                            "divorce",
+                            "settlement",
+                            "cheated",
+                            "assets",
+                            "money",
+                            "millions"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "inheritance",
+                    "text": "stands to inherit everything as Vivienne never updated her will",
+                    "trigger": {
+                        "keywords": [
+                            "will",
+                            "inherit",
+                            "death",
+                            "estate",
+                            "beneficiary"
+                        ],
+                        "minPressure": 30
+                    }
+                },
+                {
+                    "id": "alibi_lie",
+                    "text": "was actually in the wine cellar drinking heavily, too drunk to remember clearly",
+                    "trigger": {
+                        "keywords": [
+                            "drinking",
+                            "drunk",
+                            "wine",
+                            "cellar",
+                            "remember",
+                            "clearly"
+                        ],
+                        "minPressure": 35
+                    }
+                }
+            ],
+            "traits": [
+                "is elegant but cold",
+                "drinks excessively",
+                "speaks with French accent",
+                "bitter about the past"
+            ]
+        },
+        {
+            "id": "julian",
+            "name": "Julian Hayes",
+            "alias": [
+                "julian",
+                "hayes",
+                "jules"
+            ],
+            "avatar": "https://i.imgur.com/placeholder11.png",
+            "gender": "male",
+            "isGuilty": false,
+            "alibi": "I was on the balcony taking a call from Tokyo. International time zones, you understand.",
+            "motive": "Art collector, Vivienne refused to sell him a piece he desperately wanted",
+            "secrets": [
+                {
+                    "id": "obsessed",
+                    "text": "obsessively wanted the masterpiece for his private collection",
+                    "trigger": {
+                        "keywords": [
+                            "masterpiece",
+                            "obsessed",
+                            "collection",
+                            "wanted",
+                            "desperate"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "offered_million",
+                    "text": "offered Vivienne $2 million for the painting, she laughed at him",
+                    "trigger": {
+                        "keywords": [
+                            "offered",
+                            "million",
+                            "refused",
+                            "sale",
+                            "buy",
+                            "purchase"
+                        ],
+                        "minPressure": 20
+                    }
+                },
+                {
+                    "id": "no_call",
+                    "text": "there was no call from Tokyo, he was on the balcony smoking and brooding",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "location_julian_22:20"
+                        ],
+                        "keywords": [
+                            "call",
+                            "tokyo",
+                            "phone",
+                            "balcony",
+                            "lying",
+                            "alibi"
+                        ],
+                        "minPressure": 30
+                    }
+                }
+            ],
+            "traits": [
+                "is wealthy and arrogant",
+                "name-drops constantly",
+                "impatient and entitled",
+                "checks phone obsessively"
+            ]
+        }
+    ],
+    "settings": {
+        "timeLimit": 35,
+        "startingPoints": 18
+    }
+}
