@@ -7,71 +7,137 @@ import {
     Colors,
     EmbedBuilder,
     Guild,
-    OverwriteType,
-    PermissionFlagsBits,
     Role,
     TextChannel,
     ChatInputCommandInteraction,
     AutocompleteInteraction,
     Message,
-    GuildMember,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
 } from 'discord.js';
-import Case, { CaseConfig, SuspectData } from './case.js';
+import Case, { CaseConfig, PlayerStats, SuspectState } from './case.js';
 import ToolsManager from './tools.js';
 import Suspect from './suspect.js';
 import DashboardServer from './dashboard.js';
 import {
-    hasPermission,
-    denyPermission,
     createStatusEmbed,
     createToolEmbed,
     createAccusationEmbed,
     createHelpEmbed,
-    formatTime,
+    hasPermission,
+    denyPermission,
 } from './commands.js';
 import { logger } from '../../utils/logger.js';
 import { MMGame } from '../../database.js';
+
+// New imports
+import { InterrogationBuffer } from './types.js';
+import {
+    getRoomEmoji,
+    setChannelVisibility,
+    getLocationFromChannel,
+    getOrCreateCategory
+} from './discord-utils.js';
+import InterrogationManager from './interrogation.js';
+import { handleStart } from './handlers/start.js';
+import { handleStatus } from './handlers/status.js';
+import { handleJoin } from './handlers/join.js';
+import { handleDNA, handleFootage, handleLogs, handleExplore, handleExamine, handlePresent } from './handlers/tools.js';
+import { handleAccuse } from './handlers/accuse.js';
 
 /**
  * Game Manager - orchestrates the entire murder mystery game
  */
 export default class GameManager {
+    private static instances: Map<string, GameManager> = new Map();
     private client: Client;
     private dataDir: string;
     private guildId: string;
-    private roleId: string;
+    private roleId: string = '1061067650651926669';
     private activeGame: Case | null = null;
     private tools: ToolsManager | null = null;
     private suspects: Map<string, Suspect> = new Map();
     private category: CategoryChannel | null = null;
     private channels: Map<string, TextChannel> = new Map();
     private timerInterval: NodeJS.Timeout | null = null;
-    private messageHandler: ((message: Message) => Promise<void>) | null = null;
-    private interrogationBuffers: Map<string, {
-        suspect: Suspect,
-        messages: string[],
-        timer: NodeJS.Timeout,
-        member: GuildMember,
-        channel: TextChannel
-    }> = new Map();
-    private discoveredEvidence: Set<string> = new Set();
     private dashboard: DashboardServer;
+    private interrogationManager: InterrogationManager;
+    private activeExplorations: Set<string> = new Set(); // Track channel IDs being explored
+
+    public static DEBUG_VISIBILITY = true;
 
     constructor(client: Client, guildId: string, dataDir: string = 'data') {
         this.client = client;
         this.guildId = guildId;
         this.dataDir = dataDir;
-        this.roleId = '1061067650651926669';
 
         // Start dashboard server
-        this.dashboard = new DashboardServer(3001);
+        this.dashboard = new DashboardServer(this.client, 3001);
         this.dashboard.start();
+
+        // Initialize interrogation manager
+        this.interrogationManager = new InterrogationManager(this.client, {
+            getActiveGame: () => this.activeGame,
+            getSuspects: () => this.suspects,
+            getDiscoveredEvidence: () => this.getDiscoveredEvidence(),
+            getDashboard: () => this.dashboard,
+            broadcastDashboardState: () => this.broadcastDashboardState(),
+            getOrCreateStats: (userId, username) => this.getOrCreateStats(userId, username),
+            getLocationFromChannel: (channel) => this.getLocationFromChannel(channel),
+            isParticipant: (userId) => this.isParticipant(userId)
+        });
+
+        GameManager.instances.set(guildId, this);
+    }
+
+    public static getInstance(guildId?: string): GameManager | null {
+        if (!guildId) return null;
+        return GameManager.instances.get(guildId) || null;
+    }
+
+    /**
+     * Purge all ephemeral state (locks, buffers, etc)
+     */
+    public purgeEphemeralState(): void {
+        this.activeExplorations.clear();
+        this.interrogationManager.clearBuffers();
+        logger.debug(`Ephemeral state purged for guild ${this.guildId}`);
+    }
+
+    /**
+     * Check if a user is joined in the current investigation
+     */
+    public isParticipant(userId: string): boolean {
+        return !!this.activeGame?.state?.participants.has(userId);
+    }
+
+    // --- GETTERS & SETTERS FOR HANDLERS ---
+    public getActiveGame() { return this.activeGame; }
+    public setActiveGame(game: Case | null) { this.activeGame = game; }
+    public getTools() { return this.tools; }
+    public setTools(tools: ToolsManager | null) { this.tools = tools; }
+    public getSuspectsMap() { return this.suspects; }
+    public getChannelsMap() { return this.channels; }
+    public getDashboard() { return this.dashboard; }
+    public getClient() { return this.client; }
+
+    /**
+     * Exploration state management
+     */
+    public isExploring(channelId: string): boolean {
+        return this.activeExplorations.has(channelId);
+    }
+
+    public setExploring(channelId: string, active: boolean) {
+        if (active) this.activeExplorations.add(channelId);
+        else this.activeExplorations.delete(channelId);
     }
 
     /**
      * Get the guild
      */
-    private async getGuild(): Promise<Guild> {
+    public async getGuild(): Promise<Guild> {
         const guild = await this.client.guilds.fetch(this.guildId);
         if (!guild) throw new Error(`Guild ${this.guildId} not found`);
         return guild;
@@ -80,7 +146,7 @@ export default class GameManager {
     /**
      * List available cases
      */
-    listCases(): string[] {
+    public listCases(): string[] {
         const casesDir = path.join(this.dataDir, 'cases');
         if (!fs.existsSync(casesDir)) return [];
 
@@ -91,883 +157,564 @@ export default class GameManager {
             });
     }
 
+    public getDiscoveredEvidence() {
+        return this.activeGame?.state?.discoveredEvidence || new Set<string>();
+    }
+    public addDiscoveredEvidence(evidenceId: string) {
+        if (this.activeGame?.state) {
+            this.activeGame.state.discoveredEvidence.add(evidenceId.toLowerCase());
+        }
+    }
+
     /**
      * Load a case by ID
      */
-    loadCase(caseId: string): Case {
+    public loadCase(caseId: string): Case {
         const caseDir = path.join(this.dataDir, 'cases', caseId);
         return Case.load(caseDir);
     }
 
-    /**
-     * Start a new game
-     */
-    async startGame(
-        interaction: ChatInputCommandInteraction,
-        caseId: string,
-        timeOverride?: number
-    ): Promise<void> {
-        if (!hasPermission(interaction)) {
-            await denyPermission(interaction);
-            return;
-        }
-
-        if (this.activeGame?.isActive()) {
-            await interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(Colors.Orange)
-                        .setTitle('⚠️ Game in Progress')
-                        .setDescription('A game is already running. End it first with `/mm end`.')
-                ],
-                ephemeral: true,
-            });
-            return;
-        }
-
-        try {
-            await interaction.deferReply();
-
-            // Load the case
-            const newCase = this.loadCase(caseId);
-
-            // Override time if specified
-            if (timeOverride && timeOverride > 0) {
-                newCase.config.settings.timeLimit = timeOverride;
-            }
-
-            // Start the game with the command user as first participant
-            const userId = interaction.user.id;
-            newCase.start([userId]);
-
-            this.activeGame = newCase;
-            this.tools = new ToolsManager(newCase);
-
-            // Initialize suspects from case data
-            this.suspects.clear();
-            for (const suspectData of newCase.config.suspects) {
-                const suspect = new Suspect(suspectData);
-                this.suspects.set(suspectData.id, suspect);
-                // Also map by aliases for easier lookup
-                for (const alias of suspectData.alias) {
-                    this.suspects.set(alias.toLowerCase(), suspect);
-                }
-            }
-
-            // Create game channels
-            await this.setupChannels(newCase.config);
-
-            // Save initial state to database
-            await this.saveState();
-
-            // Start interrogation listener
-            this.startInterrogationListener();
-
-            // Start timer
-            this.startTimer();
-
-            // Send start message
-            const embed = new EmbedBuilder()
-                .setColor(Colors.Gold)
-                .setTitle(`🔪 ${newCase.config.name}`)
-                .setDescription(newCase.config.description)
-                .addFields(
-                    { name: '💀 Victim', value: `${newCase.config.victim.name} (${newCase.config.victim.cause})`, inline: true },
-                    { name: '🕐 Murder Time', value: newCase.config.murderTime, inline: true },
-                    { name: '📍 Location', value: newCase.config.murderLocation, inline: true },
-                )
-                .addFields(
-                    { name: '⏱️ Time Limit', value: `${newCase.config.settings.timeLimit} minutes`, inline: true },
-                    { name: '💎 Points', value: newCase.config.settings.startingPoints.toString(), inline: true },
-                )
-                .addFields({
-                    name: '👥 Suspects',
-                    value: newCase.config.suspects.map(s => `• **${s.name}**`).join('\n'),
-                })
-                .setFooter({ text: 'Use /mm status to check progress • /mm accuse to solve the case' })
-                .setTimestamp();
-
-            await interaction.editReply({ embeds: [embed] });
-
-            // Update dashboard
-            this.broadcastDashboardState();
-            this.dashboard.addEvent('game_start', `Game started: ${newCase.config.name}`);
-
-            logger.info(`Murder Mystery game started: ${caseId} by ${interaction.user.tag}`);
-        } catch (error) {
-            logger.error('Failed to start game:', error);
-            await interaction.editReply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(Colors.Red)
-                        .setTitle('❌ Failed to Start Game')
-                        .setDescription(`Could not load case "${caseId}". Check if it exists.`)
-                ],
-            });
-        }
+    // --- DELEGATED HANDLERS ---
+    async startGame(interaction: ChatInputCommandInteraction, caseId: string, timeOverride?: number) {
+        logger.info(`Starting new game: ${caseId} (Guild: ${this.guildId}, Initiator: ${interaction.user.tag})`);
+        return handleStart(this, interaction, caseId, timeOverride);
     }
 
-    /**
-     * Setup game channels in a category
-     */
-    private async setupChannels(config: CaseConfig): Promise<void> {
+    async handleStatus(interaction: ChatInputCommandInteraction) {
+        return handleStatus(this, interaction);
+    }
+
+    async handleJoin(interaction: ChatInputCommandInteraction) {
+        logger.info(`Player joining investigation: ${interaction.user.tag} (Guild: ${this.guildId})`);
+        return handleJoin(this, interaction);
+    }
+
+    async handleDNA(interaction: ChatInputCommandInteraction) {
+        return handleDNA(this, interaction);
+    }
+
+    async handleFootage(interaction: ChatInputCommandInteraction) {
+        return handleFootage(this, interaction);
+    }
+
+    async handleLogs(interaction: ChatInputCommandInteraction) {
+        return handleLogs(this, interaction);
+    }
+
+    async handleExplore(interaction: ChatInputCommandInteraction) {
+        return handleExplore(this, interaction);
+    }
+
+    async handleExamine(interaction: ChatInputCommandInteraction) {
+        return handleExamine(this, interaction);
+    }
+
+    async handlePresent(interaction: ChatInputCommandInteraction) {
+        return handlePresent(this, interaction);
+    }
+
+    async handleAccuse(interaction: ChatInputCommandInteraction) {
+        return handleAccuse(this, interaction);
+    }
+
+    // --- SHARED UTILITIES ---
+    public getOrCreateStats(userId: string, username: string): PlayerStats {
+        if (!this.activeGame?.state) throw new Error('No active game state');
+
+        if (!this.activeGame.state.playerStats[userId]) {
+            this.activeGame.state.playerStats[userId] = {
+                userId, username,
+                roomsDiscovered: 0, evidenceFound: 0,
+                secretsRevealed: 0, messagesSent: 0, toolsUsed: 0,
+                teamworkBonuses: 0
+            };
+        }
+        return this.activeGame.state.playerStats[userId];
+    }
+
+    public getLocationFromChannel(channel: TextChannel): string | null {
+        // 1. Primary: Use the internal map for 100% reliability
+        for (const [locId, ch] of this.channels.entries()) {
+            if (ch.id === channel.id) return locId;
+        }
+
+        // 2. Fallback: Parse topic (useful during restoration or manual edits)
+        return getLocationFromChannel(channel);
+    }
+
+    public async setupChannels(config: CaseConfig, existingCategoryId?: string): Promise<void> {
         const guild = await this.getGuild();
         const categoryName = `🔍 ${config.name}`;
 
-        // Find or create category
-        let category = guild.channels.cache.find(
-            c => c.name === categoryName && c.type === ChannelType.GuildCategory
-        ) as CategoryChannel | undefined;
+        this.category = await getOrCreateCategory(guild, categoryName, existingCategoryId);
 
-        if (!category) {
-            category = await guild.channels.create({
-                name: categoryName,
-                type: ChannelType.GuildCategory,
-                position: 0,
+        this.channels.clear();
+
+        // 2. Briefing Channel
+        const briefingDef = { name: '📋┃case-briefing', topic: 'Case information and victim details' };
+        let briefingChannel = this.category.children.cache.find(c =>
+            c.name === briefingDef.name || (c.type === ChannelType.GuildText && c.topic?.includes(briefingDef.topic))
+        ) as TextChannel | undefined;
+
+        if (!briefingChannel) {
+            briefingChannel = await this.category.children.create({
+                name: briefingDef.name,
+                type: ChannelType.GuildText,
+                topic: briefingDef.topic,
             });
+        } else {
+            // Update topic if needed
+            if (briefingChannel.topic !== briefingDef.topic) await briefingChannel.setTopic(briefingDef.topic);
         }
+        this.channels.set('case-briefing', briefingChannel);
 
-        this.category = category;
+        // 3. Location Channels
+        const locations = this.activeGame?.getValidLocations() || [];
+        for (const loc of locations) {
+            const suspectsHere = config.suspects.filter(s => s.currentLocation === loc);
+            const suspectNames = suspectsHere.map(s => s.name).join(', ');
 
-        // Create channels
-        const channelDefs = [
-            { name: '📋┃case-briefing', topic: 'Case information and victim details' },
-            { name: '🔍┃investigation', topic: 'Use detective tools here' },
-            { name: '💬┃interrogation', topic: 'Talk to suspects' },
-        ];
+            let topic = `Location: ${loc.replace(/_/g, ' ')}`;
+            let icon = getRoomEmoji(loc);
+            let name = `${icon}┃${loc.replace(/_/g, '-')}`;
 
-        for (const def of channelDefs) {
-            let channel = category.children.cache.find(c => c.name === def.name) as TextChannel | undefined;
+            if (suspectNames) {
+                topic += ` | 👥 Present: ${suspectNames} | Say "Hey [Name]" to interrogate`;
+                const suspectSuffix = suspectsHere.map(s => s.name.toLowerCase()).join('-');
+                name = `${icon}┃${loc.replace(/_/g, '-')}-${suspectSuffix.split(' ')[0]}┃👥`;
+            } else {
+                topic += ` | Area is clear`;
+            }
+            topic += ` | /mm explore to search`;
+
+            const locTag = `Location: ${loc.replace(/_/g, ' ')}`;
+            let channel = this.category.children.cache.find(c => {
+                if (c.type !== ChannelType.GuildText) return false;
+                const txt = c as TextChannel;
+                return txt.topic?.includes(locTag) || txt.name === name;
+            }) as TextChannel | undefined;
+
+            const isDiscovered = !!(this.activeGame?.state?.discoveredLocations.has(loc));
 
             if (!channel) {
-                channel = await category.children.create({
-                    name: def.name,
+                // Creation: Set EVERYTHING at once to avoid rate limit race conditions
+                let fullTopic = topic;
+                if (GameManager.DEBUG_VISIBILITY) {
+                    fullTopic = `[${isDiscovered ? '🔓 OPEN' : '🔒 LOCKED'}] ${topic}`;
+                }
+
+                channel = await this.category.children.create({
+                    name: name,
                     type: ChannelType.GuildText,
-                    topic: def.topic,
+                    topic: fullTopic,
+                    permissionOverwrites: [
+                        {
+                            id: guild.id,
+                            deny: isDiscovered ? [] : ['ViewChannel'],
+                            allow: isDiscovered ? ['ViewChannel'] : []
+                        }
+                    ]
                 });
+            } else {
+                // Optimization: Apply updates only if they changed
+                if (channel.name !== name) {
+                    await channel.setName(name);
+                    channel.name = name;
+                }
+
+                // Sync topic and permissions
+                await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY);
             }
 
-            this.channels.set(def.name, channel);
+            this.channels.set(loc, channel);
         }
     }
 
-    /**
-     * Start the game timer
-     */
-    private startTimer(): void {
-        if (this.timerInterval) {
-            clearInterval(this.timerInterval);
-        }
-
+    public startTimer(): void {
+        this.stopTimer();
         this.timerInterval = setInterval(async () => {
             if (!this.activeGame || !this.activeGame.isActive()) {
                 this.stopTimer();
                 await this.handleTimeout();
             }
-        }, 10000); // Check every 10 seconds
+        }, 10000);
     }
 
-    /**
-     * Stop the timer
-     */
-    private stopTimer(): void {
+    public stopTimer(): void {
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
             this.timerInterval = null;
         }
     }
 
-    /**
-     * Start listening for interrogation messages
-     */
-    private startInterrogationListener(): void {
-        this.stopInterrogationListener();
-
-        const interrogationChannel = this.channels.get('💬┃interrogation');
-        if (!interrogationChannel) return;
-
-        this.messageHandler = async (message: Message) => {
-            try {
-                // Ignore bots and messages outside interrogation channel
-                if (message.author.bot) return;
-                if (message.channelId !== interrogationChannel.id) return;
-                if (!this.activeGame?.isActive()) return;
-
-                const content = message.content.trim();
-                if (!content) return;
-
-                // Check if there is an active buffer for this channel
-                const existingBuffer = this.interrogationBuffers.get(message.channelId);
-
-                // Check if this message mentions a suspect
-                const mentionedSuspect = this.findMentionedSuspect(content);
-
-                if (existingBuffer) {
-                    // If a DIFFERENT suspect is mentioned, process the old buffer first
-                    if (mentionedSuspect && mentionedSuspect.data.id !== existingBuffer.suspect.data.id) {
-                        // Clear the timer and process immediately
-                        clearTimeout(existingBuffer.timer);
-                        await this.processBuffer(message.channelId);
-                        // Continue below to start a new buffer for the new suspect
-                    } else {
-                        // Same suspect or no suspect mentioned - add to existing buffer
-                        existingBuffer.messages.push(content);
-
-                        // Reset the timer to extend the collection window
-                        clearTimeout(existingBuffer.timer);
-                        existingBuffer.timer = setTimeout(async () => {
-                            await this.processBuffer(message.channelId);
-                        }, 3000);
-                        return;
-                    }
-                }
-
-                // Need a suspect to start a new buffer
-                if (!mentionedSuspect) return;
-
-                if (mentionedSuspect.isBusy) {
-                    await message.reply({
-                        content: `*${mentionedSuspect.data.name} is busy responding to someone else...*`,
-                    });
-                    return;
-                }
-
-                // Get member
-                const member = message.member;
-                if (!member) return;
-
-                // Create buffer for collecting messages
-                const buffer = {
-                    suspect: mentionedSuspect,
-                    messages: [content],
-                    member,
-                    channel: interrogationChannel,
-                    timer: setTimeout(async () => {
-                        await this.processBuffer(message.channelId);
-                    }, 3000)
-                };
-
-                this.interrogationBuffers.set(message.channelId, buffer);
-            } catch (error) {
-                logger.error('Error in interrogation handler:', error);
-            }
-        };
-
-        this.client.on('messageCreate', this.messageHandler);
-        logger.info('Interrogation listener started');
+    public startInterrogationListener(): void {
+        this.interrogationManager.startListener();
     }
 
-    /**
-     * Find a suspect mentioned anywhere in the message content
-     * Uses word boundary matching to prevent partial matches
-     * Prioritizes the suspect whose name appears EARLIEST in the message
-     */
-    private findMentionedSuspect(content: string): Suspect | null {
-        const processedIds = new Set<string>();
-        const contentLower = content.toLowerCase();
-
-        // Escape special regex characters in name
-        const escapeName = (name: string) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-        // Track the earliest match
-        let earliestMatch: { suspect: Suspect; position: number } | null = null;
-
-        for (const [key, suspect] of this.suspects) {
-            // Skip if we've already checked this suspect (aliases create duplicates)
-            if (processedIds.has(suspect.data.id)) continue;
-            processedIds.add(suspect.data.id);
-
-            // Check suspect's name with word boundaries
-            const nameRegex = new RegExp(`\\b${escapeName(suspect.data.name)}\\b`, 'i');
-            const nameMatch = nameRegex.exec(content);
-            if (nameMatch) {
-                if (!earliestMatch || nameMatch.index < earliestMatch.position) {
-                    earliestMatch = { suspect, position: nameMatch.index };
-                }
-            }
-
-            // Check all aliases with word boundaries
-            for (const alias of suspect.data.alias) {
-                const aliasRegex = new RegExp(`\\b${escapeName(alias)}\\b`, 'i');
-                const aliasMatch = aliasRegex.exec(content);
-                if (aliasMatch) {
-                    if (!earliestMatch || aliasMatch.index < earliestMatch.position) {
-                        earliestMatch = { suspect, position: aliasMatch.index };
-                    }
-                }
-            }
-        }
-
-        return earliestMatch?.suspect || null;
+    public stopInterrogationListener(): void {
+        this.interrogationManager.stopListener();
     }
 
-    /**
-     * Process a message buffer and send to suspect
-     */
-    private async processBuffer(channelId: string): Promise<void> {
-        const buffer = this.interrogationBuffers.get(channelId);
-        if (!buffer) return;
-
-        // Clear buffer from map immediately
-        this.interrogationBuffers.delete(channelId);
-
-        const { suspect, messages, member, channel } = buffer;
-        const combinedContent = messages.join('\n');
-
-        try {
-            // Respond via suspect, passing discovered evidence
-            const response = await suspect.respond(
-                member,
-                combinedContent,
-                channel,
-                this.discoveredEvidence
-            );
-
-            if (response) {
-                logger.info(`${suspect.data.name} responded to ${member.displayName}: ${response.action || 'continue'}`);
-
-                // Dashboard events
-                this.dashboard.addEvent('interrogation',
-                    `${member.displayName} questioned ${suspect.data.name}`);
-                this.broadcastDashboardState();
-
-                if (response.revealedSecret) {
-                    logger.info(`${suspect.data.name} revealed secret "${response.revealedSecret.id}" under pressure!`);
-                    this.dashboard.addEvent('secret_revealed',
-                        `${suspect.data.name} revealed: "${response.revealedSecret.text}"`);
-                }
-            }
-        } catch (error) {
-            logger.error(`Error processing buffer for ${suspect.data.name}:`, error);
-        }
-    }
-
-    /**
-     * Stop listening for interrogation messages
-     */
-    private stopInterrogationListener(): void {
-        if (this.messageHandler) {
-            this.client.removeListener('messageCreate', this.messageHandler);
-            this.messageHandler = null;
-        }
-    }
-
-    /**
-     * Handle game timeout
-     */
     private async handleTimeout(): Promise<void> {
         if (!this.activeGame?.state || this.activeGame.state.phase !== 'investigating') return;
 
         this.activeGame.end();
-
         const killer = this.activeGame.getSuspect(this.activeGame.config.solution);
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkRed)
-            .setTitle('⏰ TIME\'S UP!')
-            .setDescription(`The investigation ran out of time.\n\nThe killer was **${killer?.name || 'unknown'}** and they got away!`)
-            .setTimestamp();
+            .setTitle('⏰ OPERATION ABORTED: TIME EXPIRED')
+            .setDescription(`\`\`\`ansi\n\u001b[1;31m[!] CRITICAL FAILURE: INVESTIGATION WINDOW CLOSED\u001b[0m\n\`\`\`\nThe trail has gone cold. **${killer?.name || 'The killer'}** has vanished into the shadows, leaving no further trace.\n\nYour detective credentials have been temporarily suspended pending an internal review.`);
 
-        const investigationChannel = this.channels.get('🔍┃investigation');
-        if (investigationChannel) {
-            await investigationChannel.send({ embeds: [embed] });
-        }
-
-        // Update database
+        const investigationChannel = this.channels.get('case-briefing');
+        if (investigationChannel) await investigationChannel.send({ embeds: [embed] });
+        this.purgeEphemeralState();
         await this.saveState();
     }
 
-    /**
-     * Handle /mm status command
-     */
-    async handleStatus(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!this.activeGame?.state) {
-            await interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(Colors.Grey)
-                        .setTitle('No Active Game')
-                        .setDescription('Start a game with `/mm start <case>`')
-                ],
-                ephemeral: true,
-            });
-            return;
-        }
-
-        const state = this.activeGame.state;
-        const embed = createStatusEmbed(
-            this.activeGame.config.name,
-            this.activeGame.getRemainingTime(),
-            state.points,
-            state.participants.size,
-            state.phase
-        );
-
-        await interaction.reply({ embeds: [embed] });
+    public parseTimeToMinutes(time: string): number {
+        if (!time.includes(':')) return 0;
+        const [hours, minutes] = time.split(':').map(t => Number(t.trim()));
+        return (hours || 0) * 60 + (minutes || 0);
     }
 
-    /**
-     * Handle /mm join command
-     */
-    async handleJoin(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!this.activeGame?.state) {
-            await interaction.reply({
-                embeds: [
-                    new EmbedBuilder()
-                        .setColor(Colors.Grey)
-                        .setTitle('No Active Game')
-                        .setDescription('No game is currently running.')
-                ],
-                ephemeral: true,
-            });
-            return;
+    public createFootageButtons(currentIndex: number, allTimes: string[]): ActionRowBuilder<ButtonBuilder> | null {
+        if (allTimes.length <= 1) return null;
+        const row = new ActionRowBuilder<ButtonBuilder>();
+        if (currentIndex > 0) {
+            row.addComponents(new ButtonBuilder()
+                .setCustomId(`mm_footage_${allTimes[currentIndex - 1]}`)
+                .setLabel('⬅️ Previous')
+                .setStyle(ButtonStyle.Secondary));
         }
-
-        const userId = interaction.user.id;
-        if (this.activeGame.state.participants.has(userId)) {
-            await interaction.reply({
-                content: 'You are already part of the investigation!',
-                ephemeral: true,
-            });
-            return;
+        if (currentIndex < allTimes.length - 1) {
+            row.addComponents(new ButtonBuilder()
+                .setCustomId(`mm_footage_${allTimes[currentIndex + 1]}`)
+                .setLabel('Next ➡️')
+                .setStyle(ButtonStyle.Secondary));
         }
-
-        this.activeGame.state.participants.add(userId);
-        await interaction.reply({
-            embeds: [
-                new EmbedBuilder()
-                    .setColor(Colors.Green)
-                    .setTitle('🔍 Joined Investigation')
-                    .setDescription(`Welcome to the team, ${interaction.user.displayName}!`)
-            ],
-        });
-
-        // Save state to database
-        await this.saveState();
+        return row.components.length > 0 ? row : null;
     }
 
-    /**
-     * Handle /mm dna command
-     */
-    async handleDNA(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!hasPermission(interaction)) {
-            await denyPermission(interaction);
-            return;
+    public createLogsButtons(currentIndex: number, allTimes: string[]): ActionRowBuilder<ButtonBuilder> | null {
+        if (allTimes.length <= 1) return null;
+        const row = new ActionRowBuilder<ButtonBuilder>();
+        if (currentIndex > 0) {
+            row.addComponents(new ButtonBuilder()
+                .setCustomId(`mm_logs_${allTimes[currentIndex - 1]}`)
+                .setLabel('⬅️ Previous')
+                .setStyle(ButtonStyle.Success)); // Green for logs
         }
-
-        if (!this.tools || !this.activeGame?.isActive()) {
-            await interaction.reply({ content: 'No active game.', ephemeral: true });
-            return;
+        if (currentIndex < allTimes.length - 1) {
+            row.addComponents(new ButtonBuilder()
+                .setCustomId(`mm_logs_${allTimes[currentIndex + 1]}`)
+                .setLabel('Next ➡️')
+                .setStyle(ButtonStyle.Success));
         }
-
-        const location = interaction.options.getString('location', true);
-        const result = this.tools.analyzeDNA(location);
-
-        const embed = createToolEmbed(
-            'dna',
-            location,
-            result.result,
-            result.cost,
-            result.success,
-            result.error
-        );
-
-        // Track discovered evidence for interrogation
-        if (result.success) {
-            this.discoveredEvidence.add(`dna_${location.toLowerCase()}`);
-            this.dashboard.addEvent('tool_use', `DNA analyzed at ${location}: ${result.result}`);
-            this.broadcastDashboardState();
-        }
-
-        await interaction.reply({ embeds: [embed] });
+        return row.components.length > 0 ? row : null;
     }
 
-    /**
-     * Handle /mm footage command
-     */
-    async handleFootage(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!hasPermission(interaction)) {
-            await denyPermission(interaction);
-            return;
-        }
-
-        if (!this.tools || !this.activeGame?.isActive()) {
-            await interaction.reply({ content: 'No active game.', ephemeral: true });
-            return;
-        }
-
-        const time = interaction.options.getString('time', true);
-        const result = this.tools.viewFootage(time);
-
-        const embed = createToolEmbed(
-            'footage',
-            time,
-            result.result,
-            result.cost,
-            result.success,
-            result.error
-        );
-
-        // Track discovered evidence for interrogation
-        if (result.success) {
-            this.discoveredEvidence.add(`footage_${time}`);
-            this.dashboard.addEvent('tool_use', `Footage viewed at ${time}: ${result.result}`);
-            this.broadcastDashboardState();
-        }
-
-        await interaction.reply({ embeds: [embed] });
-    }
-
-    /**
-     * Handle /mm locate command
-     */
-    async handleLocate(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!hasPermission(interaction)) {
-            await denyPermission(interaction);
-            return;
-        }
-
-        if (!this.tools || !this.activeGame?.isActive()) {
-            await interaction.reply({ content: 'No active game.', ephemeral: true });
-            return;
-        }
-
-        const suspect = interaction.options.getString('suspect', true);
-        const time = interaction.options.getString('time', true);
-        const result = this.tools.trackLocation(suspect, time);
-
-        const embed = createToolEmbed(
-            'locate',
-            `${suspect} @ ${time}`,
-            result.result,
-            result.cost,
-            result.success,
-            result.error
-        );
-
-        // Track discovered evidence for interrogation
-        if (result.success) {
-            this.discoveredEvidence.add(`location_${suspect.toLowerCase()}_${time}`);
-            this.dashboard.addEvent('tool_use', `Located ${suspect} at ${time}: ${result.result}`);
-            this.broadcastDashboardState();
-        }
-
-        await interaction.reply({ embeds: [embed] });
-    }
-
-    /**
-     * Handle /mm accuse command
-     */
-    async handleAccuse(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!hasPermission(interaction)) {
-            await denyPermission(interaction);
-            return;
-        }
-
-        if (!this.activeGame?.isActive()) {
-            await interaction.reply({ content: 'No active game.', ephemeral: true });
-            return;
-        }
-
-        const suspectId = interaction.options.getString('suspect', true);
-        const suspect = this.activeGame.getSuspect(suspectId);
-
-        if (!suspect) {
-            await interaction.reply({
-                content: `Unknown suspect: "${suspectId}"`,
-                ephemeral: true,
-            });
-            return;
-        }
-
-        await interaction.deferReply();
-
-        const result = this.activeGame.accuse(suspectId);
-        this.stopTimer();
-
-        const killer = this.activeGame.getSuspect(result.solution);
-        const embed = createAccusationEmbed(
-            result.correct,
-            suspect.name,
-            killer?.name || 'Unknown'
-        );
-
-        await interaction.editReply({ embeds: [embed] });
-
-        // Save state (phase 'accused')
-        await this.saveState();
-
-        // Reveal all secrets on game end
-        await this.revealSecrets(interaction);
-    }
-
-    /**
-     * Reveal all suspect secrets after game ends
-     */
-    private async revealSecrets(interaction: ChatInputCommandInteraction): Promise<void> {
-        if (!this.activeGame) return;
-
-        const secretsEmbed = new EmbedBuilder()
-            .setColor(Colors.Purple)
-            .setTitle('📜 Case Secrets Revealed')
-            .setDescription('Here\'s what everyone was hiding:');
-
-        for (const suspect of this.activeGame.config.suspects) {
-            const role = suspect.isGuilty ? '🔪 KILLER' : '👤 Innocent';
-            secretsEmbed.addFields({
-                name: `${role} - ${suspect.name}`,
-                value: [
-                    `**Alibi:** ${suspect.alibi}`,
-                    `**Motive:** ${suspect.motive}`,
-                    `**Secrets:** ${suspect.secrets.join(', ') || 'None'}`,
-                ].join('\n'),
-            });
-        }
-
-        await interaction.followUp({ embeds: [secretsEmbed] });
-    }
-
-    /**
-     * Handle /mm end command
-     */
-    async handleEnd(interaction: ChatInputCommandInteraction): Promise<void> {
+    async handleEnd(interaction: ChatInputCommandInteraction) {
+        logger.info(`Game manually ended by ${interaction.user.tag} (Guild: ${this.guildId})`);
         if (!hasPermission(interaction)) {
             await denyPermission(interaction);
             return;
         }
 
         if (!this.activeGame) {
-            await interaction.reply({ content: 'No active game to end.', ephemeral: true });
+            await interaction.reply({ content: 'No active game.', ephemeral: true });
             return;
         }
-
         this.activeGame.end();
         this.stopTimer();
-        this.stopInterrogationListener();
-
-        await interaction.reply({
-            embeds: [
-                new EmbedBuilder()
-                    .setColor(Colors.Grey)
-                    .setTitle('🛑 Game Ended')
-                    .setDescription('The investigation has been terminated.')
-            ],
-        });
-
-        // Remove from database
-        try {
-            await MMGame.destroy({ where: { guildId: this.guildId } });
-        } catch (error) {
-            logger.error('Failed to remove game from database:', error);
-        }
-
-        // Clean up
-        this.activeGame = null;
-        this.tools = null;
-        this.suspects.clear();
-        this.discoveredEvidence.clear();
-        this.dashboard.clearState();
-        this.dashboard.addEvent('game_end', 'Game ended');
+        this.purgeEphemeralState();
+        await interaction.reply('Investigation terminated.');
+        await this.saveState();
+        this.broadcastDashboardState();
     }
 
     /**
-     * Handle /mm suspects command
+     * Delete all game-related categories and channels
      */
-    async handleSuspects(interaction: ChatInputCommandInteraction): Promise<void> {
+    public async cleanupAllGameChannels(): Promise<number> {
+        const guild = await this.getGuild();
+        let deletedCount = 0;
+
+        // Find all categories starting with 🔍 or 🔎
+        const categories = guild.channels.cache.filter(c =>
+            c.type === ChannelType.GuildCategory &&
+            (c.name.startsWith('🔍') || c.name.startsWith('🔎'))
+        );
+
+        for (const [id, category] of categories) {
+            const cat = category as CategoryChannel;
+            // Delete all children first
+            for (const [childId, child] of cat.children.cache) {
+                try {
+                    await child.delete();
+                    deletedCount++;
+                } catch (e) {
+                    logger.error(`Failed to delete channel ${child.name}`, e);
+                }
+            }
+            // Delete category
+            try {
+                await cat.delete();
+                deletedCount++;
+            } catch (e) {
+                logger.error(`Failed to delete category ${cat.name}`, e);
+            }
+        }
+
+        this.channels.clear();
+        this.category = null;
+        return deletedCount;
+    }
+
+    /**
+     * Handle /mm cleanup command
+     */
+    async handleCleanup(interaction: ChatInputCommandInteraction) {
+        logger.info(`Cleanup requested by ${interaction.user.tag} (Guild: ${this.guildId})`);
+        if (!hasPermission(interaction)) {
+            await denyPermission(interaction);
+            return;
+        }
+
+        await interaction.deferReply({ ephemeral: true });
+        const count = await this.cleanupAllGameChannels();
+        logger.info(`Cleanup completed. Removed ${count} items.`);
+        await interaction.editReply(`🧹 Cleanup complete! Removed **${count}** items.`);
+    }
+
+    async handleHelp(interaction: ChatInputCommandInteraction) {
+        await interaction.reply({ embeds: [createHelpEmbed()], ephemeral: true });
+    }
+
+    async handleSuspects(interaction: ChatInputCommandInteraction) {
+        if (!this.activeGame) {
+            await interaction.reply({ content: 'No active game.', ephemeral: true });
+            return;
+        }
+        const suspects = this.activeGame.config.suspects;
+        const embed = new EmbedBuilder()
+            .setColor(Colors.Blurple)
+            .setTitle('👥 Investigation Suspects')
+            .setDescription(suspects.map(s => `• **${s.name}** - ${s.alibi}`).join('\n'));
+        await interaction.reply({ embeds: [embed] });
+    }
+
+    async handleSecrets(interaction: ChatInputCommandInteraction) {
         if (!this.activeGame) {
             await interaction.reply({ content: 'No active game.', ephemeral: true });
             return;
         }
 
-        const suspects = this.activeGame.getSuspectsPublic();
+        const suspects = this.activeGame.config.suspects;
+        let totalSecrets = 0;
+        let discoveredCount = 0;
+
         const embed = new EmbedBuilder()
-            .setColor(Colors.Blurple)
-            .setTitle('👥 Suspects')
-            .setDescription(
-                suspects.map(s =>
-                    `**${s.name}** (ID: \`${s.id}\`)\n• Aliases: ${s.alias.join(', ')}`
-                ).join('\n\n')
-            );
+            .setColor(Colors.Purple)
+            .setTitle('🤫 Confidential Dossier: Discovered Secrets')
+            .setDescription('Intel extracted from suspects during interrogation will appear here.');
 
-        await interaction.reply({ embeds: [embed] });
-    }
+        let hasDiscovered = false;
 
-    /**
-     * Handle /mm help command
-     */
-    async handleHelp(interaction: ChatInputCommandInteraction): Promise<void> {
-        const embed = createHelpEmbed();
-        await interaction.reply({ embeds: [embed] });
-    }
+        for (const sData of suspects) {
+            // Count totals
+            totalSecrets += sData.secrets.length;
 
-    /**
-     * Handle autocomplete interactions
-     */
-    async handleAutocomplete(interaction: AutocompleteInteraction): Promise<void> {
-        const subcommand = interaction.options.getSubcommand();
-        const focusedOption = interaction.options.getFocused(true);
+            const suspect = this.suspects.get(sData.id);
+            if (!suspect) continue;
 
-        if (subcommand === 'start' && focusedOption.name === 'case') {
-            const cases = this.listCases();
-            const filtered = cases
-                .filter(c => c.toLowerCase().includes(focusedOption.value.toLowerCase()))
-                .slice(0, 25);
+            const state = suspect.getState();
+            discoveredCount += state.revealedSecrets.length;
 
-            await interaction.respond(
-                filtered.map(c => ({ name: c, value: c }))
-            );
-        } else if ((subcommand === 'locate' || subcommand === 'accuse') && focusedOption.name === 'suspect') {
-            if (!this.activeGame) {
-                await interaction.respond([]);
-                return;
+            if (state.revealedSecrets.length > 0) {
+                hasDiscovered = true;
+                const secretTexts = state.revealedSecrets.map(secretId => {
+                    const secretDef = sData.secrets.find(s => s.id === secretId);
+                    if (!secretDef) return null;
+
+                    // Add emoji based on how critical it is? For now just bullet
+                    return `🔓 **${secretDef.id.replace(/_/g, ' ')}**: ${secretDef.text}`;
+                }).filter(Boolean).join('\n');
+
+                if (secretTexts) {
+                    embed.addFields({
+                        name: `👤 ${sData.name} (${state.revealedSecrets.length}/${sData.secrets.length})`,
+                        value: secretTexts,
+                        inline: false
+                    });
+                }
+            } else {
+                // Check if we show empty suspects - maybe just show they are hiding things
+                if (state.defensiveness > 70) {
+                    embed.addFields({
+                        name: `👤 ${sData.name}`,
+                        value: '*Analysis: Suspect is withholding information (High Defensiveness)*',
+                        inline: false
+                    });
+                }
             }
+        }
 
+        if (!hasDiscovered) {
+            embed.setDescription('❌ No secrets have been revealed yet.\n\n*Tip: Cross-reference suspect alibis with evidence to apply pressure.*');
+        }
+
+        const progressPercent = Math.round((discoveredCount / totalSecrets) * 100);
+        embed.setFooter({ text: `Investigation Progress: ${progressPercent}% of potential intelligence recovered` });
+
+        await interaction.reply({ embeds: [embed], ephemeral: true });
+    }
+
+    async handleAutocomplete(interaction: AutocompleteInteraction) {
+        const focused = interaction.options.getFocused(true);
+        if (focused.name === 'case') {
+            const cases = this.listCases();
+            await interaction.respond(cases.map(c => ({ name: c, value: c })));
+        } else if (focused.name === 'location') {
+            if (!this.activeGame) return;
+            const locations = this.activeGame.getValidLocations();
+            await interaction.respond(locations.map(l => ({ name: l.replace(/_/g, ' '), value: l })));
+        } else if (focused.name === 'suspect') {
+            if (!this.activeGame) return;
             const suspects = this.activeGame.config.suspects;
-            const filtered = suspects
-                .filter(s =>
-                    s.name.toLowerCase().includes(focusedOption.value.toLowerCase()) ||
-                    s.id.toLowerCase().includes(focusedOption.value.toLowerCase())
-                )
-                .slice(0, 25);
+            await interaction.respond(suspects.map(s => ({ name: s.name, value: s.id })));
+        } else if (focused.name === 'item') {
+            if (!this.activeGame?.state) return;
+            const items = Array.from(this.activeGame.state.discoveredEvidence)
+                .filter(e => e.startsWith('physical_'))
+                .map(e => e.replace('physical_', ''));
 
-            await interaction.respond(
-                filtered.map(s => ({ name: s.name, value: s.id }))
-            );
-        } else {
-            await interaction.respond([]);
+            await interaction.respond(items.map(i => ({ name: i.replace(/_/g, ' '), value: i } as { name: string, value: string })));
+        } else if (focused.name === 'evidence') {
+            // For /mm present - show ALL discovered evidence
+            if (!this.activeGame?.state) return;
+            const allEvidence = Array.from(this.activeGame.state.discoveredEvidence)
+                .slice(0, 25) // Discord limit
+                .map((e: string) => ({
+                    name: e.replace(/_/g, ' ').substring(0, 100) as string,
+                    value: e as string
+                }));
+
+            await interaction.respond(allEvidence);
         }
     }
 
-    /**
-     * Get active game
-     */
-    getActiveGame(): Case | null {
-        return this.activeGame;
-    }
+    public async saveState(): Promise<void> {
+        if (!this.activeGame?.state) return;
+        const state = this.activeGame.state;
 
-    /**
-     * Save current game state to database
-     */
-    async saveState(): Promise<void> {
-        if (!this.activeGame?.state || !this.category) return;
+        // Collect suspect states
+        const suspectStates: Record<string, SuspectState> = {};
+        for (const [id, suspect] of this.suspects) {
+            // Only store by ID once (skip aliases)
+            if (!this.activeGame.config.suspects.some(s => s.id === id)) continue;
+            suspectStates[id] = suspect.getState();
+        }
 
         try {
-            const state = this.activeGame.state;
             await MMGame.upsert({
                 guildId: this.guildId,
-                caseId: this.activeGame.config.id,
-                categoryId: this.category.id,
+                caseId: state.caseId,
+                categoryId: this.category?.id || '',
                 roleId: this.roleId,
                 points: state.points,
                 phase: state.phase,
                 endsAt: state.endsAt,
                 participants: JSON.stringify(Array.from(state.participants)),
                 usedTools: JSON.stringify(state.usedTools),
+                discoveredEvidence: JSON.stringify(Array.from(state.discoveredEvidence)),
+                discoveredLocations: JSON.stringify(Array.from(state.discoveredLocations)),
+                playerStats: JSON.stringify(state.playerStats),
+                accusations: JSON.stringify(state.accusations),
+                suspectState: JSON.stringify(suspectStates)
             });
-        } catch (error) {
-            logger.error('Failed to save game state to database:', error);
+            logger.debug(`Game state saved: ${state.caseId} (Guild: ${this.guildId})`);
+        } catch (e) {
+            logger.error('Failed to save game state', e);
         }
     }
 
-    /**
-     * Restore game from database
-     */
-    async restoreGames(): Promise<void> {
+    public async restoreGames(): Promise<void> {
         try {
-            const gameData = await MMGame.findOne({ where: { guildId: this.guildId } });
-            if (!gameData) return;
+            logger.info(`Checking for active Murder Mystery games for guild ${this.guildId}...`);
+            const saved = await MMGame.findOne({ where: { guildId: this.guildId } });
 
-            // Check if game is archived/ended
-            if (gameData.phase === 'ended') return;
+            if (!saved) {
+                logger.info(`No saved game found for guild ${this.guildId}.`);
+                return;
+            }
 
-            logger.info(`Restoring Murder Mystery game for guild ${this.guildId}...`);
+            if (saved.phase === 'ended') {
+                logger.info(`Last game in ${this.guildId} was already ended.`);
+                return;
+            }
 
-            // Load case
-            const restoredCase = this.loadCase(gameData.caseId);
+            logger.info(`Restoring investigation: ${saved.caseId}...`);
 
-            // Set state
-            restoredCase.state = {
-                caseId: gameData.caseId,
-                startedAt: new Date(gameData.createdAt as unknown as string), // Cast to unknown first to fix type error
-                endsAt: gameData.endsAt,
-                points: gameData.points,
-                phase: gameData.phase as any,
-                participants: new Set(JSON.parse(gameData.participants || '[]')),
-                usedTools: JSON.parse(gameData.usedTools || '[]'),
+            const newCase = this.loadCase(saved.caseId);
+            const now = new Date();
+
+            newCase.state = {
+                caseId: saved.caseId,
+                difficulty: 'sherlock', // Default difficulty for restoration
+                startedAt: saved.createdAt || now,
+                endsAt: saved.endsAt,
+                points: saved.points,
+                participants: new Set(JSON.parse(saved.participants || '[]')),
+                playerStats: JSON.parse(saved.playerStats || '{}'),
+                suspectState: JSON.parse(saved.suspectState || '{}'),
+                usedTools: JSON.parse(saved.usedTools || '[]'),
+                phase: saved.phase as any,
+                discoveredLocations: new Set(JSON.parse(saved.discoveredLocations || '[]')),
+                discoveredEvidence: new Set(JSON.parse(saved.discoveredEvidence || '[]')),
+                accusations: JSON.parse(saved.accusations || '{}')
             };
 
-            this.activeGame = restoredCase;
-            this.tools = new ToolsManager(restoredCase);
+            this.activeGame = newCase;
+            this.tools = new ToolsManager(newCase);
+            this.suspects.clear();
+            for (const suspectData of newCase.config.suspects) {
+                const suspect = new Suspect(suspectData);
 
-            // Fetch guild components
-            const guild = await this.getGuild();
-            this.category = await guild.channels.fetch(gameData.categoryId) as CategoryChannel;
+                // Restore suspect state
+                const savedSState = newCase.state.suspectState[suspect.data.id];
+                if (savedSState) {
+                    suspect.loadState(savedSState);
+                }
 
-            if (this.category) {
-                // Restore channels map
-                for (const channel of this.category.children.cache.values()) {
-                    if (channel.type === ChannelType.GuildText) {
-                        this.channels.set(channel.name, channel as TextChannel);
+                // Sync known evidence
+                if (newCase.state?.discoveredEvidence) {
+                    for (const eId of newCase.state.discoveredEvidence) {
+                        suspect.addDiscoveredEvidence(eId);
                     }
                 }
-            }
 
-            // Restore suspects
-            this.suspects.clear();
-            for (const suspectData of restoredCase.config.suspects) {
-                const suspect = new Suspect(suspectData);
                 this.suspects.set(suspectData.id, suspect);
-                for (const alias of suspectData.alias) {
-                    this.suspects.set(alias.toLowerCase(), suspect);
-                }
+                for (const alias of suspectData.alias) this.suspects.set(alias.toLowerCase(), suspect);
             }
 
-            // Re-start listeners if still investigating
-            if (restoredCase.isActive()) {
-                this.startInterrogationListener();
-                this.startTimer();
-            }
+            // Sync with Discord
+            logger.debug(`Fetching guild and channels for ${this.guildId}...`);
+            const guild = this.client.guilds.cache.get(this.guildId) || await this.client.guilds.fetch(this.guildId);
+            await guild.channels.fetch();
 
-            logger.info(`Successfully restored game: ${restoredCase.config.name}`);
+            await this.setupChannels(newCase.config, saved.categoryId);
 
-            // Update dashboard
+            this.startInterrogationListener();
+            this.startTimer();
             this.broadcastDashboardState();
-        } catch (error) {
-            logger.error('Failed to restore game from database:', error);
+            logger.info(`✅ Murder Mystery session fully restored for: ${saved.caseId}`);
+        } catch (e) {
+            logger.error('❌ Failed to restore MM session:', e);
         }
     }
 
-    /**
-     * Build and broadcast current game state to dashboard
-     */
-    private broadcastDashboardState(): void {
-        if (!this.activeGame?.state) return;
-
-        // Get unique suspects (not aliases)
-        const uniqueSuspects = new Map<string, Suspect>();
-        for (const [id, suspect] of this.suspects) {
-            if (id === suspect.data.id) {
-                uniqueSuspects.set(id, suspect);
-            }
-        }
-
-        const state = {
-            caseName: this.activeGame.config.name,
-            caseId: this.activeGame.config.id,
-            phase: this.activeGame.state.phase,
-            timeRemaining: this.activeGame.getRemainingTime(),
-            points: this.activeGame.state.points,
-            participantCount: this.activeGame.state.participants.size,
-            suspects: Array.from(uniqueSuspects.values()).map(s => s.getDashboardState()),
-            discoveredEvidence: Array.from(this.discoveredEvidence),
-        };
-
+    public broadcastDashboardState(): void {
+        const state = this.dashboard.buildGameState(this.activeGame, this.suspects, this.getDiscoveredEvidence());
         this.dashboard.updateState(state);
-    }
-
-    /**
-     * Get dashboard server (for external access if needed)
-     */
-    getDashboard(): DashboardServer {
-        return this.dashboard;
     }
 }

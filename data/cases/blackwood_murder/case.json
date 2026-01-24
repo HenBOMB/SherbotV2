@@ -368,6 +368,7 @@
     ],
     "settings": {
         "timeLimit": 30,
-        "startingPoints": 15
+        "startingPoints": 15,
+        "difficulty": "sherlock"
     }
 }

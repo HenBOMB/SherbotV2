@@ -1,17 +1,16 @@
-import { ChatInputCommandInteraction, AutocompleteInteraction } from 'discord.js';
+import { ChatInputCommandInteraction, AutocompleteInteraction, Client } from 'discord.js';
 import { mmCommands } from '../mm/commands.js';
 import GameManager from '../mm/game.js';
 import { Command } from '../../types.js';
-
-// Singleton game manager (initialized on first command)
-let gameManager: GameManager | null = null;
 
 const command: Command = {
     guild: '1462571184787947674', // Your server ID
     data: mmCommands,
 
     async execute(interaction: ChatInputCommandInteraction) {
-        // Lazy init game manager with guild from interaction
+        let gameManager = GameManager.getInstance(interaction.guildId || undefined);
+
+        // Lazy init if first time
         if (!gameManager && interaction.guild) {
             gameManager = new GameManager(
                 interaction.client,
@@ -31,13 +30,6 @@ const command: Command = {
         const subcommand = interaction.options.getSubcommand();
 
         switch (subcommand) {
-            case 'start': {
-                const caseId = interaction.options.getString('case', true);
-                const time = interaction.options.getInteger('time') ?? undefined;
-                await gameManager.startGame(interaction, caseId, time);
-                break;
-            }
-
             case 'status':
                 await gameManager.handleStatus(interaction);
                 break;
@@ -54,20 +46,32 @@ const command: Command = {
                 await gameManager.handleFootage(interaction);
                 break;
 
-            case 'locate':
-                await gameManager.handleLocate(interaction);
+            case 'logs':
+                await gameManager.handleLogs(interaction);
+                break;
+
+            case 'explore':
+                await gameManager.handleExplore(interaction);
+                break;
+
+            case 'examine':
+                await gameManager.handleExamine(interaction);
+                break;
+
+            case 'present':
+                await gameManager.handlePresent(interaction);
                 break;
 
             case 'accuse':
                 await gameManager.handleAccuse(interaction);
                 break;
 
-            case 'end':
-                await gameManager.handleEnd(interaction);
-                break;
-
             case 'suspects':
                 await gameManager.handleSuspects(interaction);
+                break;
+
+            case 'secrets':
+                await gameManager.handleSecrets(interaction);
                 break;
 
             case 'help':
@@ -83,14 +87,7 @@ const command: Command = {
     },
 
     async autocomplete(interaction: AutocompleteInteraction) {
-        if (!gameManager && interaction.guild) {
-            gameManager = new GameManager(
-                interaction.client,
-                interaction.guild.id,
-                'data'
-            );
-        }
-
+        const gameManager = GameManager.getInstance(interaction.guildId || undefined);
         if (gameManager) {
             await gameManager.handleAutocomplete(interaction);
         }
@@ -98,14 +95,12 @@ const command: Command = {
 
     async init(client: Client) {
         // Initialize game manager on startup for restoration
-        const guildId = this.guild || '1462571184787947674';
-        if (!gameManager) {
-            gameManager = new GameManager(client, guildId, 'data');
-            await gameManager.restoreGames();
+        const guildId = '1462571184787947674';
+        if (!GameManager.getInstance()) {
+            const gm = new GameManager(client, guildId, 'data');
+            await gm.restoreGames();
         }
     }
 };
-
-import { Client } from 'discord.js';
 
 export default command;

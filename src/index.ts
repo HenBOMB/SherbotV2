@@ -72,7 +72,6 @@ async function start() {
         await initializeDatabase();
 
         await client.login(config.bot.token);
-        console.clear();
         logger.info('>>> Sherbot logged in.');
 
         await Features.run(client);

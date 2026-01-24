@@ -2,6 +2,8 @@
     "id": "silicon_shadows_murder",
     "name": "Silicon Shadows",
     "description": "Tech CEO Miranda Chen was found dead in her smart home at 3:47 AM, electrocuted in her biometric-sealed server room. Security logs show no forced entry. Six people had authorized access. The backup files were corrupted at exactly 3:45 AM. One of them is the killer.",
+    "difficulty_level": 3,
+    "difficulty_name": "Authentic",
     "victim": {
         "name": "Miranda Chen",
         "cause": "Electrocution (modified server rack, 240V)",
@@ -81,19 +83,7 @@
                 "devon",
                 "miranda"
             ],
-            "guest_room_1": [
-                "priya",
-                "devon"
-            ],
-            "guest_room_2": [
-                "priya",
-                "devon"
-            ],
-            "guest_room_3": [
-                "priya",
-                "devon"
-            ],
-            "guest_room_4": [
+            "guest_room": [
                 "priya",
                 "devon"
             ],
@@ -174,22 +164,6 @@
             "hallway_cam_3": "Loop was 4-minute pre-recorded footage from previous night",
             "mysterious_car": "Registered to shell company, traced to Marcus's hidden LLC"
         },
-        "physical_discovery": {
-            "server_room": [
-                "server_rack",
-                "backup_drive",
-                "floor"
-            ],
-            "master_bedroom": [
-                "admin_override_device"
-            ],
-            "hallway": [
-                "hallway_cam_3"
-            ],
-            "garage": [
-                "mysterious_car"
-            ]
-        },
         "all_locations": [
             "server_room",
             "home_office",
@@ -207,6 +181,15 @@
         ]
     },
     "solution": "elena",
+    "accomplice": "alex",
+    "complexity_modifiers": {
+        "accomplice_system": true,
+        "planted_evidence": true,
+        "time_locked_secrets": true,
+        "unreliable_witnesses": 2,
+        "evidence_requires_inference": true,
+        "timeline_precision": "exact_minutes"
+    },
     "suspects": [
         {
             "id": "alex",
@@ -215,7 +198,7 @@
                 "alex",
                 "rivera"
             ],
-            "avatar": "https://i.ibb.co/234ZGJHp/male-tech-02.webp",
+            "avatar": "https://i.ibb.co/20N6XXtn/male-tech-02.webp",
             "currentLocation": "guest_room_2",
             "gender": "male",
             "isGuilty": false,
@@ -243,8 +226,8 @@
                     "text": "disabled the server rack safety protocols at 3:15 as Elena asked, thought it was for maintenance",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:15",
-                            "physical_server_rack"
+                            "digital_logs_03:15",
+                            "physical_evidence_server_rack"
                         ],
                         "keywords": [
                             "safety",
@@ -262,9 +245,9 @@
                     "text": "Elena told him Miranda wanted the safety off for an upgrade, he had no idea it was for murder",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:15",
-                            "secret_alex_disabled_safety",
-                            "secret_elena_manipulated_alex"
+                            "digital_logs_03:15",
+                            "secret_disabled_safety",
+                            "secret_elena_manipulated"
                         ],
                         "keywords": [
                             "accomplice",
@@ -312,7 +295,7 @@
                 "elena",
                 "vance"
             ],
-            "avatar": "https://i.ibb.co/qFjYZpNk/tech-04.webp",
+            "avatar": "https://i.ibb.co/k2GC4qhp/female-tech-04.webp",
             "currentLocation": "home_office",
             "gender": "female",
             "isGuilty": true,
@@ -341,7 +324,7 @@
                     "trigger": {
                         "requiresEvidence": [
                             "secret_alex_disabled_safety",
-                            "logs_03:15"
+                            "digital_logs_03:15"
                         ],
                         "keywords": [
                             "alex",
@@ -359,8 +342,9 @@
                     "text": "used admin override device at 3:40 after copying Miranda's biometrics from wine glass earlier",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:40",
-                            "physical_admin_override_device"
+                            "digital_logs_03:40",
+                            "physical_evidence_admin_override_device",
+                            "security_footage_03:40"
                         ],
                         "keywords": [
                             "override",
@@ -378,7 +362,8 @@
                     "text": "planted the camera loop at 3:35 using footage from previous night to hide approach",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:35"
+                            "security_footage_03:35",
+                            "digital_logs_03:35"
                         ],
                         "keywords": [
                             "camera",
@@ -396,8 +381,8 @@
                     "text": "corrupted the backup files at 3:45 to destroy evidence of her algorithm theft emails with Miranda",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:45",
-                            "physical_backup_drive"
+                            "digital_logs_03:45",
+                            "physical_evidence_backup_drive"
                         ],
                         "keywords": [
                             "backup",
@@ -416,7 +401,7 @@
                     "trigger": {
                         "requiresEvidence": [
                             "locations_elena_03:30",
-                            "logs_03:30"
+                            "digital_logs_03:30"
                         ],
                         "keywords": [
                             "edit",
@@ -447,7 +432,7 @@
                 "devon",
                 "marsh"
             ],
-            "avatar": "https://i.ibb.co/Lzw5VG68/female-tech-01.webp",
+            "avatar": "https://i.ibb.co/gbN5TmF2/female-tech-01.webp",
             "currentLocation": "kitchen",
             "gender": "non-binary",
             "isGuilty": false,
@@ -474,7 +459,7 @@
                     "text": "saw Elena in the hallway at 3:38 during the camera loop gap, but Elena convinced them they were mistaken",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:35",
+                            "security_footage_03:35",
                             "locations_elena_03:30"
                         ],
                         "keywords": [
@@ -515,12 +500,12 @@
         },
         {
             "id": "yuki",
-            "name": "Yuki Miller",
+            "name": "Yuki Tanaka",
             "alias": [
                 "yuki",
-                "miller"
+                "tanaka"
             ],
-            "avatar": "https://i.ibb.co/1Yr0kPNg/female-tech-02.webp",
+            "avatar": "https://i.ibb.co/k2GC4qhp/female-tech-02.webp",
             "currentLocation": "master_bedroom",
             "gender": "female",
             "isGuilty": false,
@@ -547,8 +532,8 @@
                     "text": "was actually corporate spy for rival company TechDyne, Miranda found out",
                     "trigger": {
                         "requiresEvidence": [
-                            "secret_yuki_will_change",
-                            "logs_03:22"
+                            "secret_will_change",
+                            "digital_logs_03:22"
                         ],
                         "keywords": [
                             "spy",
@@ -566,8 +551,8 @@
                     "text": "the 3:22 external connection attempt was her trying to exfiltrate data, got blocked",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:22",
-                            "secret_yuki_corporate_spy"
+                            "digital_logs_03:22",
+                            "secret_corporate_spy"
                         ],
                         "keywords": [
                             "external",
@@ -585,7 +570,7 @@
                     "text": "was genuinely asleep during murder, thermal imaging confirms, sleeping pills knocked them out",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:00",
+                            "security_footage_03:00",
                             "locations_yuki_03:47"
                         ],
                         "keywords": [
@@ -616,7 +601,7 @@
                 "priya",
                 "sharma"
             ],
-            "avatar": "https://i.ibb.co/8wTLqMJ/female-tech-03.webp",
+            "avatar": "https://i.ibb.co/TB848021/female-tech-03.webp",
             "currentLocation": "guest_room_3",
             "gender": "female",
             "isGuilty": false,
@@ -688,7 +673,7 @@
                 "marcus",
                 "zhao"
             ],
-            "avatar": "https://i.ibb.co/dsJMGnY1/male-tech-01.webp",
+            "avatar": "https://i.ibb.co/21BjKNtf/male-tech-01.webp",
             "currentLocation": "wine_cellar",
             "gender": "male",
             "isGuilty": false,
@@ -715,8 +700,8 @@
                     "text": "the mysterious car is registered to his shell company, he was having Miranda followed",
                     "trigger": {
                         "requiresEvidence": [
-                            "logs_03:22",
-                            "physical_mysterious_car"
+                            "security_footage_03:22",
+                            "physical_evidence_mysterious_car"
                         ],
                         "keywords": [
                             "car",
@@ -734,7 +719,7 @@
                     "text": "private investigator was documenting Miranda's meetings, trying to prove fraud for lawsuit",
                     "trigger": {
                         "requiresEvidence": [
-                            "secret_marcus_shell_company"
+                            "secret_shell_company"
                         ],
                         "keywords": [
                             "investigator",
@@ -779,7 +764,46 @@
     ],
     "settings": {
         "timeLimit": 300,
-        "startingPoints": 30,
-        "difficulty": "irene"
+        "startingPoints": 20,
+        "difficulty_level": 3
+    },
+    "solution_requirements": {
+        "must_identify": [
+            "elena_as_killer",
+            "alex_as_unknowing_accomplice"
+        ],
+        "must_connect": [
+            "alex_disabled_safety",
+            "elena_used_admin_override",
+            "elena_planted_camera_loop",
+            "elena_corrupted_backups"
+        ],
+        "minimum_evidence": [
+            "digital_logs_03:15",
+            "digital_logs_03:40",
+            "security_footage_03:35",
+            "physical_evidence_server_rack",
+            "devon_witness_testimony"
+        ],
+        "inference_chain": "Alex disabled safety → Elena used override to enter → Camera loop hid her approach → She electrocuted Miranda → Corrupted backups to hide motive → Alex didn't know he was helping"
+    },
+    "red_herrings": [
+        "yuki_corporate_spy",
+        "marcus_mysterious_car",
+        "trace_unknown_dna",
+        "external_connection_attempt"
+    ],
+    "difficulty_justification": {
+        "level": 3,
+        "reasons": [
+            "Accomplice system requires identifying two people",
+            "Multiple red herrings with complete backstories",
+            "Time-locked secrets requiring evidence before revelation",
+            "Digital logs require precise timeline reconstruction",
+            "Planted evidence (camera loop, fake edit logs)",
+            "Unreliable witness (Devon's suppressed memory)",
+            "Requires 5-step inference chain to solve",
+            "Expert-level suspect resistance (Elena)"
+        ]
     }
 }

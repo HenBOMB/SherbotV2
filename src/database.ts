@@ -19,6 +19,15 @@ export class Server extends Model<InferAttributes<Server>, InferCreationAttribut
     declare id: string;
     declare tip: CreationOptional<number | null>;
     declare tip_channel: CreationOptional<string | null>;
+    declare tips_enabled: CreationOptional<boolean>;
+    declare language: CreationOptional<string | null>;
+}
+
+// Define TipTranslation model
+export class TipTranslation extends Model<InferAttributes<TipTranslation>, InferCreationAttributes<TipTranslation>> {
+    declare tipUrl: string;
+    declare language: string;
+    declare text: string;
 }
 
 // Define MMGame model for Murder Mystery state persistence
@@ -32,8 +41,28 @@ export class MMGame extends Model<InferAttributes<MMGame>, InferCreationAttribut
     declare endsAt: Date;
     declare participants: CreationOptional<string>; // JSON stringified
     declare usedTools: CreationOptional<string>; // JSON stringified
+    declare discoveredEvidence: CreationOptional<string>; // JSON stringified
+    declare discoveredLocations: CreationOptional<string>; // JSON stringified
+    declare playerStats: CreationOptional<string>; // JSON stringified
+    declare accusations: CreationOptional<string>; // JSON stringified
+    declare suspectState: CreationOptional<string>; // JSON stringified
     declare createdAt: CreationOptional<Date>;
     declare updatedAt: CreationOptional<Date>;
+}
+
+// Define UserProfile model
+export class UserProfile extends Model<InferAttributes<UserProfile>, InferCreationAttributes<UserProfile>> {
+    declare userId: string;
+    declare guildId: string;
+    declare profile: string;
+    declare messageCount: number;
+    declare lastUpdated: Date;
+}
+
+// Define BotState model for global metadata
+export class BotState extends Model<InferAttributes<BotState>, InferCreationAttributes<BotState>> {
+    declare key: string;
+    declare value: string;
 }
 
 Server.init({
@@ -51,10 +80,41 @@ Server.init({
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: null,
+    },
+    tips_enabled: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    language: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
     }
 }, {
     sequelize,
     tableName: 'Servers',
+    timestamps: false
+});
+
+TipTranslation.init({
+    tipUrl: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+    },
+    language: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+    },
+    text: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    }
+}, {
+    sequelize,
+    tableName: 'TipTranslations',
     timestamps: false
 });
 
@@ -77,7 +137,7 @@ MMGame.init({
         allowNull: false,
     },
     points: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: false,
     },
     phase: {
@@ -98,18 +158,84 @@ MMGame.init({
         allowNull: true,
         defaultValue: '[]',
     },
-    createdAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
+    discoveredEvidence: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '[]',
     },
-    updatedAt: {
-        type: DataTypes.DATE,
-        allowNull: false,
-    }
+    discoveredLocations: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '[]',
+    },
+    playerStats: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '{}',
+    },
+    accusations: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '{}',
+    },
+    suspectState: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        defaultValue: '{}',
+    },
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE
 }, {
     sequelize,
     tableName: 'MMGames',
     timestamps: true
+});
+
+UserProfile.init({
+    userId: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+    },
+    guildId: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+    },
+    profile: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    messageCount: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    lastUpdated: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: DataTypes.NOW,
+    }
+}, {
+    sequelize,
+    tableName: 'UserProfiles',
+    timestamps: false
+});
+
+BotState.init({
+    key: {
+        type: DataTypes.STRING,
+        primaryKey: true,
+        allowNull: false,
+    },
+    value: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    }
+}, {
+    sequelize,
+    tableName: 'BotState',
+    timestamps: false
 });
 
 export async function initializeDatabase() {
@@ -118,9 +244,35 @@ export async function initializeDatabase() {
         logger.info('Connection to database has been established successfully.');
 
         // Sync models
-        // In production, use migrations instead of sync({ alter: true })
         if (process.env.NODE_ENV !== 'production') {
-            await sequelize.sync({ alter: true });
+            await sequelize.sync();
+            // Manually add column if it doesn't exist (SQLite migration workaround)
+            try {
+                await sequelize.query('ALTER TABLE Servers ADD COLUMN tips_enabled BOOLEAN NOT NULL DEFAULT 0;');
+                logger.info('Added tips_enabled column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            try {
+                await sequelize.query('ALTER TABLE Servers ADD COLUMN language VARCHAR(255);');
+                logger.info('Added language column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            // MMGames migration helper
+            const mmColumns = [
+                ['discoveredEvidence', "TEXT DEFAULT '[]'"],
+                ['discoveredLocations', "TEXT DEFAULT '[]'"],
+                ['playerStats', "TEXT DEFAULT '{}'"],
+                ['accusations', "TEXT DEFAULT '{}'"],
+                ['suspectState', "TEXT DEFAULT '{}'"]
+            ];
+
+            for (const [col, def] of mmColumns) {
+                try {
+                    await sequelize.query(`ALTER TABLE MMGames ADD COLUMN ${col} ${def};`);
+                    logger.info(`Added ${col} column to MMGames table.`);
+                } catch (e) { /* ignore */ }
+            }
+
             logger.info('Database models synced.');
         }
 

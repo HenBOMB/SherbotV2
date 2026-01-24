@@ -8,7 +8,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
-    "start:dev": "npm run dev",
+    "start:dev": "clear && npm run dev",
     "build": "tsc"
   },
   "keywords": [],

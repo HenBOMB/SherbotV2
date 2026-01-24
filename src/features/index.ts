@@ -9,7 +9,8 @@ export default class Features {
             'welcome.js',
             'mod.js',
             'dailytips.js',
-            'secret.js'
+            'secret.js',
+            'profiler.js'
         ];
 
         for (const file of features) {

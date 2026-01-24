@@ -34,6 +34,12 @@ export const config = {
     features: {
         dailyTipsEnabled: process.env.DAILY_TIPS_ENABLED !== 'false',
         autoModEnabled: process.env.AUTO_MOD_ENABLED !== 'false',
+        profiler: {
+            enabled: true,
+            ignoredKeywords: ['welcome', 'rules', 'announcement'],
+            // Add guild IDs here to restrict scanning, or leave empty to scan all guilds the bot is in
+            targetGuilds: [process.env.MAIN_GUILD_ID || '670107546480017409'],
+        }
     }
 };
 
