@@ -4,3 +4,4 @@ export * from './tools/explore.js';
 export * from './tools/examine.js';
 export * from './tools/present.js';
 export * from './tools/logs.js';
+export * from './tools/evidence.js';

@@ -1,0 +1,979 @@
+{
+    "id": "silicon_shadows_easy",
+    "name": "Silicon Shadows",
+    "description": "Tech CEO Miranda Chen was found dead in her smart home at 3:47 AM, electrocuted in her biometric-sealed server room. Security logs show no forced entry. Six people had authorized access. The backup files were corrupted at exactly 3:45 AM. One of them is the killer.",
+    "context": {
+        "setup": "The six suspects attended Miranda's high-stakes investor dinner party on the evening of the murder, staying overnight at her smart home for the crucial 9 AM Series C presentation worth $200M. Tensions were high—the company's future depended on this funding. Miranda's AI algorithm patent had been officially approved three days earlier, and she planned to announce it at the presentation.",
+        "house_layout": "Modern two-story smart home. Ground floor: foyer, living room, kitchen, wine cellar (off living room), garage (off kitchen). Second floor: hallway (central), master bedroom, 4 guest rooms, home office, server room (all off hallway). All second-floor rooms have biometric access. Travel time between any two second-floor rooms: 30-45 seconds.",
+        "biometric_secured_rooms": [
+            "server_room",
+            "home_office",
+            "master_bedroom",
+            "wine_cellar"
+        ],
+        "timeline_note": "All times are based on smart home system logs, which are considered reliable except during the 3:35-3:39 camera loop period."
+    },
+    "victim": {
+        "name": "Miranda Chen",
+        "age": 38,
+        "cause": "Electrocution (modified server rack, 240V direct contact)",
+        "time_of_death": "3:47 AM (confirmed by smart home power surge log and medical examiner estimate of 3:45-3:50 AM)",
+        "description": "Founder and CEO of NexusAI, a controversial AI startup valued at $800M. Known for ruthless IP protection and aggressive acquisition tactics. Her core AI algorithm patent was approved 3 days before her death.",
+        "autopsy_findings": {
+            "cause": "Cardiac arrest due to electrocution, 240V AC current",
+            "contact_point": "Right hand, palm and fingers, consistent with grasping energized metal surface",
+            "time_of_death": "Between 3:45-3:50 AM, most likely 3:47 AM based on power surge log",
+            "instant_death": "Yes, death was instantaneous upon contact",
+            "defensive_wounds": "None",
+            "toxicology": "Negative for drugs, alcohol, or sedatives",
+            "other_findings": "Minor contusions on back and left hip consistent with falling backward after electrical shock, then being dragged approximately 3 feet"
+        }
+    },
+    "murderTime": "03:47",
+    "murderLocation": "server_room",
+    "map": {
+        "foyer": [
+            "living_room",
+            "hallway",
+            "kitchen"
+        ],
+        "living_room": [
+            "foyer",
+            "hallway",
+            "wine_cellar"
+        ],
+        "kitchen": [
+            "foyer",
+            "hallway",
+            "garage"
+        ],
+        "hallway": [
+            "foyer",
+            "living_room",
+            "kitchen",
+            "stairs_to_second_floor"
+        ],
+        "stairs_to_second_floor": [
+            "hallway",
+            "second_floor_hallway"
+        ],
+        "second_floor_hallway": [
+            "stairs_to_second_floor",
+            "master_bedroom",
+            "guest_room_1",
+            "guest_room_2",
+            "guest_room_3",
+            "guest_room_4",
+            "home_office",
+            "server_room"
+        ],
+        "master_bedroom": [
+            "second_floor_hallway"
+        ],
+        "guest_room_1": [
+            "second_floor_hallway"
+        ],
+        "guest_room_2": [
+            "second_floor_hallway"
+        ],
+        "guest_room_3": [
+            "second_floor_hallway"
+        ],
+        "guest_room_4": [
+            "second_floor_hallway"
+        ],
+        "home_office": [
+            "second_floor_hallway"
+        ],
+        "server_room": [
+            "second_floor_hallway"
+        ],
+        "wine_cellar": [
+            "living_room"
+        ],
+        "garage": [
+            "kitchen"
+        ]
+    },
+    "evidence": {
+        "dna": {
+            "server_room": [
+                "miranda",
+                "alex"
+            ],
+            "home_office": [
+                "miranda",
+                "elena",
+                "yuki"
+            ],
+            "kitchen": [
+                "devon",
+                "miranda"
+            ],
+            "guest_room_1": [
+                "elena"
+            ],
+            "guest_room_2": [
+                "alex"
+            ],
+            "guest_room_3": [
+                "devon",
+                "priya"
+            ],
+            "guest_room_4": [
+                "marcus"
+            ],
+            "garage": [
+                "alex",
+                "miranda"
+            ],
+            "wine_cellar": [
+                "marcus",
+                "miranda"
+            ],
+            "master_bedroom": [
+                "miranda",
+                "yuki"
+            ],
+            "home_office_trash": [
+                "miranda",
+                "elena"
+            ]
+        },
+        "digital_logs": {
+            "03:15": "Biometric access: Alex Rivera - server room (authorized)",
+            "03:19": "Biometric access: Alex Rivera - server room exit",
+            "03:22": "Network activity: Automated backup sync - Yuki Miller's phone",
+            "03:28": "Biometric access: Elena Vance - home office (authorized)",
+            "03:35": "Security camera loop detected - second floor hallway cam 3 (monitors server room door)",
+            "03:39": "Security camera loop ended - second floor hallway cam 3",
+            "03:40": "Biometric access: ADMIN_OVERRIDE_CODE_7749 - server room (unauthorized use)",
+            "03:45": "Backup corruption initiated - source: server room terminal",
+            "03:46": "Biometric access: Miranda Chen - server room (authorized - likely responding to backup alert)",
+            "03:47": "Power surge - server room circuit (15,000 watts, 240V)",
+            "03:48": "Emergency protocol triggered - power surge detected",
+            "03:50": "911 call placed - caller: Devon Marsh",
+            "03:51": "Biometric access: Devon Marsh - server room (emergency override)"
+        },
+        "footage": {
+            "03:00": "All guests in respective rooms (thermal imaging confirms 6 people in 6 rooms)",
+            "03:15": "Alex exits guest room 2, enters server room, exits at 03:19, returns to guest room 2",
+            "03:22": "Exterior: Delivery van briefly parks on street, leaves at 03:24 (unrelated)",
+            "03:28": "Elena exits guest room 1, enters home office",
+            "03:35-03:39": "Second floor hallway cam 3 shows 4-minute loop of empty hallway (pre-recorded footage from previous night)",
+            "03:40": "Server room door opens during loop period (no visible person due to camera loop)",
+            "03:46": "Miranda exits master bedroom, enters server room (captured by hallway cam 2, not cam 3)",
+            "03:47": "Lights flicker throughout house (power surge)",
+            "03:50": "Devon runs up stairs from kitchen to second floor hallway",
+            "03:51": "Devon enters server room, discovers body, immediately exits and makes call"
+        },
+        "locations": {
+            "alex": {
+                "03:00": "guest_room_2",
+                "03:15": "server_room",
+                "03:19": "guest_room_2",
+                "03:47": "guest_room_2",
+                "03:52": "second_floor_hallway"
+            },
+            "elena": {
+                "03:00": "guest_room_1",
+                "03:28": "home_office",
+                "03:35": "second_floor_hallway",
+                "03:37": "server_room",
+                "03:42": "home_office",
+                "03:50": "home_office",
+                "03:53": "second_floor_hallway"
+            },
+            "devon": {
+                "03:00": "guest_room_3",
+                "03:25": "kitchen",
+                "03:38": "stairs_to_second_floor",
+                "03:45": "kitchen",
+                "03:50": "second_floor_hallway",
+                "03:51": "server_room"
+            },
+            "yuki": {
+                "03:00": "master_bedroom",
+                "03:30": "master_bedroom",
+                "03:47": "master_bedroom",
+                "03:52": "second_floor_hallway"
+            },
+            "priya": {
+                "03:00": "guest_room_3",
+                "03:30": "guest_room_3",
+                "03:47": "guest_room_3",
+                "03:55": "second_floor_hallway"
+            },
+            "marcus": {
+                "03:00": "guest_room_4",
+                "03:18": "second_floor_hallway",
+                "03:20": "wine_cellar",
+                "03:47": "wine_cellar",
+                "03:52": "second_floor_hallway"
+            }
+        },
+        "physical_evidence": {
+            "server_rack": "Main server rack modified: ground wire disconnected, safety interlock disabled, exposed 240V bus bar at chest height. Modification required 15-20 minutes and technical knowledge. Fresh tool marks on safety cover screws.",
+            "floor_marks": "Scuff marks on server room floor indicate body fell backward from server rack (3 feet from rack) then was dragged forward to rack position, suggesting killer attempted to stage it as victim working on servers.",
+            "backup_drive": "RAID backup array professionally corrupted using military-grade data destruction algorithm. Unrecoverable. Corruption initiated from server room terminal at 3:45 AM using Elena Vance's admin credentials.",
+            "admin_override_device": "Hardware override key (device ID: ADMIN_OVERRIDE_CODE_7749) found in server room, under desk. Smudged fingerprints and cleaning residue detected. Device normally stored in Miranda's office safe.",
+            "hallway_cam_3_analysis": "Camera loop was pre-recorded footage from 3:35-3:39 AM the previous night (same lighting, no people). Loop file uploaded to camera at 3:34:58 AM from home office workstation.",
+            "wine_glass": "Wine glass found in home office trash with Miranda's lipstick print and saliva. Silicone residue detected on rim - consistent with fingerprint molding compound.",
+            "fingerprint_mold_kit": "Professional biometric spoofing kit found hidden in home office desk drawer, bottom level. Contains silicone molding compound, UV curing lamp, and gelatin film. Fresh silicone mold of fingerprint (matches Miranda's right index finger).",
+            "miranda_tablet": "Miranda's tablet in master bedroom shows she received backup corruption alert at 3:45 AM. Last activity: opened alert at 3:45:47 AM, then biometric access to server room at 3:46 AM.",
+            "elena_laptop": "Elena's laptop in home office shows automated presentation editing script running from 3:28-3:55 AM, creating false alibi of continuous work. Script made minor edits every 2-3 minutes to create realistic edit log timestamps.",
+            "alex_phone": "Text message from Elena to Alex at 11:47 PM previous night: 'Miranda wants server safety protocols disabled for emergency firmware upgrade tonight. She'll confirm in morning. Can you handle it around 3 AM? She doesn't want to wake everyone.' Alex replied: 'Seems odd but ok, will do.'",
+            "server_room_terminal": "Terminal shows backup corruption command executed at 3:45 AM. Login: Elena Vance's credentials. Terminal physically accessed (not remote)."
+        },
+        "physical_discovery": {
+            "automatic": [
+                "server_rack",
+                "floor_marks",
+                "backup_drive",
+                "miranda_tablet",
+                "server_room_terminal"
+            ],
+            "search_server_room": [
+                "admin_override_device"
+            ],
+            "search_home_office": [
+                "wine_glass",
+                "fingerprint_mold_kit",
+                "elena_laptop"
+            ],
+            "search_phones": [
+                "alex_phone"
+            ]
+        },
+        "initial_police_statements": {
+            "alex": "I was asked to do routine server maintenance at 3:15 AM. In and out in four minutes. Went back to sleep. Woke up to screaming.",
+            "elena": "I was working on the investor presentation in the home office from 3:28 until Devon started screaming. I have edit logs proving I was working the entire time.",
+            "devon": "I had insomnia, made tea around 3:25. I was in the kitchen when the lights flickered. Ran upstairs and found Miranda. I called 911 immediately.",
+            "yuki": "I was asleep in the master bedroom. Miranda and I went to bed around 1 AM. I didn't hear anything until the emergency alerts started going off.",
+            "priya": "I was asleep in guest room 3. I'm a heavy sleeper - I slept through everything until people were shouting in the hallway.",
+            "marcus": "I have insomnia and rare wine helps me sleep. I went to the wine cellar around 3:20 to select a bottle. I was there when the power flickered."
+        },
+        "all_locations": [
+            "server_room",
+            "home_office",
+            "kitchen",
+            "guest_room_1",
+            "guest_room_2",
+            "guest_room_3",
+            "guest_room_4",
+            "master_bedroom",
+            "garage",
+            "wine_cellar",
+            "second_floor_hallway",
+            "stairs_to_second_floor",
+            "hallway",
+            "living_room",
+            "foyer"
+        ]
+    },
+    "solution": {
+        "killer": "elena",
+        "accomplice": "alex",
+        "accomplice_knowledge": "none - unwitting accomplice, believed he was helping with legitimate maintenance",
+        "method": "Elena manipulated Alex into disabling server safety protocols under false pretense of emergency firmware upgrade. She created a fingerprint mold from Miranda's wine glass to spoof biometric access. At 3:35 AM, Elena planted pre-recorded camera loop to hide her movements. At 3:37 AM, she used the spoofed biometric to access server room and modified the server rack to be lethal. At 3:40 AM she used the admin override to ensure access would work. At 3:45 AM, she corrupted backups from server terminal to destroy evidence of her stolen algorithm emails, knowing the alert would lure Miranda to the server room. When Miranda arrived at 3:46 AM and touched the electrified rack at 3:47 AM, she was killed instantly. Elena dragged the body closer to the rack to stage an accident, then returned to her office where her automated script provided a false alibi.",
+        "motive": "Miranda stole Elena's core AI algorithm and patented it under her own name three months ago. Elena's lawsuit to reclaim credit was blocked when Miranda's patent was officially approved 3 days before the murder. The 9 AM investor presentation would publicly announce the patent, destroying Elena's legal case forever and costing her $50 million in equity. This was Elena's last chance to stop Miranda and regain control of her life's work.",
+        "timeline_summary": {
+            "11:47 PM (night before)": "Elena texts Alex pretending to relay Miranda's firmware upgrade request",
+            "3:15 AM": "Alex disables server safety protocols as 'requested'",
+            "3:28 AM": "Elena enters home office, starts automated editing script",
+            "3:35 AM": "Elena plants camera loop on hallway cam 3",
+            "3:37 AM": "Elena enters server room using spoofed biometric, modifies server rack to be lethal",
+            "3:40 AM": "Elena tests admin override access (insurance)",
+            "3:42 AM": "Elena returns to home office",
+            "3:45 AM": "Elena accesses server terminal, corrupts backups (lures Miranda)",
+            "3:46 AM": "Miranda receives alert, goes to server room",
+            "3:47 AM": "Miranda touches electrified rack, dies instantly",
+            "3:50 AM": "Devon discovers body"
+        }
+    },
+    "suspects": [
+        {
+            "id": "alex",
+            "name": "Alex Rivera",
+            "alias": [
+                "alex",
+                "rivera"
+            ],
+            "avatar": "https://i.ibb.co/234ZGJHp/male-tech-02.webp",
+            "currentLocation": "guest_room_2",
+            "age": 34,
+            "role": "CTO (Chief Technology Officer)",
+            "gender": "male",
+            "isGuilty": false,
+            "isAccomplice": true,
+            "alibi": "I was in the server room at 3:15 doing routine maintenance like Miranda asked. I went back to bed after. I heard nothing until Devon started screaming.",
+            "motive": "CTO being pushed out after explosive disagreement over AI ethics. Miranda threatened to sue him for $10M for alleged code theft unless he resigned quietly.",
+            "secrets": [
+                {
+                    "id": "ethics_fight",
+                    "text": "Had explosive argument with Miranda two weeks ago about using NexusAI for government surveillance contracts. She called him 'naive' and threatened to fire him if he didn't drop it. He's been iced out of major decisions since then.",
+                    "trigger": {
+                        "keywords": [
+                            "argument",
+                            "ethics",
+                            "surveillance",
+                            "fired",
+                            "disagreement",
+                            "ai",
+                            "fight",
+                            "miranda",
+                            "conflict"
+                        ],
+                        "minPressure": 20
+                    }
+                },
+                {
+                    "id": "code_theft_threat",
+                    "text": "Miranda threatened to claim Alex stole proprietary code and sue him for $10 million unless he resigned quietly. She had fabricated commit logs to frame him. He was terrified and couldn't afford lawyers to fight her.",
+                    "trigger": {
+                        "keywords": [
+                            "resign",
+                            "quit",
+                            "leaving",
+                            "threatened",
+                            "lawsuit",
+                            "sue",
+                            "code",
+                            "theft",
+                            "frame"
+                        ],
+                        "minPressure": 28
+                    }
+                },
+                {
+                    "id": "disabled_safety",
+                    "text": "Disabled the server rack safety protocols at 3:15 AM because Elena sent him a text saying Miranda wanted it done for an emergency firmware upgrade. He thought it was legitimate - Miranda often made last-minute technical demands.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "logs_03:15",
+                            "physical_server_rack"
+                        ],
+                        "keywords": [
+                            "safety",
+                            "disabled",
+                            "server",
+                            "maintenance",
+                            "protocols",
+                            "modified",
+                            "3:15",
+                            "rack"
+                        ],
+                        "minPressure": 35
+                    }
+                },
+                {
+                    "id": "elena_text_message",
+                    "text": "Shows text from Elena at 11:47 PM: 'Miranda wants server safety disabled for firmware upgrade tonight around 3 AM. She'll confirm in morning.' Alex believed it was from Miranda. He feels sick realizing he was manipulated into helping murder her.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "physical_alex_phone",
+                            "secret_alex_disabled_safety"
+                        ],
+                        "keywords": [
+                            "text",
+                            "message",
+                            "elena",
+                            "asked",
+                            "who",
+                            "told",
+                            "request",
+                            "upgrade"
+                        ],
+                        "minPressure": 38
+                    }
+                },
+                {
+                    "id": "unknowing_accomplice",
+                    "text": "Breaks down: 'I killed her, didn't I? Elena used me. I disabled the safety and Miranda died because of it. I didn't know. I swear I didn't know. She said it was for an upgrade...' He's genuinely devastated.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_alex_disabled_safety",
+                            "secret_alex_elena_text_message"
+                        ],
+                        "keywords": [
+                            "accomplice",
+                            "used",
+                            "manipulated",
+                            "helped",
+                            "tricked",
+                            "guilty",
+                            "your fault"
+                        ],
+                        "minPressure": 42
+                    }
+                }
+            ],
+            "traits": [
+                "Technically brilliant but naive about office politics",
+                "Speaks passionately about ethics and responsible AI",
+                "Becomes defensive when questioned about server access",
+                "Genuinely devastated when he realizes his role",
+                "Voice cracks when discussing the firmware upgrade request"
+            ],
+            "resistance_level": "moderate",
+            "tells": "Touches his neck and looks away when discussing Elena or the maintenance request"
+        },
+        {
+            "id": "elena",
+            "name": "Elena Vance",
+            "alias": [
+                "elena",
+                "vance"
+            ],
+            "avatar": "https://i.ibb.co/qFjYZpNk/tech-04.webp",
+            "currentLocation": "home_office",
+            "age": 36,
+            "role": "VP of Product",
+            "gender": "female",
+            "isGuilty": true,
+            "alibi": "I was in the home office working on the investor presentation from 3:28 AM until Devon started screaming. I have the edit logs to prove continuous work. The presentation was due at 9 AM and I'm a perfectionist.",
+            "motive": "Created NexusAI's core algorithm but Miranda patented it under her own name, costing Elena $50M in equity. The patent was approved 3 days ago, and the 9 AM announcement would destroy Elena's lawsuit forever.",
+            "secrets": [
+                {
+                    "id": "stolen_algorithm",
+                    "text": "Elena created the entire NexusAI core algorithm over 8 months. Miranda watched, learned, then filed the patent solely in her name while Elena was on medical leave. When Elena discovered it, Miranda said 'You were an employee. I own your work. Sue me.' Elena did sue, but the patent approval 3 days ago killed her case.",
+                    "trigger": {
+                        "keywords": [
+                            "algorithm",
+                            "patent",
+                            "stole",
+                            "credit",
+                            "created",
+                            "your work",
+                            "intellectual property",
+                            "invented"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "lawsuit_destroyed",
+                    "text": "Elena's lawsuit was her entire future - $50 million in equity and her reputation. Three days ago, Miranda's patent was officially approved. The 9 AM investor presentation would announce it publicly, destroying Elena's case forever. After that, she'd have nothing. No credit, no money, no justice. This was her last chance.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_elena_stolen_algorithm"
+                        ],
+                        "keywords": [
+                            "lawsuit",
+                            "legal",
+                            "case",
+                            "patent approved",
+                            "three days",
+                            "presentation",
+                            "announce",
+                            "last chance"
+                        ],
+                        "minPressure": 30
+                    }
+                },
+                {
+                    "id": "manipulated_alex",
+                    "text": "At 11:47 PM, Elena texted Alex pretending to relay Miranda's request for a firmware upgrade requiring disabled safety protocols. Alex trusted her and did it at 3:15 AM. He had no idea he was creating the murder weapon. Elena chose him because he's naive and was already scared of Miranda.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_alex_disabled_safety",
+                            "physical_alex_phone"
+                        ],
+                        "keywords": [
+                            "alex",
+                            "asked",
+                            "told",
+                            "text",
+                            "firmware",
+                            "upgrade",
+                            "safety",
+                            "manipulated",
+                            "used"
+                        ],
+                        "minPressure": 40
+                    }
+                },
+                {
+                    "id": "fingerprint_mold",
+                    "text": "Elena created a silicone fingerprint mold from Miranda's wine glass during dinner. She used a professional biometric spoofing kit - the wine glass and kit are both in her office. The mold allowed her to bypass Miranda's biometric locks.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "physical_wine_glass",
+                            "physical_fingerprint_mold_kit"
+                        ],
+                        "keywords": [
+                            "biometric",
+                            "fingerprint",
+                            "access",
+                            "how",
+                            "bypass",
+                            "wine glass",
+                            "mold",
+                            "spoof"
+                        ],
+                        "minPressure": 43
+                    }
+                },
+                {
+                    "id": "camera_loop",
+                    "text": "Elena planted a pre-recorded camera loop on hallway cam 3 at 3:35 AM. The loop was from the previous night - same lighting, empty hallway. It ran from 3:35-3:39, hiding her approach to the server room. She uploaded it from her office workstation.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "logs_03:35",
+                            "physical_hallway_cam_3_analysis"
+                        ],
+                        "keywords": [
+                            "camera",
+                            "loop",
+                            "hallway",
+                            "footage",
+                            "hide",
+                            "recorded",
+                            "3:35",
+                            "uploaded"
+                        ],
+                        "minPressure": 45
+                    }
+                },
+                {
+                    "id": "corrupted_backups",
+                    "text": "Elena corrupted the backup files at 3:45 AM using her admin credentials on the server room terminal. The backups contained three months of emails between her and Miranda about the algorithm theft - proof of her motive. Destroying them was essential. She also knew the corruption alert would lure Miranda to the server room.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "logs_03:45",
+                            "physical_backup_drive",
+                            "physical_server_room_terminal"
+                        ],
+                        "keywords": [
+                            "backup",
+                            "corrupted",
+                            "destroyed",
+                            "emails",
+                            "evidence",
+                            "why",
+                            "3:45",
+                            "terminal"
+                        ],
+                        "minPressure": 47
+                    }
+                },
+                {
+                    "id": "fake_alibi_script",
+                    "text": "The edit logs are fake. Elena created an automated script that ran from 3:28-3:55 AM, making minor presentation edits every 2-3 minutes. It created the illusion she was working continuously. The script is still on her laptop. She was actually in the server room from 3:37-3:42.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "locations_elena_03:28",
+                            "physical_elena_laptop"
+                        ],
+                        "keywords": [
+                            "edit logs",
+                            "alibi",
+                            "presentation",
+                            "automated",
+                            "script",
+                            "fake",
+                            "working",
+                            "prove"
+                        ],
+                        "minPressure": 48
+                    }
+                },
+                {
+                    "id": "server_room_entry",
+                    "text": "At 3:37 AM, during the camera loop, Elena used her fingerprint mold to access the server room. She spent 5 minutes modifying the server rack - disconnecting grounds, disabling interlocks, exposing the 240V bus bar. Then she tested the admin override at 3:40 as backup. She was back in her office by 3:42.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_elena_camera_loop",
+                            "secret_elena_fingerprint_mold",
+                            "physical_server_rack"
+                        ],
+                        "keywords": [
+                            "server room",
+                            "entered",
+                            "3:37",
+                            "modified",
+                            "rack",
+                            "how",
+                            "when",
+                            "access"
+                        ],
+                        "minPressure": 50
+                    }
+                },
+                {
+                    "id": "full_confession",
+                    "text": "Elena's composure finally breaks: 'She STOLE my life's work. Eight months of my brilliance, and she took it. The patent was MY future. $50 million. My reputation. Everything. The lawsuit was my last hope and she crushed it. In three days, she destroyed me. So yes, I corrupted the backups to lure her there. I knew she'd rush to check. I knew she'd touch the rack. And I knew Alex had disabled the safety. It was perfect. She died instantly, touching MY algorithm's servers. Poetic, really.' Her voice is cold, matter-of-fact.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_elena_stolen_algorithm",
+                            "secret_elena_manipulated_alex",
+                            "secret_elena_camera_loop",
+                            "secret_elena_corrupted_backups",
+                            "secret_elena_server_room_entry"
+                        ],
+                        "keywords": [
+                            "killed her",
+                            "murdered",
+                            "confess",
+                            "did it",
+                            "guilty",
+                            "why",
+                            "admit"
+                        ],
+                        "minPressure": 55
+                    }
+                }
+            ],
+            "traits": [
+                "Calculating and methodical in speech",
+                "Maintains perfect composure until evidence chain is complete",
+                "Deflects with technical details and logic",
+                "Speaks about the algorithm with intense personal ownership",
+                "Shows brief flashes of rage when discussing Miranda's theft"
+            ],
+            "resistance_level": "expert",
+            "tells": "No visible tells until confronted with complete evidence. Then her left eye twitches slightly when lying."
+        },
+        {
+            "id": "devon",
+            "name": "Devon Marsh",
+            "alias": [
+                "devon",
+                "marsh"
+            ],
+            "avatar": "https://i.ibb.co/Lzw5VG68/female-tech-01.webp",
+            "currentLocation": "kitchen",
+            "age": 29,
+            "role": "Lead Designer",
+            "gender": "non-binary",
+            "isGuilty": false,
+            "alibi": "I have chronic insomnia. I went to the kitchen around 3:25 to make chamomile tea. I was steeping it when the lights flickered at 3:47. I ran upstairs and found Miranda in the server room. I called 911 immediately.",
+            "motive": "Miranda rejected Devon's accessibility-focused redesign to cut costs, calling it 'wasted effort on edge cases.' Devon saw this as discrimination against disabled users and felt morally devastated.",
+            "secrets": [
+                {
+                    "id": "accessibility_fight",
+                    "text": "Devon spent four months designing comprehensive accessibility features - screen readers, high contrast modes, voice navigation. Miranda cut all of it three weeks ago, saying 'Disabled users aren't our market. Stop wasting time.' Devon was devastated - they have a deaf sister and saw it as personal discrimination.",
+                    "trigger": {
+                        "keywords": [
+                            "accessibility",
+                            "disabled",
+                            "users",
+                            "features",
+                            "rejected",
+                            "discrimination",
+                            "cut",
+                            "fight"
+                        ],
+                        "minPressure": 18
+                    }
+                },
+                {
+                    "id": "saw_elena_stairs",
+                    "text": "When Devon went upstairs at 3:38 (couldn't find tea), they saw Elena coming down from the second floor hallway, looking flustered. Devon asked if she was okay. Elena said 'Just stretching my legs, couldn't focus.' Devon thought it was odd but didn't think much of it at the time.",
+                    "trigger": {
+                        "keywords": [
+                            "see",
+                            "saw",
+                            "anyone",
+                            "elena",
+                            "hallway",
+                            "stairs",
+                            "3:38",
+                            "before",
+                            "noticed"
+                        ],
+                        "minPressure": 22
+                    }
+                },
+                {
+                    "id": "elena_timing_realization",
+                    "text": "Devon realizes: 'Wait... I saw Elena on the stairs at 3:38. She said she was in her office the whole time. But the camera loop was 3:35 to 3:39. She was moving around during the loop. That's... that's not possible if she was working. Why would she lie about that?' Devon is visibly shaken.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_devon_saw_elena_stairs",
+                            "logs_03:35"
+                        ],
+                        "keywords": [
+                            "elena",
+                            "3:38",
+                            "loop",
+                            "lying",
+                            "timeline",
+                            "doesn't match",
+                            "alibi"
+                        ],
+                        "minPressure": 26
+                    }
+                },
+                {
+                    "id": "trauma_finding_body",
+                    "text": "Breaks down crying: 'I can't stop seeing it. Her hand was still on the rack. Her eyes were open. The smell of burnt... I ran to her but I knew. I just knew. I called 911 but I couldn't speak at first. I was shaking so hard. I couldn't even tell them what happened. I still can't sleep without seeing her face.' Genuinely traumatized.",
+                    "trigger": {
+                        "keywords": [
+                            "found her",
+                            "body",
+                            "saw",
+                            "911",
+                            "traumatic",
+                            "scared",
+                            "shaking"
+                        ],
+                        "minPressure": 20
+                    }
+                }
+            ],
+            "traits": [
+                "Anxious and visibly traumatized by finding the body",
+                "Second-guesses their own memories and observations",
+                "Passionate about accessibility and inclusive design",
+                "Genuinely wants to help but confused about what they saw",
+                "Speaks quickly when nervous"
+            ],
+            "resistance_level": "low",
+            "tells": "Hands shake noticeably when discussing finding Miranda's body"
+        },
+        {
+            "id": "yuki",
+            "name": "Yuki Miller",
+            "alias": [
+                "yuki",
+                "miller"
+            ],
+            "avatar": "https://i.ibb.co/1Yr0kPNg/female-tech-02.webp",
+            "currentLocation": "master_bedroom",
+            "age": 32,
+            "role": "Miranda's girlfriend (6 months)",
+            "gender": "female",
+            "isGuilty": false,
+            "alibi": "Miranda and I went to bed around 1 AM after the dinner party. I took melatonin for my insomnia and was completely asleep. I didn't hear anything until the emergency alerts went off after 3:50. I thought it was a false alarm at first.",
+            "motive": "Was supposed to inherit controlling stake in company, but didn't know Miranda changed her will 3 days ago after discovering Yuki's corporate espionage.",
+            "secrets": [
+                {
+                    "id": "will_change",
+                    "text": "Miranda changed her will three days ago, completely removing Yuki and leaving everything to a trust. Yuki has no idea - she still thinks she's inheriting 40% of the company. Miranda's lawyer drafted it the same day the patent was approved.",
+                    "trigger": {
+                        "keywords": [
+                            "will",
+                            "inheritance",
+                            "inherit",
+                            "money",
+                            "estate",
+                            "changed",
+                            "removed"
+                        ],
+                        "minPressure": 28
+                    }
+                },
+                {
+                    "id": "corporate_spy",
+                    "text": "Yuki was recruited by rival company TechDyne six months ago to get close to Miranda and steal NexusAI trade secrets. She's been passing information about the algorithm and investor plans. Miranda found out three days ago when TechDyne filed a suspiciously similar patent. That's why Miranda changed the will.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_yuki_will_change"
+                        ],
+                        "keywords": [
+                            "spy",
+                            "rival",
+                            "techdyne",
+                            "corporate",
+                            "espionage",
+                            "secrets",
+                            "why",
+                            "found out"
+                        ],
+                        "minPressure": 38
+                    }
+                },
+                {
+                    "id": "confirmed_asleep",
+                    "text": "Thermal imaging and bedroom motion sensors confirm Yuki was in bed from 1:15 AM to 3:52 AM. Melatonin bottle in bathroom shows she took 10mg at 1:07 AM. She's telling the truth - she was completely unconscious during the murder. Her espionage is real but irrelevant to the murder.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "footage_03:00",
+                            "locations_yuki_03:47"
+                        ],
+                        "keywords": [
+                            "alibi",
+                            "asleep",
+                            "prove",
+                            "thermal",
+                            "imaging",
+                            "confirm",
+                            "really"
+                        ],
+                        "minPressure": 32
+                    }
+                }
+            ],
+            "traits": [
+                "Grief-stricken but hiding guilt about espionage",
+                "Speaks very carefully, choosing words precisely",
+                "Defensive about relationship timeline and intensity",
+                "Avoids questions about her job and industry connections",
+                "Tears up when discussing Miranda, but seems more afraid than sad"
+            ],
+            "resistance_level": "high",
+            "tells": "Changes subject abruptly when corporate connections or TechDyne are mentioned"
+        },
+        {
+            "id": "priya",
+            "name": "Priya Sharma",
+            "alias": [
+                "priya",
+                "sharma"
+            ],
+            "avatar": "https://i.ibb.co/8wTLqMJ/female-tech-03.webp",
+            "currentLocation": "guest_room_3",
+            "age": 41,
+            "role": "Corporate Counsel",
+            "gender": "female",
+            "isGuilty": false,
+            "alibi": "I flew in yesterday afternoon to finalize acquisition documents for the 9 AM meeting. I was exhausted and took an Ambien at 11 PM. I slept through everything - I didn't even hear the sirens. I woke up to police knocking on my door.",
+            "motive": "Miranda was planning illegal acquisition tactics (insider trading, market manipulation) that Priya refused to support. Miranda threatened to frame Priya for fraud if she didn't cooperate.",
+            "secrets": [
+                {
+                    "id": "illegal_tactics",
+                    "text": "Miranda wanted Priya to facilitate insider trading and market manipulation for a hostile takeover of CompuVision. She had Priya draft documents that would let NexusAI illegally coordinate with board members. Priya refused, saying it would cost her law license. Miranda said 'Then you're useless to me.'",
+                    "trigger": {
+                        "keywords": [
+                            "illegal",
+                            "insider trading",
+                            "manipulation",
+                            "takeover",
+                            "acquisition",
+                            "refused",
+                            "unethical"
+                        ],
+                        "minPressure": 24
+                    }
+                },
+                {
+                    "id": "blackmail_threat",
+                    "text": "Two weeks ago, Miranda threatened to frame Priya for securities fraud using fabricated emails. She said 'I'll make it look like you advised these tactics. Your word against mine, and I'm the CEO. You'll be disbarred.' Priya was terrified but called Miranda's bluff, knowing the fabrication would fall apart under scrutiny.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_priya_illegal_tactics"
+                        ],
+                        "keywords": [
+                            "threatened",
+                            "frame",
+                            "fraud",
+                            "disbarred",
+                            "blackmail",
+                            "fabricated",
+                            "emails"
+                        ],
+                        "minPressure": 30
+                    }
+                },
+                {
+                    "id": "knew_elena_motive",
+                    "text": "Priya knew about Elena's stolen algorithm because Miranda consulted her about blocking Elena's lawsuit. Miranda showed Priya the patent filing and said 'Elena's claiming she invented it. Make sure she can't prove it.' Priya reviewed the case and told Miranda it was ethically questionable but probably legal since Elena was an employee. She feels guilty now.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "secret_elena_stolen_algorithm"
+                        ],
+                        "keywords": [
+                            "elena",
+                            "algorithm",
+                            "lawsuit",
+                            "patent",
+                            "knew",
+                            "blocking",
+                            "aware"
+                        ],
+                        "minPressure": 28
+                    }
+                }
+            ],
+            "traits": [
+                "Extremely professional and guarded",
+                "Speaks in precise legal terminology",
+                "Cites attorney-client privilege to avoid questions",
+                "Visibly relieved Miranda is gone, though tries to hide it",
+                "Careful not to speculate or make accusations"
+            ],
+            "resistance_level": "moderate",
+            "tells": "Pauses and takes a breath before answering questions about ethics or legality"
+        },
+        {
+            "id": "marcus",
+            "name": "Marcus Zhao",
+            "alias": [
+                "marcus",
+                "zhao"
+            ],
+            "avatar": "https://i.ibb.co/dsJMGnY1/male-tech-01.webp",
+            "currentLocation": "wine_cellar",
+            "age": 52,
+            "role": "Angel Investor (Lead Series A and B)",
+            "gender": "male",
+            "isGuilty": false,
+            "alibi": "I have terrible insomnia, especially before high-stakes meetings. I went to the wine cellar around 3:20 AM to select a 2015 Château Margaux for the post-presentation celebration. I was examining bottles when the lights flickered. The wine cellar has poor cell reception so I didn't hear the alerts until I came upstairs.",
+            "motive": "Invested $50M across Series A and B. Company is secretly bankrupt - Miranda was burning cash with no path to profitability and hiding losses from other investors.",
+            "secrets": [
+                {
+                    "id": "company_bankrupt",
+                    "text": "Marcus invested $50M total and recently discovered NexusAI is functionally bankrupt. Miranda was using new investor money to pay old debts (Ponzi scheme structure) and hiding catastrophic losses. The 9 AM presentation was supposed to secure $200M Series C to keep the house of cards standing. Marcus would lose everything.",
+                    "trigger": {
+                        "keywords": [
+                            "invested",
+                            "money",
+                            "bankrupt",
+                            "losses",
+                            "fraud",
+                            "50 million",
+                            "losing"
+                        ],
+                        "minPressure": 26
+                    }
+                },
+                {
+                    "id": "wine_cellar_alibi",
+                    "text": "Biometric logs confirm Marcus accessed the wine cellar at 3:20 AM and didn't exit until 3:53 AM. Wine cellar security camera shows him examining bottles at 3:47 AM (time of murder). His alibi is solid - he was genuinely selecting wine and has expensive taste that requires careful consideration.",
+                    "trigger": {
+                        "requiresEvidence": [
+                            "locations_marcus_03:47",
+                            "dna_wine_cellar"
+                        ],
+                        "keywords": [
+                            "alibi",
+                            "wine",
+                            "cellar",
+                            "3:47",
+                            "prove",
+                            "really",
+                            "confirm"
+                        ],
+                        "minPressure": 30
+                    }
+                }
+            ],
+            "traits": [
+                "Wealthy, entitled, and pretentious about wine",
+                "Speaks condescendingly about 'proper investment oversight'",
+                "Visibly angry about lost $50M investment",
+                "Treats the murder as primarily a financial inconvenience",
+                "Name-drops expensive wines and vineyards"
+            ],
+            "resistance_level": "high",
+            "tells": "Clenches jaw and grips his wine glass tightly when financial losses are mentioned"
+        }
+    ],
+    "settings": {
+        "timeLimit": 1800,
+        "startingPoints": 60,
+        "difficulty": "hard",
+        "point_system": {
+            "description": "Points represent investigative resources (questions, pressure tactics, evidence analysis). Each question costs 1 point. Correct deductions refund 2 points. Finding key evidence grants 3 points.",
+            "question_cost": 1,
+            "correct_deduction_reward": 2,
+            "key_evidence_reward": 3
+        },
+        "evidence_system": {
+            "automatic_evidence": "Digital logs, footage timestamps, autopsy, and initial police statements are automatically available",
+            "search_required": "Physical evidence in specific locations requires spending 2 points to search that location",
+            "secret_revealed_evidence": "Some evidence is only discoverable after uncovering specific secrets"
+        }
+    }
+}

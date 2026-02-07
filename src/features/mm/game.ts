@@ -43,7 +43,7 @@ import InterrogationManager from './interrogation.js';
 import { handleStart } from './handlers/start.js';
 import { handleStatus } from './handlers/status.js';
 import { handleJoin } from './handlers/join.js';
-import { handleDNA, handleFootage, handleLogs, handleExplore, handleExamine, handlePresent } from './handlers/tools.js';
+import { handleDNA, handleFootage, handleLogs, handleExplore, handleExamine, handlePresent, handleEvidence } from './handlers/tools.js';
 import { handleAccuse } from './handlers/accuse.js';
 
 /**
@@ -205,6 +205,10 @@ export default class GameManager {
         return handleExplore(this, interaction);
     }
 
+    async handleEvidence(interaction: ChatInputCommandInteraction) {
+        return handleEvidence(this, interaction);
+    }
+
     async handleExamine(interaction: ChatInputCommandInteraction) {
         return handleExamine(this, interaction);
     }
@@ -295,6 +299,7 @@ export default class GameManager {
             }) as TextChannel | undefined;
 
             const isDiscovered = !!(this.activeGame?.state?.discoveredLocations.has(loc));
+            const isMurderLoc = this.activeGame?.config.murderLocation === loc;
 
             if (!channel) {
                 // Creation: Set EVERYTHING at once to avoid rate limit race conditions
@@ -310,11 +315,18 @@ export default class GameManager {
                     permissionOverwrites: [
                         {
                             id: guild.id,
-                            deny: isDiscovered ? [] : ['ViewChannel'],
-                            allow: isDiscovered ? ['ViewChannel'] : []
+                            deny: (isDiscovered || isMurderLoc) ? [] : ['ViewChannel'],
+                            allow: (isDiscovered || isMurderLoc) ? ['ViewChannel'] : [],
+                            // For murder loc if undiscovered, we also need to deny send
                         }
                     ]
                 });
+
+                // If murder loc and undiscovered, we need to explicitly sync perms after creation if creation simple logic wasn't enough
+                if (isMurderLoc && !isDiscovered) {
+                    await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY, isMurderLoc);
+                }
+
             } else {
                 // Optimization: Apply updates only if they changed
                 if (channel.name !== name) {
@@ -323,7 +335,7 @@ export default class GameManager {
                 }
 
                 // Sync topic and permissions
-                await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY);
+                await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY, isMurderLoc);
             }
 
             this.channels.set(loc, channel);
@@ -359,11 +371,11 @@ export default class GameManager {
         if (!this.activeGame?.state || this.activeGame.state.phase !== 'investigating') return;
 
         this.activeGame.end();
-        const killer = this.activeGame.getSuspect(this.activeGame.config.solution);
+        // const killer = this.activeGame.getSuspect(this.activeGame.config.solution);
         const embed = new EmbedBuilder()
             .setColor(Colors.DarkRed)
             .setTitle('⏰ OPERATION ABORTED: TIME EXPIRED')
-            .setDescription(`\`\`\`ansi\n\u001b[1;31m[!] CRITICAL FAILURE: INVESTIGATION WINDOW CLOSED\u001b[0m\n\`\`\`\nThe trail has gone cold. **${killer?.name || 'The killer'}** has vanished into the shadows, leaving no further trace.\n\nYour detective credentials have been temporarily suspended pending an internal review.`);
+            .setDescription(`\`\`\`ansi\n\u001b[1;31m[!] CRITICAL FAILURE: INVESTIGATION WINDOW CLOSED\u001b[0m\n\`\`\`\nThe trail has gone cold. The killer has vanished into the shadows, leaving no further trace.\n\nYour detective credentials have been temporarily suspended pending an internal review.`);
 
         const investigationChannel = this.channels.get('case-briefing');
         if (investigationChannel) await investigationChannel.send({ embeds: [embed] });
@@ -600,6 +612,17 @@ export default class GameManager {
                 }));
 
             await interaction.respond(allEvidence);
+        } else if (focused.name === 'time') {
+            if (!this.activeGame?.state) return;
+            const allDiscovered = Array.from(this.activeGame.state.discoveredEvidence);
+            const logTimes = allDiscovered
+                .filter(e => e.startsWith('logs_'))
+                .map(e => e.replace('logs_', ''))
+                .sort();
+
+            // Autocomplete filtering happens client side mostly, but we can help
+            const filtered = logTimes.filter(t => t.startsWith(focused.value));
+            await interaction.respond(filtered.map(t => ({ name: t, value: t })));
         }
     }
 

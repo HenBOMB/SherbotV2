@@ -29,15 +29,14 @@ export function getRoomEmoji(roomName: string | null | undefined): string {
     const roomMappings: { keywords: string[]; emoji: string }[] = [
         { keywords: ['kitchen'], emoji: '🍳' },
         { keywords: ['living room', 'lounge', 'salon'], emoji: '🛋️' },
-        { keywords: ['bedroom', 'guest room', 'master bedroom'], emoji: '🛏️' },
+        { keywords: ['bedroom', 'guest', 'master bedroom'], emoji: '🛏️' },
         { keywords: ['bathroom', 'shower'], emoji: '🚿' },
         { keywords: ['garden', 'patio', 'yard', 'outdoor'], emoji: '🌳' },
         { keywords: ['home office', 'office', 'study', 'library'], emoji: '📚' },
         { keywords: ['garage'], emoji: '🚗' },
-        { keywords: ['foyer', 'hall', 'entrance', 'corridor'], emoji: '🚪' },
         { keywords: ['dining room', 'diner'], emoji: '🍽️' },
         { keywords: ['wine cellar', 'cellar'], emoji: '🍷' },
-        { keywords: ['server room', 'tech'], emoji: '💻' },
+        { keywords: ['server', 'tech'], emoji: '💻' },
         { keywords: ['lab'], emoji: '🧪' },
         { keywords: ['laundry', 'utility'], emoji: '🧺' },
         { keywords: ['gym', 'fitness', 'workout'], emoji: '🏋️' },
@@ -52,11 +51,12 @@ export function getRoomEmoji(roomName: string | null | undefined): string {
         { keywords: ['kids room', 'playroom', 'nursery'], emoji: '🧸' },
         { keywords: ['music room', 'studio'], emoji: '🎵' },
         { keywords: ['workshop'], emoji: '🛠️' },
+        { keywords: ['foyer', 'hall', 'entrance', 'corridor', 'room'], emoji: '🚪' },
     ];
 
     // Find the first mapping where a keyword is included in the room name.
     const mapping = roomMappings.find(m =>
-        m.keywords.some(keyword => name.includes(keyword))
+        m.keywords.some(keyword => name.replace(/-/g, ' ').includes(keyword))
     );
 
     // If a mapping is found, return its emoji. Otherwise, return the default emoji.
@@ -70,7 +70,8 @@ export async function setChannelVisibility(
     channel: TextChannel,
     isVisible: boolean,
     baseTopic: string,
-    debugMode: boolean = true
+    debugMode: boolean = true,
+    isDiscoveryExempt: boolean = false
 ): Promise<void> {
     const guild = channel.guild;
 
@@ -92,10 +93,25 @@ export async function setChannelVisibility(
     // Only update permissions if they differ to save API calls
     const everyoneId = guild.id;
     const current = channel.permissionOverwrites.cache.get(everyoneId);
-    const mode = isVisible ? true : false;
-    if (!current || current.allow.has('ViewChannel') !== mode || current.deny.has('ViewChannel') === mode) {
+
+    // Mode logic:
+    // If exempt (murder room): Always visible in sidebar, but history/chat depends on discovery.
+    // If normal: Hidden until discovered.
+    const canView = isDiscoveryExempt || isVisible;
+    const canInteract = isVisible;
+
+    // Check if we need to update
+    const needsUpdate = !current ||
+        current.allow.has('ViewChannel') !== canView ||
+        current.allow.has('SendMessages') !== canInteract ||
+        current.allow.has('ReadMessageHistory') !== canInteract ||
+        (canView === false && !current.deny.has('ViewChannel'));
+
+    if (needsUpdate) {
         await channel.permissionOverwrites.edit(everyoneId, {
-            ViewChannel: mode
+            ViewChannel: canView,
+            SendMessages: canInteract,
+            ReadMessageHistory: canInteract
         });
     }
 }

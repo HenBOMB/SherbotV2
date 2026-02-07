@@ -199,7 +199,7 @@ export default class Case {
             // Always reveal the murder location if no explicit entry
             const entry = Object.keys(this.config.map)[0]; // First key as entry
             if (entry) this.state.discoveredLocations.add(entry.toLowerCase());
-            if (this.config.murderLocation) this.state.discoveredLocations.add(this.config.murderLocation.toLowerCase());
+            // if (this.config.murderLocation) this.state.discoveredLocations.add(this.config.murderLocation.toLowerCase());
 
             // In Watson mode, reveal all immediately
             if (difficulty === 'watson') {

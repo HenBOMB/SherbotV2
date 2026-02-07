@@ -30,7 +30,31 @@ export async function handleFootage(
         return;
     }
 
-    const time = interaction.options.getString('time', true);
+    // Smart Time Selection
+    let time = interaction.options.getString('time');
+    const allTimes = Object.keys(activeGame.config.evidence.footage || {}).sort((a, b) => {
+        return manager.parseTimeToMinutes(a) - manager.parseTimeToMinutes(b);
+    });
+
+    if (!time) {
+        // Find latest discovered footage log to suggest continuation
+        const discovered = manager.getDiscoveredEvidence();
+        const discoveredTimes = allTimes.filter(t => discovered.has(`footage_${t}`));
+
+        if (discoveredTimes.length > 0) {
+            // Default to the last one they found (most recent discovery)
+            // Or the earliest one? Let's go with the one that appears visually first in the sequence?
+            // Actually, let's default to the *first* available one so they can click "Next" through them.
+            time = discoveredTimes[0];
+        } else if (allTimes.length > 0) {
+            // New game, just pick the first one
+            time = allTimes[0];
+        } else {
+            await interaction.reply({ content: 'No footage data available in this case.', ephemeral: true });
+            return;
+        }
+    }
+
     const result = tools.viewFootage(time);
     let battery = 100;
 
@@ -44,11 +68,7 @@ export async function handleFootage(
         { battery }
     );
 
-    // Get all timestamps for buttons
-    const allTimes = Object.keys(activeGame.config.evidence.footage || {}).sort((a, b) => {
-        return manager.parseTimeToMinutes(a) - manager.parseTimeToMinutes(b);
-    });
-
+    // Ensure our selected time is in the list for buttons (it really should be if valid)
     const currentIndex = allTimes.indexOf(time);
     const row = manager.createFootageButtons(currentIndex, allTimes);
 
@@ -63,7 +83,7 @@ export async function handleFootage(
         manager.broadcastDashboardState();
 
         // Register evidence for secret triggers
-        manager.addDiscoveredEvidence(`logs_${time}`);
+        manager.addDiscoveredEvidence(`footage_${time}`);
 
         const stats = manager.getOrCreateStats(interaction.user.id, interaction.user.username);
         stats.toolsUsed++;
@@ -99,7 +119,7 @@ export async function handleFootage(
             const newResult = tools.viewFootage(newTime, false);
 
             // Register evidence for secret triggers
-            manager.addDiscoveredEvidence(`logs_${newTime}`);
+            manager.addDiscoveredEvidence(`footage_${newTime}`);
 
             const newEmbed = createToolEmbed(
                 'footage',

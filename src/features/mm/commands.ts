@@ -54,8 +54,9 @@ export const mmCommands = new SlashCommandBuilder()
             .setDescription('View camera footage at a time')
             .addStringOption(opt =>
                 opt.setName('time')
-                    .setDescription('Time to check (e.g., 21:00, 21:30)')
-                    .setRequired(true)
+                    .setDescription('Time to check (e.g., 21:00). Leave empty to pick from history.')
+                    .setRequired(false)
+                    .setAutocomplete(true)
             )
     )
     .addSubcommand(sub =>
@@ -76,8 +77,8 @@ export const mmCommands = new SlashCommandBuilder()
             .setDescription('Examine physical evidence in detail')
             .addStringOption(opt =>
                 opt.setName('item')
-                    .setDescription('Evidence ID to examine (e.g., blood_splatter, safe)')
-                    .setRequired(true)
+                    .setDescription('Evidence ID to examine (e.g., blood_splatter, safe). Leave empty to cycle through room items.')
+                    .setRequired(false)
                     .setAutocomplete(true)
             )
     )
@@ -110,6 +111,10 @@ export const mmCommands = new SlashCommandBuilder()
     .addSubcommand(sub =>
         sub.setName('suspects')
             .setDescription('List all suspects and their alibies')
+    )
+    .addSubcommand(sub =>
+        sub.setName('evidence')
+            .setDescription('List and show all collected evidence')
     )
     .addSubcommand(sub =>
         sub.setName('secrets')

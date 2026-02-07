@@ -127,5 +127,3 @@ dist
 .pnp.*
 
 test/
-
-.env

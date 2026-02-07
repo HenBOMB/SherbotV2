@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { GuildMember, TextChannel, Webhook, EmbedBuilder, Colors } from "discord.js";
 import { SuspectData, SecretData, SuspectState } from './case.js';
 import { buildSystemPrompt, buildPressureHint } from './prompts.js';
+import { tokenTracker } from '../../utils/token-tracker.js';
 import { logger } from '../../utils/logger.js';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
@@ -541,6 +542,9 @@ export default class Suspect {
                 temperature: 0.9,
             });
 
+            // Track token consumption
+            tokenTracker.track(this.data.id, OPENAI_MODEL, response.usage);
+
             let text = response.choices[0].message.content || '*stares silently*';
 
             // Apply behavioral tells
@@ -670,6 +674,10 @@ export default class Suspect {
                 max_tokens: 200,
                 temperature: 0.8,
             });
+
+            // Track token consumption
+            tokenTracker.track(this.data.id, OPENAI_MODEL, response.usage);
+
             const duration = Date.now() - startTime;
 
             const text = response.choices[0].message.content || '';

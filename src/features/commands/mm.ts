@@ -54,6 +54,10 @@ const command: Command = {
                 await gameManager.handleExplore(interaction);
                 break;
 
+            case 'evidence':
+                await gameManager.handleEvidence(interaction);
+                break;
+
             case 'examine':
                 await gameManager.handleExamine(interaction);
                 break;
