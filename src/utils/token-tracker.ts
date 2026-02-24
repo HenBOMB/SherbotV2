@@ -1,9 +1,12 @@
 import fs from 'fs';
 import path from 'path';
+import { TokenUsageLog } from '../database.js';
 
 interface TokenUsage {
     timestamp: number;
     suspectId: string;
+    caseId?: string | null;
+    guildId?: string | null;
     promptTokens: number;
     completionTokens: number;
     totalTokens: number;
@@ -26,12 +29,14 @@ export class TokenTracker {
         }
     }
 
-    public track(suspectId: string, model: string, usage: any) {
+    public async track(suspectId: string, model: string, usage: any, caseId: string | null = null, guildId: string | null = null) {
         if (!usage) return;
 
         const entry: TokenUsage = {
             timestamp: Date.now(),
             suspectId,
+            caseId,
+            guildId,
             model,
             promptTokens: usage.prompt_tokens || 0,
             completionTokens: usage.completion_tokens || 0,
@@ -43,6 +48,20 @@ export class TokenTracker {
         fs.appendFile(this.reportPath, line, (err) => {
             if (err) console.error('Failed to log token usage:', err);
         });
+
+        try {
+            await TokenUsageLog.create({
+                suspectId: entry.suspectId !== '-1' ? entry.suspectId : null,
+                caseId: entry.caseId,
+                guildId: entry.guildId,
+                model: entry.model,
+                promptTokens: entry.promptTokens,
+                completionTokens: entry.completionTokens,
+                totalTokens: entry.totalTokens
+            });
+        } catch (dbErr) {
+            console.error('Failed to log token usage to DB:', dbErr);
+        }
     }
 }
 

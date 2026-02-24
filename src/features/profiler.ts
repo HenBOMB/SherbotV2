@@ -7,7 +7,7 @@ import { config } from "../config.js";
 const SCAN_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours
 const MAX_CHANNELS = 3;
 const MESSAGES_PER_USER = 50;
-const LOOKBACK_HOURS = 24;
+const LOOKBACK_HOURS = 72; // 3 days
 
 export default async function (client: Client) {
     if (!config.features.profiler?.enabled) {
@@ -58,7 +58,7 @@ export default async function (client: Client) {
 /**
  * Main scanner logic
  */
-async function runScanner(client: Client) {
+export async function runScanner(client: Client) {
     logger.info("--- Starting User Profiling Session ---");
 
     const targetGuildIds = config.features.profiler.targetGuilds;
@@ -178,8 +178,8 @@ async function processGuild(guild: Guild) {
         // 3. Generate/Refine profiles
         for (const [userId, messages] of UserMessages) {
             // Only profile users with at least 5 messages for better quality
-            if (messages.length < 5) {
-                logger.debug(`  - Skipping user ${userId}: only ${messages.length} messages found (min 5).`);
+            if (messages.length < 2) {
+                logger.debug(`  - Skipping user ${userId}: only ${messages.length} messages found (min 2).`);
                 continue;
             }
 
@@ -189,7 +189,7 @@ async function processGuild(guild: Guild) {
                 let finalProfile: string;
                 if (existingModel) {
                     logger.info(`  - Updating profile for ${userId}...`);
-                    finalProfile = await refineProfile(existingModel.profile, messages);
+                    finalProfile = await refineProfile(existingModel.profile, messages, userId);
 
                     await existingModel.update({
                         profile: finalProfile,
@@ -198,7 +198,7 @@ async function processGuild(guild: Guild) {
                     });
                 } else {
                     logger.info(`  - Generating first profile for ${userId}...`);
-                    finalProfile = await generateProfile(messages);
+                    finalProfile = await generateProfile(messages, userId);
 
                     await UserProfile.create({
                         userId,

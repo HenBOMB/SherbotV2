@@ -41,9 +41,10 @@ export async function sendTip(client: Client, tipId: number, channelId: string, 
         const row = new ActionRowBuilder<ButtonBuilder>();
 
         if (targetLanguage && targetLanguage.toLowerCase() !== 'english') {
+            const title = targetLanguage === 'Spanish' ? 'Traducir' : 'Translate'
             const translateBtn = new ButtonBuilder()
                 .setCustomId(`translate_tip_${tipId}`)
-                .setLabel(`Translate (${targetLanguage})`)
+                .setLabel(title)
                 .setStyle(ButtonStyle.Secondary)
                 .setEmoji('🌍');
             row.addComponents(translateBtn);

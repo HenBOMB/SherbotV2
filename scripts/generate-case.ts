@@ -34,7 +34,6 @@ async function main() {
         );
 
         console.log(`\n📁 Saved to: data/cases/${caseConfig.id}/case.json`);
-        console.log(`👉 To play: /mm start case:${caseConfig.id}`);
 
     } catch (error) {
         console.error("❌ Generation Failed:", error);

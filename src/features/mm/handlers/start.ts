@@ -1,7 +1,10 @@
 import {
     ChatInputCommandInteraction,
     EmbedBuilder,
-    Colors
+    Colors,
+    ButtonBuilder,
+    ActionRowBuilder,
+    ButtonStyle
 } from 'discord.js';
 import { hasPermission, denyPermission } from '../commands.js';
 import { logger } from '../../../utils/logger.js';
@@ -11,7 +14,7 @@ import GameManager from '../game.js';
 import { createCaseBriefingEmbeds } from '../commands.js';
 
 /**
- * Handle /mm start command
+ * Handle /mma start command
  */
 export async function handleStart(
     manager: GameManager,
@@ -24,6 +27,35 @@ export async function handleStart(
         return;
     }
 
+    const detectiveRoleId = await manager.getDetectiveRoleId(interaction.guild || undefined);
+    if (!detectiveRoleId) {
+        const setupEmbed = new EmbedBuilder()
+            .setColor(Colors.Red)
+            .setTitle('🚨 Missing Investigator Credentials')
+            .setDescription("A formal investigation requires a 'Detective' or 'Inspector' role. Shall I issue new credentials (create role), or is there an existing division I should assign (select role)?");
+
+        const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('mma-setup-create-role')
+                    .setLabel('Create \'Detective\' Role')
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji('🔨'),
+                new ButtonBuilder()
+                    .setCustomId('mma-setup-select-role')
+                    .setLabel('Select Existing Role')
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji('📋')
+            );
+
+        await interaction.reply({
+            embeds: [setupEmbed],
+            components: [row],
+            ephemeral: true,
+        });
+        return;
+    }
+
     const activeGame = manager.getActiveGame();
     if (activeGame?.isActive()) {
         await interaction.reply({
@@ -31,7 +63,7 @@ export async function handleStart(
                 new EmbedBuilder()
                     .setColor(Colors.Orange)
                     .setTitle('⚠️ Game in Progress')
-                    .setDescription('A game is already running. End it first with `/mm end`.')
+                    .setDescription('A game is already running. End it first with `/mma end`.')
             ],
             ephemeral: true,
         });
@@ -65,6 +97,15 @@ export async function handleStart(
         // Initialize stats for the starter
         manager.getOrCreateStats(userId, interaction.user.username);
 
+        // Ensure the starter user gets the MM role
+        try {
+            const member = await interaction.guild?.members.fetch(userId);
+            const detectiveRoleId = await manager.getDetectiveRoleId(interaction.guild || undefined);
+            if (member && detectiveRoleId) await member.roles.add(detectiveRoleId);
+        } catch (e) {
+            logger.warn(`Failed to add role to starter ${userId}`, e);
+        }
+
         // Initialize suspects from case data
         const suspectsMap = manager.getSuspectsMap();
         suspectsMap.clear();
@@ -96,14 +137,38 @@ export async function handleStart(
         const { embeds, files } = createCaseBriefingEmbeds(newCase.config, {
             timeLimit: newCase.config.settings.timeLimit,
             points: newCase.config.settings.startingPoints,
-            players: [userId]
+            players: [userId],
+            roomChannels: manager.getChannelsMap()
         });
+
+        const joinButton = new ButtonBuilder()
+            .setCustomId('mm-join')
+            .setLabel('Join Investigation')
+            .setStyle(ButtonStyle.Success)
+            .setEmoji('🔍');
+
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinButton);
 
         if (briefingChannel) {
             try {
                 // Clear previous messages
                 await briefingChannel.bulkDelete(20, true).catch(() => { });
+
+                // 1. Send the dossier dossier
                 await briefingChannel.send({ embeds, files });
+
+                // 2. Send the JOIN Call-to-Action
+                const joinEmbed = new EmbedBuilder()
+                    .setColor(Colors.Green)
+                    .setTitle('🕵🏻 Join the Investigation')
+                    .setDescription('Click the button below to join the detective team. Only joined members can participate in interrogations and use detective tools.')
+                    .setFooter({ text: 'Detective Role required to send messages in case channels' });
+
+                await briefingChannel.send({
+                    embeds: [joinEmbed],
+                    components: [row]
+                });
+
                 // Also ping the players
                 await briefingChannel.send(`📢 **DETECTIVES NEEDED!** <@${interaction.user.id}> has initiated a Crime Scene Investigation. Review the dossier above and report to the scene.`);
             } catch (e) {
@@ -112,14 +177,14 @@ export async function handleStart(
         }
 
         await interaction.editReply({
-            content: `🕵️ **Investigation Started!**\nHead over to <#${briefingChannel?.id}> to review the case details.`
+            content: `🕵️ **The game is afoot!**\nA scene awaits your inspection in <#${briefingChannel?.id}>. Review the dossier and begin your investigation.`
         });
 
         // Update dashboard
         manager.broadcastDashboardState();
         manager.getDashboard().addEvent('game_start', `Game started: ${newCase.config.name}`);
 
-        logger.info(`Murder Mystery game started: ${caseId} by ${interaction.user.tag}`);
+        logger.info(`The game is afoot: "${caseId}" has been initiated in guild ${interaction.guildId} by ${interaction.user.tag}.`);
     } catch (error) {
         logger.error('Failed to start game:', error);
         await interaction.editReply({

@@ -1,13 +1,16 @@
-import { ChatInputCommandInteraction, AutocompleteInteraction, Client } from 'discord.js';
-import { mmCommands } from '../mm/commands.js';
+import { ChatInputCommandInteraction, AutocompleteInteraction, Client, ButtonInteraction } from 'discord.js';
+import { mmCommands, hasServerPremium, denyServerPremium } from '../mm/commands.js';
 import GameManager from '../mm/game.js';
 import { Command } from '../../types.js';
 
 const command: Command = {
-    guild: '1462571184787947674', // Your server ID
+    // guild: '1462571184787947674', // Your server ID
     data: mmCommands,
 
     async execute(interaction: ChatInputCommandInteraction) {
+        if (!await hasServerPremium(interaction.guildId)) {
+            return denyServerPremium(interaction);
+        }
         let gameManager = GameManager.getInstance(interaction.guildId || undefined);
 
         // Lazy init if first time
@@ -86,11 +89,26 @@ const command: Command = {
                 await gameManager.handleHelp(interaction);
                 break;
 
+
             default:
                 await interaction.reply({
                     content: `Unknown subcommand: ${subcommand}`,
                     ephemeral: true,
                 });
+        }
+    },
+
+    async click(interaction: ButtonInteraction) {
+        if (interaction.customId === 'mm-join') {
+            let gameManager = GameManager.getInstance(interaction.guildId || undefined);
+            if (!gameManager && interaction.guild) {
+                gameManager = new GameManager(interaction.client, interaction.guild.id, 'data');
+            }
+            if (gameManager) {
+                await gameManager.handleJoin(interaction);
+            } else {
+                await interaction.reply({ content: 'Failed to initialize game manager.', ephemeral: true });
+            }
         }
     },
 

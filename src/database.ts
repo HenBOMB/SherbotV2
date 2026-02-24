@@ -21,6 +21,9 @@ export class Server extends Model<InferAttributes<Server>, InferCreationAttribut
     declare tip_channel: CreationOptional<string | null>;
     declare tips_enabled: CreationOptional<boolean>;
     declare language: CreationOptional<string | null>;
+    declare isPremium: CreationOptional<boolean>;
+    declare lastGeneratedAt: CreationOptional<Date | null>;
+    declare detectiveRoleId: CreationOptional<string | null>;
 }
 
 // Define TipTranslation model
@@ -87,6 +90,19 @@ export class InterrogationLog extends Model<InferAttributes<InterrogationLog>, I
     declare createdAt: CreationOptional<Date>;
 }
 
+// Define TokenUsageLog model for tracking all AI token usage
+export class TokenUsageLog extends Model<InferAttributes<TokenUsageLog>, InferCreationAttributes<TokenUsageLog>> {
+    declare id: CreationOptional<number>;
+    declare caseId: string | null;
+    declare suspectId: string | null;
+    declare guildId: string | null;
+    declare model: string;
+    declare promptTokens: number;
+    declare completionTokens: number;
+    declare totalTokens: number;
+    declare createdAt: CreationOptional<Date>;
+}
+
 Server.init({
     id: {
         type: DataTypes.STRING,
@@ -109,6 +125,21 @@ Server.init({
         defaultValue: false,
     },
     language: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        defaultValue: null,
+    },
+    isPremium: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    },
+    lastGeneratedAt: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+    },
+    detectiveRoleId: {
         type: DataTypes.STRING,
         allowNull: true,
         defaultValue: null,
@@ -338,7 +369,53 @@ InterrogationLog.init({
     indexes: [
         { fields: ['caseId'] },
         { fields: ['suspectId'] },
-        { fields: ['userId'] }
+    ]
+});
+
+TokenUsageLog.init({
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+    },
+    caseId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    suspectId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    guildId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    model: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    promptTokens: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    completionTokens: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    totalTokens: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+    },
+    createdAt: DataTypes.DATE
+}, {
+    sequelize,
+    tableName: 'TokenUsageLogs',
+    timestamps: true,
+    updatedAt: false,
+    indexes: [
+        { fields: ['caseId'] },
+        { fields: ['suspectId'] },
+        { fields: ['model'] }
     ]
 });
 
@@ -359,6 +436,26 @@ export async function initializeDatabase() {
             try {
                 await sequelize.query('ALTER TABLE Servers ADD COLUMN language VARCHAR(255);');
                 logger.info('Added language column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            try {
+                await sequelize.query('ALTER TABLE Servers ADD COLUMN isPremium BOOLEAN NOT NULL DEFAULT 0;');
+                logger.info('Added isPremium column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            try {
+                await sequelize.query('ALTER TABLE Servers ADD COLUMN lastGeneratedAt DATETIME DEFAULT NULL;');
+                logger.info('Added lastGeneratedAt column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            try {
+                await sequelize.query('ALTER TABLE Servers ADD COLUMN detectiveRoleId VARCHAR(255) DEFAULT NULL;');
+                logger.info('Added detectiveRoleId column to Servers table.');
+            } catch (e) { /* ignore */ }
+
+            try {
+                await sequelize.query('ALTER TABLE TokenUsageLogs ADD COLUMN guildId VARCHAR(255) DEFAULT NULL;');
+                logger.info('Added guildId column to TokenUsageLogs table.');
             } catch (e) { /* ignore */ }
 
             // MMGames migration helper
@@ -382,6 +479,8 @@ export async function initializeDatabase() {
             // Ensure InterrogationCache and Logs tables exist (sync should handle it, but for safety in dev)
             await InterrogationCache.sync();
             await InterrogationLog.sync();
+            await TokenUsageLog.sync();
+            await UserProfile.sync();
         }
 
         // Initialize default guild if configured

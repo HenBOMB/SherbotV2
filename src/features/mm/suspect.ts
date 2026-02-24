@@ -567,12 +567,13 @@ export default class Suspect {
             ], {
                 max_tokens: 150,
                 temperature: 0.9,
-                model: LOCAL_MODEL // Use fast local model for reactions
+                model: LOCAL_MODEL, // Use fast local model for reactions
+                guildId: channel.guildId
             });
 
             // Track token consumption
             if (response.usage) {
-                tokenTracker.track(this.data.id, LOCAL_MODEL, response.usage);
+                tokenTracker.track(this.data.id, LOCAL_MODEL, response.usage, caseId, channel.guildId);
             }
 
             // Calculate AI latency
@@ -832,12 +833,13 @@ export default class Suspect {
                 // max_tokens: 200,
                 // temperature: 0.8,
                 // model: 'deepseek-r1:1.5b'
-                model: GEMINI_MODEL
+                model: GEMINI_MODEL,
+                guildId: channel.guildId
             });
 
             // Track token consumption
             if (response.usage) {
-                tokenTracker.track(this.data.id, GEMINI_MODEL, response.usage);
+                tokenTracker.track(this.data.id, GEMINI_MODEL, response.usage, caseId, channel.guildId);
             }
 
             const duration = Date.now() - startTime;

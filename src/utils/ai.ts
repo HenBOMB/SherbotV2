@@ -4,7 +4,7 @@ import { logger } from "./logger.js";
 /**
  * Generate an initial profile for a user based on their messages.
  */
-export async function generateProfile(messages: string[]): Promise<string> {
+export async function generateProfile(messages: string[], userId: string): Promise<string> {
     if (messages.length === 0) return "No sufficient message history to generate a profile.";
 
     const input = messages.join("\n");
@@ -18,7 +18,9 @@ export async function generateProfile(messages: string[]): Promise<string> {
             { role: 'user', content: `Here are the messages:\n\n${input}` }
         ], {
             temperature: 0.7,
-            max_tokens: 300
+            max_tokens: 300,
+            suspectId: userId,
+            caseId: 'system_profiler'
         });
 
         return response.content?.trim() || "Failed to generate profile.";
@@ -31,7 +33,7 @@ export async function generateProfile(messages: string[]): Promise<string> {
 /**
  * Refine an existing profile with new messages.
  */
-export async function refineProfile(existingProfile: string, newMessages: string[]): Promise<string> {
+export async function refineProfile(existingProfile: string, newMessages: string[], userId: string): Promise<string> {
     if (newMessages.length === 0) return existingProfile;
 
     const input = newMessages.join("\n");
@@ -51,7 +53,9 @@ ${existingProfile}`
             { role: 'user', content: `New messages for analysis:\n\n${input}` }
         ], {
             temperature: 0.7,
-            max_tokens: 400
+            max_tokens: 400,
+            suspectId: userId,
+            caseId: 'system_profiler'
         });
 
         return response.content?.trim() || existingProfile;

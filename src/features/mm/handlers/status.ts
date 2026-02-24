@@ -19,8 +19,8 @@ export async function handleStatus(
             embeds: [
                 new EmbedBuilder()
                     .setColor(Colors.Grey)
-                    .setTitle('No Active Game')
-                    .setDescription('Start a game with `/mm start <case>`')
+                    .setTitle('🗄️ Case File Closed')
+                    .setDescription('A crime scene has yet to be reported. Please consult with the local authorities to initiate a search.')
             ],
             ephemeral: true,
         });

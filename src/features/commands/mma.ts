@@ -7,21 +7,29 @@ import {
     ButtonStyle,
     ButtonInteraction,
     EmbedBuilder,
-    Colors
+    Colors,
+    StringSelectMenuInteraction,
+    RoleSelectMenuInteraction,
+    RoleSelectMenuBuilder
 } from 'discord.js';
-import { mmaCommands, hasPermission, denyPermission, AUTHORIZED_ADMIN_ID } from '../mm/commands.js';
+import { mmaCommands, hasPermission, denyPermission, AUTHORIZED_ADMIN_ID, hasServerPremium, denyServerPremium } from '../mm/commands.js';
 import GameManager from '../mm/game.js';
+import { Server } from '../../database.js';
 import { Command } from '../../types.js';
 import { logger } from '../../utils/logger.js';
 import { exec } from 'child_process';
 
 const command: Command = {
-    guild: '1462571184787947674', // Your server ID
+    // guild: '1462571184787947674', // Your server ID
     data: mmaCommands,
 
     async execute(interaction: ChatInputCommandInteraction) {
         if (!hasPermission(interaction)) {
             return denyPermission(interaction);
+        }
+
+        if (!await hasServerPremium(interaction.guildId)) {
+            return denyServerPremium(interaction);
         }
 
         let gameManager = GameManager.getInstance(interaction.guildId || undefined);
@@ -61,32 +69,36 @@ const command: Command = {
                 await gameManager.handleCleanup(interaction);
                 break;
 
-            case 'shutdown': {
-                const row = new ActionRowBuilder<ButtonBuilder>()
-                    .addComponents(
-                        new ButtonBuilder()
-                            .setCustomId('mma-shutdown-confirm')
-                            .setLabel('Confirm SYSTEM Shutdown')
-                            .setStyle(ButtonStyle.Danger),
-                        new ButtonBuilder()
-                            .setCustomId('mma-shutdown-cancel')
-                            .setLabel('Cancel')
-                            .setStyle(ButtonStyle.Secondary)
-                    );
-
-                const embed = new EmbedBuilder()
-                    .setColor(Colors.Red)
-                    .setTitle('🚨 CRITICAL: System Power Off Request')
-                    .setDescription('Are you sure you want to **SHUT DOWN THE SERVER COMPUTER**? This will literally power off the machine.')
-                    .setFooter({ text: 'Ensure the bot has sudo permission for "shutdown now".' });
-
-                await interaction.reply({
-                    embeds: [embed],
-                    components: [row],
-                    ephemeral: true
-                });
+            case 'generate':
+                await gameManager.handleGenerate(interaction);
                 break;
-            }
+
+            // case 'shutdown': {
+            //     const row = new ActionRowBuilder<ButtonBuilder>()
+            //         .addComponents(
+            //             new ButtonBuilder()
+            //                 .setCustomId('mma-shutdown-confirm')
+            //                 .setLabel('Confirm SYSTEM Shutdown')
+            //                 .setStyle(ButtonStyle.Danger),
+            //             new ButtonBuilder()
+            //                 .setCustomId('mma-shutdown-cancel')
+            //                 .setLabel('Cancel')
+            //                 .setStyle(ButtonStyle.Secondary)
+            //         );
+
+            //     const embed = new EmbedBuilder()
+            //         .setColor(Colors.Red)
+            //         .setTitle('🚨 CRITICAL: System Power Off Request')
+            //         .setDescription('Are you sure you want to **SHUT DOWN THE SERVER COMPUTER**? This will literally power off the machine.')
+            //         .setFooter({ text: 'Ensure the bot has sudo permission for "shutdown now".' });
+
+            //     await interaction.reply({
+            //         embeds: [embed],
+            //         components: [row],
+            //         ephemeral: true
+            //     });
+            //     break;
+            // }
 
             default:
                 await interaction.reply({
@@ -128,12 +140,60 @@ const command: Command = {
             setTimeout(() => {
                 process.exit(0);
             }, 3000);
-        } else if (interaction.customId === 'mma-shutdown-cancel') {
+        } else if (interaction.customId === 'mma-setup-create-role') {
+            if (!interaction.guild) return;
+            try {
+                const role = await interaction.guild.roles.create({
+                    name: 'Detective',
+                    color: Colors.Blue,
+                    reason: 'Created for Murder Mystery games'
+                });
+                await Server.upsert({ id: interaction.guild.id, detectiveRoleId: role.id });
+                await interaction.update({
+                    content: `✅ Successfully created and assigned the ${role.toString()} role! You can now start the case with \`/mma start\`.`,
+                    embeds: [],
+                    components: []
+                });
+            } catch (error) {
+                await interaction.update({
+                    content: `❌ Failed to create the role. Ensure I have the "Manage Roles" permission.`,
+                    embeds: [],
+                    components: []
+                });
+            }
+        } else if (interaction.customId === 'mma-setup-select-role') {
+            const selectMenu = new RoleSelectMenuBuilder()
+                .setCustomId('mma-setup-role-select')
+                .setPlaceholder('Select the detective role...');
+
+            const row = new ActionRowBuilder<RoleSelectMenuBuilder>().addComponents(selectMenu);
+
             await interaction.update({
-                content: '✅ Shutdown cancelled.',
+                content: 'Please select the existing role you want to use for investigators:',
                 embeds: [],
-                components: []
+                components: [row]
             });
+        }
+    },
+
+    async select(interaction: StringSelectMenuInteraction | RoleSelectMenuInteraction) {
+        if (interaction.isRoleSelectMenu() && interaction.customId === 'mma-setup-role-select') {
+            if (!interaction.guild) return;
+            const roleId = interaction.values[0];
+            try {
+                await Server.upsert({ id: interaction.guild.id, detectiveRoleId: roleId });
+                await interaction.update({
+                    content: `✅ Successfully set the detective role! You can now start the case with \`/mma start\`.`,
+                    embeds: [],
+                    components: []
+                });
+            } catch (error) {
+                await interaction.update({
+                    content: `❌ Failed to save the role to the database.`,
+                    embeds: [],
+                    components: []
+                });
+            }
         }
     },
 

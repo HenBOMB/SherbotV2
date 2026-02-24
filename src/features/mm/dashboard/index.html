@@ -77,6 +77,12 @@
                 <button onclick="showTab('tips')" id="tab-tips"
                     class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">Daily
                     Tips</button>
+                <button onclick="showTab('profiles')" id="tab-profiles"
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">User
+                    Profiles</button>
+                <button onclick="showTab('tokens')" id="tab-tokens"
+                    class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">Token
+                    Logs</button>
                 <button onclick="showTab('db')" id="tab-db"
                     class="px-4 py-2 rounded-md text-sm font-medium transition-all text-gray-400 hover:text-white">Database
                     Explorer</button>
@@ -96,7 +102,7 @@
                 <div class="text-6xl mb-4">🕵️</div>
                 <h2 class="text-2xl font-semibold text-gray-300 mb-2">No Active Game</h2>
                 <p class="text-gray-500">Start a murder mystery game with <code
-                        class="bg-dark-700 px-2 py-1 rounded">/mm start</code></p>
+                        class="bg-dark-700 px-2 py-1 rounded">/mma start</code></p>
             </div>
 
             <!-- Game Dashboard -->
@@ -181,6 +187,98 @@
                 </div>
                 <div id="tipsInfo" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                     <p class="text-gray-500 italic py-4">Loading tips data...</p>
+                </div>
+            </section>
+        </div>
+
+        <div id="tabContent-profiles" class="tab-content hidden">
+            <!-- User Profiles Section -->
+            <section class="glass rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>👤</span> AI User Profiles
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <span id="profilesCount" class="text-sm text-gray-400">Loading...</span>
+                        <button onclick="loadProfiles()"
+                            class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-300 border border-gray-600/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="profilesGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <p class="text-gray-500 italic py-4 col-span-full">Loading profiles...</p>
+                </div>
+
+                <div id="profilesPagination"
+                    class="flex justify-between items-center mt-6 pt-4 border-t border-gray-800 hidden">
+                    <span id="profilesPaginationInfo" class="text-sm text-gray-500"></span>
+                    <div class="flex gap-2">
+                        <button id="profilesPrevBtn"
+                            class="px-3 py-1 rounded bg-dark-700 hover:bg-dark-600 text-sm disabled:opacity-30">Previous</button>
+                        <button id="profilesNextBtn"
+                            class="px-3 py-1 rounded bg-dark-700 hover:bg-dark-600 text-sm disabled:opacity-30">Next</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <div id="tabContent-tokens" class="tab-content hidden">
+            <!-- Token Logs Section -->
+            <section class="glass rounded-xl p-6">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>🪙</span> Token Consumption Logs
+                    </h3>
+                    <div class="flex items-center gap-2">
+                        <span id="tokensCount" class="text-sm text-gray-400">Loading...</span>
+                        <button onclick="loadTokens()"
+                            class="p-2 rounded-lg bg-dark-700 hover:bg-dark-600 text-gray-300 border border-gray-600/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto -mx-6 px-6">
+                    <table class="w-full text-left text-sm whitespace-nowrap">
+                        <thead class="bg-dark-800/50 text-gray-400 font-medium border-y border-gray-700/50">
+                            <tr>
+                                <th class="px-4 py-3">Time</th>
+                                <th class="px-4 py-3">Case ID</th>
+                                <th class="px-4 py-3">Suspect/System</th>
+                                <th class="px-4 py-3">Model</th>
+                                <th class="px-4 py-3">Guild ID</th>
+                                <th class="px-4 py-3 text-right">Prompt</th>
+                                <th class="px-4 py-3 text-right">Completion</th>
+                                <th class="px-4 py-3 text-right">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tokensTableData" class="divide-y divide-gray-800/50">
+                            <tr>
+                                <td colspan="7" class="py-10 text-center text-gray-500">Loading token data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="tokensPagination"
+                    class="flex justify-between items-center mt-6 pt-4 border-t border-gray-800 hidden">
+                    <span id="tokensPaginationInfo" class="text-sm text-gray-500"></span>
+                    <div class="flex gap-2">
+                        <button id="tokensPrevBtn"
+                            class="px-3 py-1 rounded bg-dark-700 hover:bg-dark-600 text-sm disabled:opacity-30">Previous</button>
+                        <button id="tokensNextBtn"
+                            class="px-3 py-1 rounded bg-dark-700 hover:bg-dark-600 text-sm disabled:opacity-30">Next</button>
+                    </div>
                 </div>
             </section>
         </div>
@@ -761,6 +859,139 @@
 
             if (tabId === 'db') {
                 loadTables();
+            } else if (tabId === 'profiles') {
+                loadProfiles();
+            } else if (tabId === 'tokens') {
+                loadTokens();
+            }
+        }
+
+        let profilesOffset = 0;
+        const profilesLimit = 12;
+
+        async function loadProfiles(offset = 0) {
+            profilesOffset = offset;
+            const grid = document.getElementById('profilesGrid');
+            const countLabel = document.getElementById('profilesCount');
+
+            try {
+                grid.innerHTML = '<p class="text-gray-500 italic py-4 col-span-full text-center">Loading profiles...</p>';
+                const response = await fetch(`/api/profiles?limit=${profilesLimit}&offset=${offset}`);
+                const data = await response.json();
+
+                countLabel.textContent = `${data.total} Total Profiles`;
+
+                if (!data.profiles || data.profiles.length === 0) {
+                    grid.innerHTML = '<p class="text-gray-500 italic py-8 col-span-full text-center">No compiled user profiles in database.</p>';
+                    document.getElementById('profilesPagination').classList.add('hidden');
+                    return;
+                }
+
+                grid.innerHTML = data.profiles.map(p => {
+                    const updateDate = new Date(p.lastUpdated).toLocaleString();
+                    return `
+                        <div class="bg-dark-800/60 border border-gray-700/50 hover:border-purple-500/50 transition-colors rounded-xl p-5 flex flex-col h-full">
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2">
+                                    <h4 class="font-bold text-white text-lg">${p.userId}</h4>
+                                    <span class="text-xs bg-dark-900 px-2 py-1 rounded text-gray-400 border border-gray-800" title="Guild ID">${p.guildId}</span>
+                                </div>
+                                <div class="text-xs bg-purple-900/30 text-purple-300 font-bold px-2 py-1 rounded">
+                                    ${p.messageCount} msgs
+                                </div>
+                            </div>
+                            <div class="text-sm text-gray-300 flex-grow whitespace-pre-wrap leading-relaxed mt-2">${p.profile}</div>
+                            <div class="mt-4 pt-3 border-t border-gray-700/50 text-right text-[10px] text-gray-500 uppercase tracking-widest">
+                                Scan of ${updateDate}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Pagination configuration
+                document.getElementById('profilesPagination').classList.remove('hidden');
+                document.getElementById('profilesPaginationInfo').textContent =
+                    `Showing ${offset + 1} to ${Math.min(offset + profilesLimit, data.total)} of ${data.total} profiles`;
+
+                const prev = document.getElementById('profilesPrevBtn');
+                const next = document.getElementById('profilesNextBtn');
+
+                prev.disabled = offset === 0;
+                prev.onclick = () => loadProfiles(Math.max(0, offset - profilesLimit));
+
+                next.disabled = offset + profilesLimit >= data.total;
+                next.onclick = () => loadProfiles(offset + profilesLimit);
+
+            } catch (err) {
+                console.error('Failed to load profiles:', err);
+                grid.innerHTML = '<p class="text-red-400 py-4 col-span-full text-center">Failed to load profiles.</p>';
+            }
+        }
+
+        let tokensOffset = 0;
+        const tokensLimit = 50;
+
+        async function loadTokens(offset = 0) {
+            tokensOffset = offset;
+            const tableData = document.getElementById('tokensTableData');
+            const countLabel = document.getElementById('tokensCount');
+
+            try {
+                tableData.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-gray-500">Loading token data...</td></tr>';
+                const response = await fetch(`/api/tokens?limit=${tokensLimit}&offset=${offset}`);
+                const data = await response.json();
+
+                countLabel.textContent = `${data.total} Total AI Requests`;
+
+                if (!data.logs || data.logs.length === 0) {
+                    tableData.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-gray-500">No token logs found.</td></tr>';
+                    document.getElementById('tokensPagination').classList.add('hidden');
+                    return;
+                }
+
+                tableData.innerHTML = data.logs.map(log => {
+                    const time = new Date(log.createdAt).toLocaleString();
+                    const isSystem = log.suspectId && log.suspectId.startsWith('system_');
+                    const isTotalHigh = log.totalTokens > 5000;
+
+                    return `
+                        <tr class="hover:bg-dark-800/30 transition-colors border-b border-gray-800/50 last:border-0">
+                            <td class="px-4 py-3 text-gray-400 whitespace-nowrap">${time}</td>
+                            <td class="px-4 py-3 text-purple-300 font-mono text-xs">${log.caseId || '—'}</td>
+                            <td class="px-4 py-3">
+                                ${isSystem
+                            ? `<span class="text-xs bg-amber-900/30 text-amber-300 px-2 py-0.5 rounded border border-amber-800/50">${log.suspectId}</span>`
+                            : `<span class="font-medium text-gray-300">${log.suspectId || 'system'}</span>`
+                        }
+                            </td>
+                            <td class="px-4 py-3 text-xs text-blue-300 font-mono">${log.model}</td>
+                            <td class="px-4 py-3 text-xs text-gray-400 font-mono">${log.guildId || '—'}</td>
+                            <td class="px-4 py-3 text-right text-gray-400">${log.promptTokens.toLocaleString()}</td>
+                            <td class="px-4 py-3 text-right text-gray-400">${log.completionTokens.toLocaleString()}</td>
+                            <td class="px-4 py-3 text-right ${isTotalHigh ? 'text-red-400 font-bold' : 'text-green-400 font-bold'}">
+                                ${log.totalTokens.toLocaleString()}
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Pagination configuration
+                document.getElementById('tokensPagination').classList.remove('hidden');
+                document.getElementById('tokensPaginationInfo').textContent =
+                    `Showing ${offset + 1} to ${Math.min(offset + tokensLimit, data.total)} of ${data.total} requests`;
+
+                const prev = document.getElementById('tokensPrevBtn');
+                const next = document.getElementById('tokensNextBtn');
+
+                prev.disabled = offset === 0;
+                prev.onclick = () => loadTokens(Math.max(0, offset - tokensLimit));
+
+                next.disabled = offset + tokensLimit >= data.total;
+                next.onclick = () => loadTokens(offset + tokensLimit);
+
+            } catch (err) {
+                console.error('Failed to load tokens:', err);
+                tableData.innerHTML = '<tr><td colspan="7" class="py-10 text-center text-red-500">Failed to load token logs.</td></tr>';
             }
         }
 
@@ -776,10 +1007,10 @@
                 const tableList = document.getElementById('tableList');
 
                 tableList.innerHTML = data.tables.map(table => `
-                    <button onclick="viewTable('${table}')" class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${currentTable === table ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-dark-700 hover:text-white'}">
-                        ${getTableIcon(table)} ${table}
-                    </button>
-                `).join('');
+                    < button onclick = "viewTable('${table}')" class= "w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${currentTable === table ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-dark-700 hover:text-white'}" >
+                    ${getTableIcon(table)} ${table}
+                    </button >
+                    `).join('');
             } catch (err) {
                 console.error(err);
             }
@@ -804,11 +1035,11 @@
             // Highlight selected table in list
             document.querySelectorAll('#tableList button').forEach(btn => {
                 const isSelected = btn.textContent.includes(tableName);
-                btn.className = `w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${isSelected ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-dark-700 hover:text-white'}`;
+                btn.className = `w - full text - left px - 3 py - 2 rounded - lg text - sm transition - all ${isSelected ? 'bg-purple-600/20 text-purple-400 font-bold' : 'text-gray-400 hover:bg-dark-700 hover:text-white'} `;
             });
 
             try {
-                const response = await fetch(`/api/db/table/${tableName}?limit=${pageLimit}&offset=${offset}`);
+                const response = await fetch(`/ api / db / table / ${tableName}?limit = ${pageLimit}& offset=${offset} `);
                 const data = await response.json();
 
                 renderTable(data);
@@ -824,24 +1055,25 @@
 
             // Render Header
             header.innerHTML = `
-                <tr>
+                    < tr >
                     ${data.columns.map(col => `
                         <th class="px-6 py-3 font-semibold uppercase tracking-wider">${col.name}</th>
-                    `).join('')}
-                </tr>
-            `;
+                    `).join('')
+                }
+                </tr >
+                    `;
 
             // Render Body
             if (data.rows.length === 0) {
-                body.innerHTML = `<tr><td colspan="100%" class="py-20 text-center text-gray-500 italic text-lg">No data found in this table</td></tr>`;
+                body.innerHTML = `< tr > <td colspan="100%" class="py-20 text-center text-gray-500 italic text-lg">No data found in this table</td></tr > `;
                 document.getElementById('rowCount').textContent = '0 rows';
                 document.getElementById('dbPagination').classList.add('hidden');
                 return;
             }
 
             body.innerHTML = data.rows.map(row => `
-                <tr class="hover:bg-dark-800/30 transition-colors">
-                    ${data.columns.map(col => {
+                    < tr class="hover:bg-dark-800/30 transition-colors" >
+                        ${data.columns.map(col => {
                 const val = row[col.name];
                 let displayVal = val;
 
@@ -860,9 +1092,10 @@
                 }
 
                 return `<td class="px-6 py-4 text-gray-300 max-w-xs truncate">${displayVal}</td>`;
-            }).join('')}
-                </tr>
-            `).join('');
+            }).join('')
+                }
+                </tr >
+                    `).join('');
 
             // Pagination
             document.getElementById('rowCount').textContent = `${data.total} rows`;

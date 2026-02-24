@@ -92,6 +92,8 @@ export interface CaseConfig {
         generatedAt: number;
         verified: boolean;
         solvabilityScore: number;
+        templateId?: string;
+        seed?: string;
     };
 }
 

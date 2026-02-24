@@ -110,8 +110,11 @@ export async function setChannelVisibility(
     if (needsUpdate) {
         await channel.permissionOverwrites.edit(everyoneId, {
             ViewChannel: canView,
-            SendMessages: canInteract,
-            ReadMessageHistory: canInteract
+            SendMessages: false, // ALWAYS deny for everyone
+            ReadMessageHistory: canView,
+            CreatePublicThreads: false,
+            CreatePrivateThreads: false,
+            SendMessagesInThreads: false
         });
     }
 }
@@ -169,6 +172,13 @@ export async function getOrCreateCategory(
             name: categoryName,
             type: ChannelType.GuildCategory,
             position: 0,
+            permissionOverwrites: [
+                {
+                    id: guild.id, // @everyone
+                    allow: ['ViewChannel'],
+                    deny: ['SendMessages', 'ReadMessageHistory']
+                }
+            ]
         });
     }
 

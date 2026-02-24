@@ -11,6 +11,7 @@ import {
     TextChannel,
     ChatInputCommandInteraction,
     AutocompleteInteraction,
+    ButtonInteraction,
     Message,
     ActionRowBuilder,
     ButtonBuilder,
@@ -29,7 +30,7 @@ import {
     denyPermission,
 } from './commands.js';
 import { logger } from '../../utils/logger.js';
-import { MMGame } from '../../database.js';
+import { Server, MMGame } from '../../database.js';
 
 // New imports
 import { InterrogationBuffer } from './types.js';
@@ -45,6 +46,7 @@ import { handleStatus } from './handlers/status.js';
 import { handleJoin } from './handlers/join.js';
 import { handleDNA, handleFootage, handleLogs, handleSearch, handleExamine, handlePresent, handleEvidence } from './handlers/tools.js';
 import { handleAccuse } from './handlers/accuse.js';
+import { handleGenerate } from './handlers/generate.js';
 
 /**
  * Game Manager - orchestrates the entire murder mystery game
@@ -54,7 +56,6 @@ export default class GameManager {
     private client: Client;
     private dataDir: string;
     private guildId: string;
-    private roleId: string = '1061067650651926669';
     private activeGame: Case | null = null;
     private tools: ToolsManager | null = null;
     private suspects: Map<string, Suspect> = new Map();
@@ -144,6 +145,46 @@ export default class GameManager {
         return Array.from(matches);
     }
 
+    public async getDetectiveRoleId(guildInput?: Guild): Promise<string | null> {
+        let guild = guildInput;
+        if (!guild) {
+            guild = await this.client.guilds.fetch(this.guildId).catch(() => undefined);
+        }
+        if (!guild) return null;
+
+        // 1. Check Database First
+        try {
+            const serverConfig = await Server.findByPk(this.guildId);
+            if (serverConfig && serverConfig.detectiveRoleId) {
+                // Verify the role still exists
+                const existingRole = await guild.roles.fetch(serverConfig.detectiveRoleId).catch(() => null);
+                if (existingRole) return existingRole.id;
+            }
+        } catch (e) {
+            logger.error('Error fetching detective role from DB', e);
+        }
+
+        // 2. Fallback: Search by name
+        await guild.roles.fetch();
+        const role = guild.roles.cache.find(r => {
+            const name = r.name.toLowerCase();
+            return name === 'detective' || name === 'inspector'; // Add more aliases if needed
+        });
+
+        if (role) {
+            // 3. Save to DB for future use
+            try {
+                await Server.upsert({ id: this.guildId, detectiveRoleId: role.id });
+                logger.info(`Discovered and saved detective role: ${role.name} (${role.id}) for guild ${this.guildId}`);
+            } catch (e) {
+                logger.error('Error saving detective role to DB', e);
+            }
+            return role.id;
+        }
+
+        return null;
+    }
+
     public getChannelsMap() { return this.channels; }
     public getDashboard() { return this.dashboard; }
     public getClient() { return this.client; }
@@ -210,7 +251,7 @@ export default class GameManager {
         return handleStatus(this, interaction);
     }
 
-    async handleJoin(interaction: ChatInputCommandInteraction) {
+    async handleJoin(interaction: ChatInputCommandInteraction | ButtonInteraction) {
         logger.info(`Player joining investigation: ${interaction.user.tag} (Guild: ${this.guildId})`);
         return handleJoin(this, interaction);
     }
@@ -247,6 +288,10 @@ export default class GameManager {
         return handleAccuse(this, interaction);
     }
 
+    async handleGenerate(interaction: ChatInputCommandInteraction) {
+        return handleGenerate(this, interaction);
+    }
+
     // --- SHARED UTILITIES ---
     public getOrCreateStats(userId: string, username: string): PlayerStats {
         if (!this.activeGame?.state) throw new Error('No active game state');
@@ -274,6 +319,9 @@ export default class GameManager {
 
     public async setupChannels(config: CaseConfig, existingCategoryId?: string): Promise<void> {
         const guild = await this.getGuild();
+        if (!guild) return;
+
+        const detectiveRoleId = await this.getDetectiveRoleId(guild);
         const categoryName = `🔍 ${config.name}`;
 
         this.category = await getOrCreateCategory(guild, categoryName, existingCategoryId);
@@ -341,28 +389,45 @@ export default class GameManager {
                     topic: fullTopic,
                     permissionOverwrites: [
                         {
-                            id: guild.id,
-                            deny: (isDiscovered || isMurderLoc) ? [] : ['ViewChannel'],
-                            allow: (isDiscovered || isMurderLoc) ? ['ViewChannel'] : [],
-                            // For murder loc if undiscovered, we also need to deny send
-                        }
+                            id: guild.id, // @everyone
+                            allow: ['ViewChannel'],
+                            deny: ['SendMessages', 'ReadMessageHistory', 'CreatePublicThreads', 'CreatePrivateThreads']
+                        },
+                        ...(detectiveRoleId ? [{
+                            id: detectiveRoleId,
+                            allow: ['ViewChannel', 'SendMessages', 'ReadMessageHistory']
+                        } as any] : [])
                     ]
                 });
 
                 // If murder loc and undiscovered, we need to explicitly sync perms after creation if creation simple logic wasn't enough
-                if (isMurderLoc && !isDiscovered) {
-                    await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY, isMurderLoc);
-                }
-
             } else {
                 // Optimization: Apply updates only if they changed
                 if (channel.name !== name) {
                     await channel.setName(name);
                     channel.name = name;
                 }
+            }
 
-                // Sync topic and permissions
-                await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY, isMurderLoc);
+            // Sync topic and permissions
+            await setChannelVisibility(channel, isDiscovered, topic, GameManager.DEBUG_VISIBILITY, isMurderLoc);
+
+            // Always ensure role-based permissions are correct (Joiner vs Spectator)
+            // Explicitly DENY SendMessages for anyone who isn't a detective (except Admins)
+            await channel.permissionOverwrites.edit(guild.id, {
+                ViewChannel: true,
+                SendMessages: false,
+                ReadMessageHistory: isDiscovered,
+                CreatePublicThreads: false,
+                CreatePrivateThreads: false
+            });
+
+            if (detectiveRoleId) {
+                await channel.permissionOverwrites.edit(detectiveRoleId, {
+                    ViewChannel: true,
+                    SendMessages: true,
+                    ReadMessageHistory: true
+                });
             }
 
             this.channels.set(loc, channel);
@@ -665,12 +730,14 @@ export default class GameManager {
             suspectStates[id] = suspect.getState();
         }
 
+        const detectiveRoleId = await this.getDetectiveRoleId();
+
         try {
             await MMGame.upsert({
                 guildId: this.guildId,
                 caseId: state.caseId,
                 categoryId: this.category?.id || '',
-                roleId: this.roleId,
+                roleId: detectiveRoleId || '',
                 points: state.points,
                 phase: state.phase,
                 endsAt: state.endsAt,

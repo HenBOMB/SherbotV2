@@ -26,7 +26,7 @@ export class AvatarGenerator {
         }
     }
 
-    async generateAvatar(filename: string = uuidv4(), context?: { role: string; gender: string; description?: string }): Promise<string> {
+    async generateAvatar(filename: string = uuidv4(), context?: { role: string; gender: string; description?: string; seed?: string; guildId?: string }): Promise<string> {
         let props;
 
         if (context) {
@@ -62,15 +62,13 @@ export class AvatarGenerator {
         return outputPath;
     }
 
-    private async generateAvatarProps(context: { role: string; gender: string; description?: string }): Promise<any> {
+    private async generateAvatarProps(context: { role: string; gender: string; description?: string; seed?: string; guildId?: string }): Promise<any> {
         // Valid options extracted from library inspection
         const validOptions = {
             body: ['chest', 'breasts'],
-            // others: naked
             clothing: ['shirt', 'dressShirt', 'vneck', 'tankTop', 'dress'],
             hair: ['none', 'long', 'bun', 'short', 'pixie', 'balding', 'buzz', 'afro', 'bob'],
             mouth: ['grin', 'sad', 'openSmile', 'lips', 'open', 'serious', 'tongue'],
-            // others: heart
             eyes: ['normal', 'leftTwitch', 'happy', 'content', 'squint', 'simple', 'dizzy', 'wink'],
             eyebrows: ['raised', 'leftLowered', 'serious', 'angry', 'concerned'],
             accessory: ['none', 'roundGlasses', 'tinyGlasses', 'shades'],
@@ -112,7 +110,12 @@ Format:
 {"body":"","clothing":"","clothingColor":"","hair":"","hairColor":"","hatColor":"","mouth":"","eyes":"","eyebrows":"","accessory":"","facialHair":"","skinTone":"","lipColor":"","circleColor":""}`;
 
         try {
-            const response = await aiService.generateText(systemPrompt, userPrompt, { temperature: 0.7 });
+            const response = await aiService.generateText(systemPrompt, userPrompt, {
+                temperature: 0.7,
+                caseId: context.seed || 'unknown',
+                suspectId: 'system_avatar',
+                guildId: context.guildId
+            });
 
             // Clean up potentially dirty JSON (e.g. markdown blocks or intro text)
             let cleanJson = response.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -132,18 +135,22 @@ Format:
             json.hat = 'none';
 
             // Safety overrides for critical fields
-            if (json.body && !validOptions.body.includes(json.body)) json.body = 'chest';
-            if (json.clothing && !validOptions.clothing.includes(json.clothing)) json.clothing = 'shirt';
-            if (json.hair && !validOptions.hair.includes(json.hair)) json.hair = 'short';
-            if (json.facialHair && !validOptions.facialHair.includes(json.facialHair)) json.facialHair = 'none';
+            if (!json.body || !validOptions.body.includes(json.body)) json.body = 'chest';
+            if (!json.clothing || !validOptions.clothing.includes(json.clothing)) json.clothing = 'shirt';
+            if (!json.hair || !validOptions.hair.includes(json.hair)) json.hair = 'short';
+            if (!json.mouth || !validOptions.mouth.includes(json.mouth)) json.mouth = 'serious';
+            if (!json.eyes || !validOptions.eyes.includes(json.eyes)) json.eyes = 'normal';
+            if (!json.eyebrows || !validOptions.eyebrows.includes(json.eyebrows)) json.eyebrows = 'serious';
+            if (!json.accessory || !validOptions.accessory.includes(json.accessory)) json.accessory = 'none';
+            if (!json.facialHair || !validOptions.facialHair.includes(json.facialHair)) json.facialHair = 'none';
 
             // Color validation
-            if (json.hairColor && !validOptions.hairColor.includes(json.hairColor)) json.hairColor = 'brown';
-            if (json.clothingColor && !validOptions.clothingColor.includes(json.clothingColor)) json.clothingColor = 'white';
-            if (json.hatColor && !validOptions.clothingColor.includes(json.hatColor)) json.hatColor = 'black';
-            if (json.skinTone && !validOptions.skinTone.includes(json.skinTone)) json.skinTone = 'light';
-            if (json.lipColor && !validOptions.lipColor.includes(json.lipColor)) json.lipColor = 'pink';
-            if (json.circleColor && !validOptions.circleColor.includes(json.circleColor)) json.circleColor = 'blue';
+            if (!json.hairColor || !validOptions.hairColor.includes(json.hairColor)) json.hairColor = 'brown';
+            if (!json.clothingColor || !validOptions.clothingColor.includes(json.clothingColor)) json.clothingColor = 'white';
+            if (!json.hatColor || !validOptions.clothingColor.includes(json.hatColor)) json.hatColor = 'black';
+            if (!json.skinTone || !validOptions.skinTone.includes(json.skinTone)) json.skinTone = 'light';
+            if (!json.lipColor || !validOptions.lipColor.includes(json.lipColor)) json.lipColor = 'pink';
+            if (!json.circleColor || !validOptions.circleColor.includes(json.circleColor)) json.circleColor = 'blue';
 
             this.previousAvatars.push({
                 hair: json.hair,
@@ -174,10 +181,10 @@ Format:
             accessory: pick(['none', 'roundGlasses', 'tinyGlasses', 'shades']),
             body: pick(['chest', 'breasts']),
             circleColor: pick(['blue', 'green', 'red', 'yellow']),
-            clothing: pick(['naked', 'shirt', 'dressShirt', 'tankTop', 'vneck']),
+            clothing: pick(['shirt', 'dressShirt', 'tankTop', 'vneck']),
             clothingColor: pick(['white', 'blue', 'black', 'green', 'red']),
             eyebrows: pick(['raised', 'serious', 'angry', 'concerned']),
-            eyes: pick(['normal', 'leftTwitch', 'happy', 'content', 'squint', 'simple', 'dizzy', 'wink', 'heart']),
+            eyes: pick(['normal', 'leftTwitch', 'happy', 'content', 'squint', 'simple', 'dizzy', 'wink']),
             facialHair: pick(['none', 'none', 'mediumBeard']),
             graphic: 'none',
             hair: pick(['none', 'long', 'bun', 'short', 'pixie', 'balding', 'buzz', 'afro', 'bob']),

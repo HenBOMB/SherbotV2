@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { logger } from '../../utils/logger.js';
 import { getTipsStatus, setTipIndex, triggerTipNow, toggleTips, updateServerConfig, registerServer, setServerLanguage, removeServer, cleanupServers } from '../dailytips.js';
 import { Client } from 'discord.js';
-import { sequelize } from '../../database.js';
+import { sequelize, UserProfile, TokenUsageLog } from '../../database.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -228,6 +228,40 @@ export default class DashboardServer {
                     limit,
                     offset
                 });
+            } catch (err: any) {
+                res.status(500).json({ error: err.message });
+            }
+        });
+
+        // Dedicated API for Profiles
+        this.app.get('/api/profiles', async (req, res) => {
+            const limit = parseInt(req.query.limit as string) || 50;
+            const offset = parseInt(req.query.offset as string) || 0;
+
+            try {
+                const { count, rows } = await UserProfile.findAndCountAll({
+                    limit,
+                    offset,
+                    order: [['lastUpdated', 'DESC']]
+                });
+                res.json({ profiles: rows, total: count, limit, offset });
+            } catch (err: any) {
+                res.status(500).json({ error: err.message });
+            }
+        });
+
+        // Dedicated API for Tokens
+        this.app.get('/api/tokens', async (req, res) => {
+            const limit = parseInt(req.query.limit as string) || 100;
+            const offset = parseInt(req.query.offset as string) || 0;
+
+            try {
+                const { count, rows } = await TokenUsageLog.findAndCountAll({
+                    limit,
+                    offset,
+                    order: [['createdAt', 'DESC']]
+                });
+                res.json({ logs: rows, total: count, limit, offset });
             } catch (err: any) {
                 res.status(500).json({ error: err.message });
             }

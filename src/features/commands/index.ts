@@ -12,6 +12,7 @@ const __dirname = path.dirname(__filename);
 export default async function (client: Client) {
     client.commands = new Collection();
     const guilds: { [key: string]: any[] } = {};
+    const globalCommands: any[] = [];
 
     // __dirname is now the commands directory itself
     const commandsDir = __dirname;
@@ -45,7 +46,7 @@ export default async function (client: Client) {
                 if (command.guild) {
                     guilds[command.guild] = [...(guilds[command.guild] || []), command.data];
                 } else {
-                    // Global commands logic if needed
+                    globalCommands.push(command.data);
                 }
 
                 // Initialize command if it has an init method
@@ -74,9 +75,18 @@ export default async function (client: Client) {
                 { body: guilds[key] },
             );
         }
-        logger.info(`   Sync ${client.commands.size} commands.`);
+
+        if (globalCommands.length > 0) {
+            await rest.put(
+                Routes.applicationCommands(client.application!.id),
+                { body: globalCommands },
+            );
+            logger.info(`   Sync ${globalCommands.length} global commands.`);
+        }
+
+        logger.info(`   Sync ${client.commands.size} total commands.`);
     } catch (error) {
-        logger.error(`   Failed to put ${client.commands.size} commands.`, error);
+        logger.error(`   Failed to put commands.`, error);
     }
 
     client.on(Events.InteractionCreate, async (interaction: Interaction) => {

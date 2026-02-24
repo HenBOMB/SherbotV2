@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Ollama } from 'ollama';
 import { GoogleGenerativeAI, Part } from '@google/generative-ai';
+import { tokenTracker } from '../../utils/token-tracker.js';
 
 export interface ChatMessage {
     role: 'system' | 'user' | 'assistant';
@@ -11,6 +12,9 @@ export interface CompletionOptions {
     model?: string;
     temperature?: number;
     max_tokens?: number;
+    suspectId?: string;
+    caseId?: string;
+    guildId?: string;
 }
 
 export interface ChatResponse {
@@ -87,18 +91,25 @@ export class AIService {
      * Send a chat completion request to the configured provider
      */
     async chatCompletion(messages: ChatMessage[], options: CompletionOptions = {}): Promise<ChatResponse> {
+        let result: ChatResponse;
+
         // Special routing for local reasoning models
         if (options.model === 'goekdenizguelmez/JOSIEFIED-Qwen3:0.6b' || options.model?.includes('JOSIEFIED')) {
-            return this.chatCompletionOllama(messages, options);
+            result = await this.chatCompletionOllama(messages, options);
+        } else if (this.provider === 'ollama') {
+            result = await this.chatCompletionOllama(messages, options);
+        } else if (this.provider === 'gemini') {
+            result = await this.chatCompletionGemini(messages, options);
+        } else {
+            result = await this.chatCompletionRapidAPI(messages, options);
         }
 
-        if (this.provider === 'ollama') {
-            return this.chatCompletionOllama(messages, options);
-        } else if (this.provider === 'gemini') {
-            return this.chatCompletionGemini(messages, options);
-        } else {
-            return this.chatCompletionRapidAPI(messages, options);
+        if (result.usage) {
+            const usedModel = options.model || (this.provider === 'ollama' ? this.ollamaModel : this.geminiModel);
+            tokenTracker.track(options.suspectId || 'system', usedModel, result.usage, options.caseId || null, options.guildId || null);
         }
+
+        return result;
     }
 
     private async chatCompletionGemini(messages: ChatMessage[], options: CompletionOptions): Promise<ChatResponse> {
@@ -116,9 +127,9 @@ export class AIService {
 
             // Convert messages to Gemini format
             // Filter out system message as it's passed separately
-            const history = messages
+            const historyPromises = messages
                 .filter(m => m.role !== 'system')
-                .map(m => {
+                .map(async m => {
                     let role = 'user';
                     if (m.role === 'assistant') role = 'model';
 
@@ -127,25 +138,27 @@ export class AIService {
                     if (typeof m.content === 'string') {
                         parts.push({ text: m.content });
                     } else if (Array.isArray(m.content)) {
-                        // Handle multi-modal content (like images)
-                        // Assuming valid structure from suspect.ts which mimics OpenAI format
-                        /*
-                         { type: "image_url", image_url: { url: imageUrl } }
-                        */
-                        m.content.forEach((item: any) => {
+                        for (const item of m.content) {
                             if (item.type === 'text') {
                                 parts.push({ text: item.text });
                             } else if (item.type === 'image_url') {
-                                // For Gemini, we ideally need base64 or file URI. 
-                                // But if it's a URL, Gemini 1.5 Pro / Flash can sometimes handle it if using Google AI Studio tools, 
-                                // but via API usually requires base64. 
-                                // However, for now, let's assume we might need to fetch it or just pass text if it's not supported easily.
-                                // NOTE: This implementation might need adjustment for image URLs.
-                                // For now, we'll try to rely on text description if possible or log a warning.
-                                // TODO: Implement image fetching and base64 conversion if strictly needed.
-                                parts.push({ text: `[Image: ${item.image_url.url}]` });
+                                try {
+                                    const response = await axios.get(item.image_url.url, { responseType: 'arraybuffer' });
+                                    const buffer = Buffer.from(response.data, 'binary');
+                                    const mimeType = response.headers['content-type'] || 'image/png';
+
+                                    parts.push({
+                                        inlineData: {
+                                            data: buffer.toString('base64'),
+                                            mimeType: mimeType
+                                        }
+                                    });
+                                } catch (e) {
+                                    console.error('Failed to fetch image for Gemini:', e);
+                                    parts.push({ text: `[Image at ${item.image_url.url} could not be loaded]` });
+                                }
                             }
-                        });
+                        }
                     }
 
                     return {
@@ -153,6 +166,8 @@ export class AIService {
                         parts: parts
                     };
                 });
+
+            const history = await Promise.all(historyPromises);
 
             // The last message is the prompt for generateContent, but startChat validates history.
             // Let's use startChat with history (minus last) and sendMessage(last).

@@ -1,8 +1,10 @@
 import {
     ChatInputCommandInteraction,
+    ButtonInteraction,
     EmbedBuilder,
     Colors
 } from 'discord.js';
+import { logger } from '../../../utils/logger.js';
 import GameManager from '../game.js';
 
 /**
@@ -10,7 +12,7 @@ import GameManager from '../game.js';
  */
 export async function handleJoin(
     manager: GameManager,
-    interaction: ChatInputCommandInteraction
+    interaction: ChatInputCommandInteraction | ButtonInteraction
 ): Promise<void> {
     const activeGame = manager.getActiveGame();
     if (!activeGame?.state) {
@@ -36,6 +38,16 @@ export async function handleJoin(
     }
 
     activeGame.state.participants.add(userId);
+
+    // Assign MM Role
+    try {
+        const member = await interaction.guild?.members.fetch(userId);
+        const detectiveRoleId = await manager.getDetectiveRoleId(interaction.guild || undefined);
+        if (member && detectiveRoleId) await member.roles.add(detectiveRoleId);
+    } catch (e) {
+        logger.warn(`Failed to add MM role to ${userId} on join`, e);
+    }
+
     await interaction.reply({
         embeds: [
             new EmbedBuilder()
@@ -43,6 +55,7 @@ export async function handleJoin(
                 .setTitle('🔍 Joined Investigation')
                 .setDescription(`Welcome to the team, ${interaction.user.displayName}!`)
         ],
+        ephemeral: interaction.isButton() ? true : false,
     });
 
     // Save state to database

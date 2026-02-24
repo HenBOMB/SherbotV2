@@ -19,7 +19,13 @@ export const AUTHORIZED_ADMIN_ID = '348547981253017610';
  * Check if user has permission to use MM Admin commands
  */
 export function hasPermission(interaction: ChatInputCommandInteraction): boolean {
-    return interaction.user.id === AUTHORIZED_ADMIN_ID;
+    if (interaction.user.id === AUTHORIZED_ADMIN_ID) return true;
+
+    if (interaction.memberPermissions?.has(PermissionFlagsBits.Administrator)) {
+        return true;
+    }
+
+    return false;
 }
 
 /**
@@ -32,6 +38,36 @@ export async function denyPermission(interaction: ChatInputCommandInteraction): 
                 .setColor(Colors.Red)
                 .setTitle('🚫 Access Denied')
                 .setDescription('You do not have permission to use Murder Mystery commands.')
+        ],
+        ephemeral: true,
+    });
+}
+
+import { Server } from '../../database.js';
+
+/**
+ * Check if the server has an active premium subscription.
+ */
+export async function hasServerPremium(guildId: string | null): Promise<boolean> {
+    if (!guildId) return false;
+    try {
+        const server = await Server.findByPk(guildId);
+        return server?.isPremium === true;
+    } catch (e) {
+        return false;
+    }
+}
+
+/**
+ * Send server premium denied message
+ */
+export async function denyServerPremium(interaction: ChatInputCommandInteraction): Promise<void> {
+    await interaction.reply({
+        embeds: [
+            new EmbedBuilder()
+                .setColor(Colors.Gold)
+                .setTitle('⭐ Premium Server Feature')
+                .setDescription(`This server requires a **Premium Subscription** to initiate and play Murder Mystery investigations.\n\nPlease DM <@${AUTHORIZED_ADMIN_ID}> to upgrade this server.`)
         ],
         ephemeral: true,
     });
@@ -129,7 +165,8 @@ export const mmCommands = new SlashCommandBuilder()
     .addSubcommand(sub =>
         sub.setName('help')
             .setDescription('Show game rules and how to play')
-    );
+    )
+    ;
 
 /**
  * Admin commands - Hidden from regular users in the UI
@@ -137,7 +174,7 @@ export const mmCommands = new SlashCommandBuilder()
 export const mmaCommands = new SlashCommandBuilder()
     .setName('mma')
     .setDescription('Murder Mystery Admin controls')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages) // Hidden by default from non-staff
+    .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(sub =>
         sub.setName('start')
             .setDescription('Start a new murder mystery game')
@@ -162,9 +199,33 @@ export const mmaCommands = new SlashCommandBuilder()
             .setDescription('Swiftly clear all murder mystery channels and categories')
     )
     .addSubcommand(sub =>
-        sub.setName('shutdown')
-            .setDescription('Safely power down the bot (Admin only)')
+        sub.setName('generate')
+            .setDescription('Run the case generator to create a new mystery')
+            .addStringOption(opt =>
+                opt.setName('theme')
+                    .setDescription('Theme of the mystery (noir, modern, mansion)')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'Noir', value: 'noir' },
+                        { name: 'Modern', value: 'modern' },
+                        { name: 'Mansion', value: 'mansion' }
+                    )
+            )
+            .addStringOption(opt =>
+                opt.setName('difficulty')
+                    .setDescription('Difficulty of the case')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'Easy', value: 'easy' },
+                        { name: 'Medium', value: 'medium' },
+                        { name: 'Hard', value: 'hard' }
+                    )
+            )
     );
+// .addSubcommand(sub =>
+//     sub.setName('shutdown')
+//         .setDescription('Safely power down the bot (Admin only)')
+// );
 
 /**
  * Format seconds into MM:SS
@@ -202,30 +263,30 @@ export function createStatusEmbed(
         .setColor(color)
         .setTitle(`${phaseEmoji} ${caseName}`)
         .addFields(
-            { name: '⏱️ Time Remaining', value: `\`${formatTime(remainingTime)}\``, inline: true },
-            { name: '💎 Points Left', value: `\`${Number(points).toFixed(2)}\``, inline: true },
-            { name: '👥 Detectives', value: `\`${participants}\``, inline: true },
+            { name: '⏳ INVESTIGATION CLOCK', value: `\`${formatTime(remainingTime)}\``, inline: true },
+            { name: '� OPERATION CREDITS', value: `\`${Number(points).toFixed(2)}\``, inline: true },
+            { name: '�️ OFFICERS ON SCENE', value: `\`${participants}\``, inline: true },
         );
 
     if (phase === 'investigating') {
-        const totalVotes = playerStats ? Object.values(playerStats).reduce((acc, s) => acc + (s.accusedId ? 1 : 0), 0) : 0; // This is a bit indirect, let's use a new param or handle it via description
-        embed.setDescription('**Investigation in Progress**');
+        const totalVotes = playerStats ? Object.values(playerStats).reduce((acc, s) => acc + (s.accusedId ? 1 : 0), 0) : 0;
+        embed.setDescription('**Observation and Deduction in Progress**');
 
         // If we have accusation data in state, show it
         if (accusation && 'currentVotes' in (accusation as any)) {
             const current = (accusation as any).currentVotes as number;
             const needed = (accusation as any).votesNeeded as number;
             embed.addFields({
-                name: '⚖️ Collective Verdict',
-                value: `\`${current}/${needed}\` detectives have voted to conclude.`,
+                name: '⚖️ COLLECTIVE VERDICT',
+                value: `\`${current}/${needed}\` investigators have signed the warrant to conclude.`,
                 inline: false
             });
         }
     } else if (phase === 'accused') {
         if (accusation?.correct) {
-            embed.setDescription(`**Case Solved!**\nJustice has been served. **${accusation.accusedName || accusation.accusedId}** was successfully apprehended.`);
+            embed.setDescription(`**THE TRUTH REVEALED**\nJustice has been served. **${accusation.accusedName || accusation.accusedId}** has been brought to light and apprehended.`);
         } else {
-            embed.setDescription(`**Case Closed - Failed**\n**${accusation?.accusedName || accusation?.accusedId}** was innocent. The real killer, **${killerName || 'Unknown'}**, escaped.`);
+            embed.setDescription(`**A MISCARRIAGE OF JUSTICE**\n**${accusation?.accusedName || accusation?.accusedId}** was innocent. The true culprit, **${killerName || 'Unknown'}**, has vanished into the shadows.`);
         }
     } else {
         embed.setDescription('**Investigation Terminated**');
@@ -468,13 +529,13 @@ export function createAccusationEmbed(
         return new EmbedBuilder()
             .setColor(Colors.Green)
             .setTitle('⚖️ VERDICT: GUILTY')
-            .setDescription(`\`\`\`ansi\n\u001b[1;32mCASE CLOSED\u001b[0m | \u001b[1;36mSUSPECT APPREHENDED\u001b[0m\n\`\`\`\n**${accusedName}** has been found guilty of the charge. Justice has been served.\n\nCongratulations, detective. The department has been notified of your success.`)
+            .setDescription(`\`\`\`ansi\n\u001b[1;32mEVIDENCE SECURED\u001b[0m | \u001b[1;36mCRIMINAL IN CUSTODY\u001b[0m\n\`\`\`\n**${accusedName}** has been found guilty of the charge. The web of deceit has been unraveled.\n\nExcellent work, detective. The yard has been notified of your triumph.`)
             .setThumbnail('https://em-content.zobj.net/source/twitter/376/handcuffs_26d3.png');
     } else {
         return new EmbedBuilder()
             .setColor(Colors.Red)
             .setTitle('⚖️ VERDICT: INNOCENT')
-            .setDescription(`\`\`\`ansi\n\u001b[1;31mINVESTIGATION FAILED\u001b[0m | \u001b[1;33mKILLER AT LARGE\u001b[0m\n\`\`\`\n**${accusedName}** was innocent. The real killer, **${actualKillerName}**, has escaped justice.\n\nThe case has been handed over to a higher authority. You are relieved of duty.`)
+            .setDescription(`\`\`\`ansi\n\u001b[1;31mTHE TRAIL GOES COLD\u001b[0m | \u001b[1;33mA CRIMINAL ESCAPES\u001b[0m\n\`\`\`\n**${accusedName}** was innocent of this crime. The real killer, **${actualKillerName}**, has escaped into the fog.\n\nThe investigation has reached a dead end. You are relieved of duty.`)
             .setThumbnail('https://em-content.zobj.net/source/twitter/376/person-running_1f3c3.png');
     }
 }
@@ -489,37 +550,27 @@ export function createHelpEmbed(): EmbedBuilder {
         .setDescription('Become a detective and solve the murder! You must interrogate suspects where they stand.')
         .addFields(
             {
-                name: '🚪 Exploration',
-                value: '• All accessible rooms are visible as channels from the start.\n• Click these channels (e.g., `#📍┃kitchen`) to move there and investigate.',
+                name: '🧭 MOVEMENT & NAVIGATION',
+                value: '• All accessible rooms are visible as channels in the sidebar.\n• Click a channel (e.g., `#📍┃kitchen`) to move there instantly.\n• 👥 Suspects are always found at their specific room locations.',
                 inline: false
             },
             {
-                name: '💬 Interrogation',
+                name: '💬 INTERROGATION',
                 value: '• Go to the room where a suspect is located.\n• Say `Hey <suspect_name>, <your question>` in that channel.\n• Example: `Hey Victoria, where were you at 9:30 PM?`\n• If they reveal their location, **new evidence** is automatically collected!',
                 inline: false
             },
             {
-                name: '🔬 Detective Tools',
+                name: '🔬 DETECTIVE TOOLS',
                 value: '• `/mm search` - Search current room for physical evidence (1 pt)\n• `/mm dna` - Analyze DNA in your current room (0.5 pts)\n• `/mm footage <time>` - View camera footage (0.25 pts)\n• `/mm examine <item>` - Inspect discovered items (Free)\n• `/mm present <evidence> <suspect>` - **Show evidence to a suspect!** (Free)',
                 inline: false
             },
             {
-                name: '📎 Present Evidence (NEW!)',
-                value: '• Use `/mm present` to confront a suspect with evidence.\n• If the evidence is **relevant to their secrets**, they take MASSIVE pressure damage!\n• Watch for their reaction - stuttering and hesitation means you\'re on to something.',
+                name: '📎 PRESENT EVIDENCE',
+                value: '• Use `/mm present` to confront a suspect with evidence.\n• If the evidence is **relevant to their secrets**, they take pressure damage!\n• Stuttering and hesitation means you\'re close to the truth.',
                 inline: false
             },
             {
-                name: '🚔 Teamwork Bonus',
-                value: '• When **multiple detectives** interrogate the same suspect within 60 seconds, pressure is increased by 50%!\n• Coordinate questions with your team for maximum effect.',
-                inline: false
-            },
-            {
-                name: '😰 Reading Tells',
-                value: '• Watch the suspect\'s behavior as their composure drops:\n  • **High composure**: Calm, confident responses\n  • **Nervous**: Hesitation ("..."), slight stuttering\n  • **Breaking**: Frequent stuttering, CAPS, longer typing pauses\n• Use `/mm secrets` to see what you\'ve uncovered.',
-                inline: false
-            },
-            {
-                name: '🎯 Solving the Case',
+                name: '🎯 SOLVING THE CASE',
                 value: '• Use `/mm accuse <suspect>` when you **know** who did it.\n• You only get **one shot** at an accusation!',
                 inline: false
             }
@@ -541,6 +592,7 @@ export function createCaseBriefingEmbeds(
         timeLimit: number;
         points: number;
         players: string[];
+        roomChannels?: Map<string, any>; // Map of locationId -> Channel object
     }
 ): { embeds: EmbedBuilder[]; files: AttachmentBuilder[] } { // Changed return type
     const embeds: EmbedBuilder[] = [];
@@ -578,7 +630,9 @@ export function createCaseBriefingEmbeds(
             },
             {
                 name: '📍 PRIMARY SCENE',
-                value: `\`${capitalize(caseConfig.murderLocation)}\``,
+                value: options.roomChannels?.has(caseConfig.murderLocation)
+                    ? `<#${options.roomChannels.get(caseConfig.murderLocation).id}>`
+                    : `\`${capitalize(caseConfig.murderLocation)}\``,
                 inline: true
             }
         );
@@ -611,7 +665,7 @@ export function createCaseBriefingEmbeds(
         .setDescription('Scanning biometric database for individuals with proximity to the scene at the time of incident...')
         .addFields(
             {
-                name: '⚠️ POTENTIAL PERSONS OF INTEREST',
+                name: '⚠️ POTENTIAL SUSPECTS OF INTEREST',
                 value: suspects.map((s: any) => `• **${s.name}**`).join('\n'),
                 inline: false
             }
@@ -623,10 +677,17 @@ export function createCaseBriefingEmbeds(
     suspects.slice(0, 5).forEach((s: any) => {
         const sEmbed = new EmbedBuilder()
             .setColor('#34495e')
-            .setAuthor({ name: `SUSPECT DATA: ${s.name.toUpperCase()}`, iconURL: 'https://em-content.zobj.net/source/twitter/376/bust-in-silhouette_1f464.png' })
+            .setAuthor({ name: s.name.toUpperCase(), iconURL: 'https://em-content.zobj.net/source/twitter/376/bust-in-silhouette_1f464.png' })
             .setDescription(`**Statement:** "${s.alibi}"`)
             .addFields(
-                { name: 'IDENTIFIER', value: `\`${capitalize(s.id)}\``, inline: true },
+                { name: 'ROLE', value: `\`${capitalize(s.id)}\``, inline: true },
+                {
+                    name: 'INITIAL LOCATION',
+                    value: options.roomChannels?.has(s.currentLocation)
+                        ? `<#${options.roomChannels.get(s.currentLocation).id}>`
+                        : `\`${capitalize(s.currentLocation)}\``,
+                    inline: true
+                },
                 { name: 'STATUS', value: s.motive ? '\`KNOWN INTEREST\`' : '\`UNRESTRICTED\`', inline: true }
             );
 
@@ -649,16 +710,16 @@ export function createCaseBriefingEmbeds(
         embeds.push(sEmbed);
     });
 
-    // 5. INVESTIGATION RESOURCES
+    // 5. INVESTIGATION LOGISTICS
     const resourceEmbed = new EmbedBuilder()
         .setColor(Colors.Green)
-        .setTitle('🛠️ INVESTIGATION RESOURCES')
+        .setTitle('🕯️ INVESTIGATION LOGISTICS')
         .addFields(
-            { name: '⏱️ REMAINING TIME', value: `\`${options.timeLimit} Minutes\``, inline: true },
-            { name: '💎 ALLOCATED POINTS', value: `\`${options.points}\``, inline: true },
-            { name: '👥 CURRENT AGENTS', value: `<@${options.players[0]}>`, inline: true }
+            { name: '⏳ TIME ALLOTTED', value: `\`${options.timeLimit} Minutes\``, inline: true },
+            { name: '🔎 DEPARTMENT CREDITS', value: `\`${options.points}\``, inline: true },
+            { name: '🕵️ LEAD INVESTIGATOR', value: `<@${options.players[0]}>`, inline: true }
         )
-        .setDescription('```ansi\n\u001b[1;32mDETECTIVES READY\u001b[0m | \u001b[1;36mINITIALIZED\u001b[0m | \u001b[1;33mIDENTIFYING...\u001b[0m\n```\nUse your tools wisely. Every minute spent and every log accessed will deplete your department resources.')
+        .setDescription('```ansi\n\u001b[1;32mTHE GAME IS AFOOT\u001b[0m | \u001b[1;36mLOGISTICS SECURED\u001b[0m | \u001b[1;33mSEEKING THE TRUTH...\u001b[0m\n```\nEvery second counts, and every lead followed has its price. Tread carefully, for the department\'s patience and resources are finite.')
         .setFooter({ text: 'Use /mm help for tactical instructions • /mm status to review progress' });
 
     embeds.push(resourceEmbed);

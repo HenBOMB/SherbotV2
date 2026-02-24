@@ -15,7 +15,6 @@ import path from 'path';
 import { Command } from "../../types.js";
 
 // Fix path resolution for assets
-const assetsPath = path.resolve('src/assets/games/mindyourlogic.no');
 const RIDDLES_01 = fs.readFileSync('src/assets/games/mindyourlogic.no', 'utf8').split('+').slice(1);
 
 export default {

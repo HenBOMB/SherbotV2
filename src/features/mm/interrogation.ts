@@ -55,6 +55,14 @@ export default class InterrogationManager {
                 const content = message.content.trim();
                 if (!content) return;
 
+                // MAX LENGTH CAP: Prevent abuse and token waste
+                if (content.length > 200) {
+                    await message.reply({
+                        content: `⚠️ **Message too long!** (Max 200 characters)\n*Please keep your interrogation concise to avoid overwhelming the suspect.*`
+                    });
+                    return;
+                }
+
                 // Detect Location using the new robust method
                 const channel = message.channel instanceof TextChannel ? message.channel : null;
                 if (!channel) return;
