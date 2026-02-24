@@ -7,7 +7,7 @@ export const TOOL_COSTS = {
     dna: 0.5,
     footage: 0.25,
     logs: 0.25,
-    explore: 1.0,
+    search: 1.0,
 } as const;
 
 export type ToolType = keyof typeof TOOL_COSTS;
@@ -153,57 +153,47 @@ export default class ToolsManager {
     }
 
     /**
-     * Use the explore tool to find connected rooms
+     * Use the search tool to find physical evidence in a room
      */
-    explore(currentLocation: string): ToolResult {
-        const cost = TOOL_COSTS.explore;
+    search(currentLocation: string): ToolResult {
+        const cost = TOOL_COSTS.search;
 
         if (!this.case.state) {
-            return { success: false, tool: 'explore', cost: 0, query: currentLocation, result: null, error: 'No active game' };
+            return { success: false, tool: 'search' as any, cost: 0, query: currentLocation, result: null, error: 'No active game' };
         }
 
         if (!this.case.isActive()) {
-            return { success: false, tool: 'explore', cost: 0, query: currentLocation, result: null, error: 'Game has ended' };
+            return { success: false, tool: 'search' as any, cost: 0, query: currentLocation, result: null, error: 'Game has ended' };
         }
 
         // Map check
         if (!this.case.config.map || !this.case.config.map[currentLocation]) {
-            return { success: false, tool: 'explore', cost: 0, query: currentLocation, result: null, error: 'Cannot explore from here (invalid location or no map)' };
+            return { success: false, tool: 'search' as any, cost: 0, query: currentLocation, result: null, error: 'Cannot explore from here (invalid location or no map)' };
         }
 
         if (!this.case.usePoints(cost)) {
-            return { success: false, tool: 'explore', cost, query: currentLocation, result: null, error: `Not enough points (need ${cost})` };
+            return { success: false, tool: 'search' as any, cost, query: currentLocation, result: null, error: `Not enough points (need ${cost})` };
         }
 
-        // Find adjacent rooms and items
-        const adjacent = this.case.config.map[currentLocation] || [];
+        // Only items are found now
         const items = this.case.getPhysicalDiscovery(currentLocation);
 
         const newlyDiscovered: string[] = [];
 
-        // 1. Rooms
-        adjacent.forEach(loc => {
-            if (!this.case.state?.discoveredLocations.has(loc.toLowerCase())) {
-                this.case.state?.discoveredLocations.add(loc.toLowerCase());
-                newlyDiscovered.push(`ROOM:${loc}`);
-            }
-        });
-
-        // 2. Items
         items.forEach(itemId => {
             newlyDiscovered.push(`ITEM:${itemId}`);
         });
 
         const result: ToolResult = {
             success: true,
-            tool: 'explore',
+            tool: 'search' as any,
             cost,
             query: currentLocation,
             result: newlyDiscovered
         };
 
         this.case.state.usedTools.push({
-            tool: 'explore',
+            tool: 'search' as any,
             cost,
             result: `Found: ${newlyDiscovered.join(', ') || 'Nothing new'}`
         });

@@ -1,10 +1,5 @@
-import OpenAI from "openai";
+import { aiService, ChatMessage } from "../features/mm/ai-service.js";
 import { logger } from "./logger.js";
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENAI_MODEL = 'gpt-4o-mini';
-
-const ai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 /**
  * Generate an initial profile for a user based on their messages.
@@ -15,20 +10,18 @@ export async function generateProfile(messages: string[]): Promise<string> {
     const input = messages.join("\n");
 
     try {
-        const response = await ai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: 'You are an expert behavioral analyst. Based on a collection of Discord messages from a user, generate a concise profile. Focus on: \n1. Communication style (e.g., formal, casual, technical, helpful).\n2. Main interests or topics they discuss.\n3. Notable personality traits or recurring themes.\nKeep the profile under 150 words.'
-                },
-                { role: 'user', content: `Here are the messages:\n\n${input}` }
-            ],
+        const response = await aiService.chatCompletion([
+            {
+                role: 'system',
+                content: 'You are an expert behavioral analyst. Based on a collection of Discord messages from a user, generate a concise profile. Focus on: \n1. Communication style (e.g., formal, casual, technical, helpful).\n2. Main interests or topics they discuss.\n3. Notable personality traits or recurring themes.\nKeep the profile under 150 words.'
+            },
+            { role: 'user', content: `Here are the messages:\n\n${input}` }
+        ], {
             temperature: 0.7,
-            max_tokens: 300,
+            max_tokens: 300
         });
 
-        return response.choices[0].message.content?.trim() || "Failed to generate profile.";
+        return response.content?.trim() || "Failed to generate profile.";
     } catch (error) {
         logger.error("Error generating AI profile:", error);
         return "Profile generation unavailable.";
@@ -44,26 +37,24 @@ export async function refineProfile(existingProfile: string, newMessages: string
     const input = newMessages.join("\n");
 
     try {
-        const response = await ai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are an expert behavioral analyst. Update an existing user profile with new message data. 
+        const response = await aiService.chatCompletion([
+            {
+                role: 'system',
+                content: `You are an expert behavioral analyst. Update an existing user profile with new message data. 
 Maintain the core characteristics but update interests, communication style, or recurring themes based on the new activity. 
 If new data contradicts or expands on the old profile, adjust accordingly. 
 Keep the final profile concise (under 200 words).
 
 Existing Profile:
 ${existingProfile}`
-                },
-                { role: 'user', content: `New messages for analysis:\n\n${input}` }
-            ],
+            },
+            { role: 'user', content: `New messages for analysis:\n\n${input}` }
+        ], {
             temperature: 0.7,
-            max_tokens: 400,
+            max_tokens: 400
         });
 
-        return response.choices[0].message.content?.trim() || existingProfile;
+        return response.content?.trim() || existingProfile;
     } catch (error) {
         logger.error("Error refining AI profile:", error);
         return existingProfile;
@@ -75,30 +66,28 @@ ${existingProfile}`
  */
 export async function translateTip(imageUrl: string, targetLanguage: string): Promise<string> {
     try {
-        const response = await ai.chat.completions.create({
-            model: OPENAI_MODEL,
-            messages: [
-                {
-                    role: 'system',
-                    content: `You are an expert translator. You will be provided with an image containing a detective tip or piece of advice. 
-                    Your task is to:
-                    1. Extract the text from the image.
-                    2. Translate that text into ${targetLanguage}.
-                    3. Maintain the tone and style of the original advice.
-                    Return ONLY the translated text. No commentary.`
-                },
-                {
-                    role: 'user',
-                    content: [
-                        { type: "image_url", image_url: { url: imageUrl } }
-                    ] as any
-                }
-            ],
+        const response = await aiService.chatCompletion([
+            {
+                role: 'system',
+                content: `You are an expert translator. You will be provided with an image containing a detective tip or piece of advice. 
+                Your task is to:
+                1. Extract the text from the image.
+                2. Translate that text into ${targetLanguage}.
+                3. Maintain the tone and style of the original advice.
+                Return ONLY the translated text. No commentary.`
+            },
+            {
+                role: 'user',
+                content: [
+                    { type: "image_url", image_url: { url: imageUrl } }
+                ] as any
+            }
+        ], {
             temperature: 0.3,
-            max_tokens: 500,
+            max_tokens: 500
         });
 
-        return response.choices[0].message.content?.trim() || "Translation failed.";
+        return response.content?.trim() || "Translation failed.";
     } catch (error) {
         logger.error(`Error translating tip at ${imageUrl}:`, error);
         return "Translation unavailable.";

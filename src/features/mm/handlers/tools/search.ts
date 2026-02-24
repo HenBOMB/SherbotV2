@@ -8,9 +8,9 @@ import { createToolEmbed } from '../../commands.js';
 import GameManager from '../../game.js';
 
 /**
- * Handle /mm explore command
+ * Handle /mm search command
  */
-export async function handleExplore(
+export async function handleSearch(
     manager: GameManager,
     interaction: ChatInputCommandInteraction
 ): Promise<void> {
@@ -59,8 +59,8 @@ export async function handleExplore(
         embeds: [
             new EmbedBuilder()
                 .setColor(Colors.Yellow)
-                .setTitle('🧭 Area Mapping Initialized')
-                .setDescription(`\`\`\`ansi\n\u001b[1;33m[ SCANNING AREA: ${locationId.toUpperCase()} ]\u001b[0m\n\u001b[0;37mDeployment of AUTO_NAV drones... 20%\u001b[0m\n\`\`\`\nSearching for hidden pathways and physical evidence. This will take a moment...`)
+                .setTitle('🧭 Area Search Initialized')
+                .setDescription(`\`\`\`ansi\n\u001b[1;33m[ SCANNING AREA: ${locationId.toUpperCase()} ]\u001b[0m\n\u001b[0;37mDeployment of FORENSIC_SWEEP drones... 20%\u001b[0m\n\`\`\`\nSearching for physical evidence. This will take a moment...`)
         ]
     });
 
@@ -74,9 +74,9 @@ export async function handleExplore(
         return;
     }
 
-    const result = tools.explore(locationId);
+    const result = tools.search(locationId);
     const embed = createToolEmbed(
-        'explore',
+        'search',
         locationId,
         result.result,
         result.cost,
@@ -91,7 +91,7 @@ export async function handleExplore(
     manager.setExploring(channel.id, false);
 
     if (result.success) {
-        manager.getDashboard().addEvent('tool_use', `Explored ${locationId}`);
+        manager.getDashboard().addEvent('tool_use', `Searched ${locationId}`);
 
         // Register evidence for secret triggers
         const findings = Array.isArray(result.result) ? result.result : [];
@@ -104,12 +104,7 @@ export async function handleExplore(
 
         const stats = manager.getOrCreateStats(interaction.user.id, interaction.user.username);
         stats.toolsUsed++;
-        const discovered = findings.filter(f => f.startsWith('ROOM:'));
-        if (discovered.length > 0) {
-            stats.roomsDiscovered += discovered.length;
-            // Update channels to reflect new rooms
-            await manager.setupChannels(activeGame.config);
-        }
+        // No more rooms discovered by search, removed room logic.
 
         manager.broadcastDashboardState();
         await manager.saveState();

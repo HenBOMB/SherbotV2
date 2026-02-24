@@ -25,24 +25,52 @@ export async function handlePresent(
         return;
     }
 
-    const evidenceId = interaction.options.getString('evidence', true);
-    const suspectId = interaction.options.getString('suspect', true);
+    const evidenceQuery = interaction.options.getString('evidence', true);
+    const suspectQuery = interaction.options.getString('suspect', true);
 
     // Get the suspect
-    const suspect = manager.getSuspectsMap().get(suspectId);
-    if (!suspect) {
+    const matches = manager.getSuspectByFuzzyMatch(suspectQuery);
+    if (matches.length === 0) {
         await interaction.reply({
-            content: `Unknown suspect: "${suspectId}".`,
+            content: `Unknown suspect matching "${suspectQuery}".`,
+            ephemeral: true
+        });
+        return;
+    } else if (matches.length > 1) {
+        const names = matches.map(m => m.data.name).join(', ');
+        await interaction.reply({
+            content: `Multiple suspects found matching "${suspectQuery}": **${names}**.\nPlease be more specific.`,
             ephemeral: true
         });
         return;
     }
+    const suspect = matches[0];
+    const suspectId = suspect.data.id;
 
-    // Check if evidence is discovered
+    // Check if evidence is discovered via fuzzy matching
     const discovered = manager.getDiscoveredEvidence();
-    if (!discovered.has(evidenceId.toLowerCase())) {
+
+    const q = evidenceQuery.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let evidenceId: string | null = null;
+    let fallbackEvidenceId: string | null = null;
+
+    for (const item of discovered) {
+        const rawName = item.includes('_') ? item.substring(item.indexOf('_') + 1) : item;
+        const normalizedItem = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (normalizedItem === q) {
+            evidenceId = item;
+            break;
+        }
+        if (normalizedItem.includes(q) || q.includes(normalizedItem)) {
+            fallbackEvidenceId = item;
+        }
+    }
+
+    evidenceId = evidenceId || fallbackEvidenceId;
+
+    if (!evidenceId) {
         await interaction.reply({
-            content: `You haven't discovered evidence "${evidenceId}" yet.`,
+            content: `You haven't discovered any evidence matching "${evidenceQuery}" yet.`,
             ephemeral: true
         });
         return;

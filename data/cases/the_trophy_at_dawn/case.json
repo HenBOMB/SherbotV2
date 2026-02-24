@@ -1,0 +1,300 @@
+{
+    "id": "the_trophy_at_dawn",
+    "name": "The Trophy at Dawn",
+    "description": "I’ve been sitting here in the gallery since five a.m., the rain tapping soft on the windows. The light is low, golden, like it’s just waking up. The victim, Mr. Ellington, was found slumped over the grand marble table, his face still turned toward the glass. The trophy—his old college one—was right where he’d been holding it. Now it’s half-buried in the dust, the stem cracked, the gold dimmed. I don’t know who took it, or why, but I know one thing: someone wanted to remember the past, and someone just wanted to erase it.",
+    "victim": {
+        "name": "Elena Marquez",
+        "cause": "Killed by trophy",
+        "description": "Elena Marquez, a seasoned art curator in her late 40s, carries the quiet intensity of a woman who has seen the ebb and flow of the art world's rhythms. With a sharp gaze and a penchant for vintage novels, she moves through the city like a shadow, always on the hunt for meaning beneath the surface. A devoted daughter to a working-class family, she balanced her ambition with the quiet grace of a woman who never wanted to be the center of attention. Her life was one of subtle contrasts—elegant yet grounded, emotionally reserved yet deeply empathetic. Known for her uncanny ability to sense the mood in a room, Elena was not just a curator but a storyteller of art, weaving narratives that brought forgotten masterpieces to life. When she was found dead in her apartment, the crime scene suggested a sudden, violent interruption of her routine—her life, it seemed, had been upended just as she was about to present a new exhibit on the forgotten stories of noir artists.",
+        "avatar": "avatars/victim_36ce8658-fee3-4e37-83c7-641253abfc2f.png"
+    },
+    "murderTime": "21:28",
+    "murderLocation": "street",
+    "map": {
+        "gallery": [
+            "studio",
+            "street"
+        ],
+        "studio": [
+            "gallery",
+            "storage"
+        ],
+        "storage": [
+            "studio",
+            "street"
+        ],
+        "street": [
+            "gallery",
+            "storage",
+            "cafe"
+        ],
+        "cafe": [
+            "street"
+        ]
+    },
+    "evidence": {
+        "dna": {
+            "gallery": [
+                "patron",
+                "artist",
+                "critic"
+            ],
+            "studio": [
+                "rival_artist",
+                "gallery_owner"
+            ],
+            "storage": [
+                "gallery_owner",
+                "critic"
+            ],
+            "street": [
+                "critic",
+                "artist",
+                "patron"
+            ]
+        },
+        "footage": {
+            "21:00": "The gallery glows with a soft, amber light, casting long shadows across the marble floors. A patron moves with purpose through the space, silhouetted against the warm illumination. The rival artist is seen adjusting brushes in the studio, their figure blurred slightly by the evening mist. The gallery owner walks briskly toward the storage area, their footsteps echoing faintly. The critic stands motionless on the street, gazing toward the building, their silhouette sharp against the fading dusk. The artist enters the gallery, stepping into the warm light, their silhouette moving with a quiet grace.",
+            "21:06": "The rival artist is now seen in the studio, moving with urgency, their hands gesturing as if sketching rapidly. The scene is slightly hazy due to the ambient wind. The camera captures the faintest tremor in their posture, suggesting tension.",
+            "21:09": "The critic walks briskly toward the storage area, their coat flapping in the breeze. The camera picks up the rhythmic sway of their steps. As they approach the storage entrance, the light from the building casts a deep pool of shadow behind them.",
+            "21:15": "The critic enters the gallery, now moving with a measured pace. The lighting in the gallery is slightly dimmer than before, and the ambient hum of the building is more pronounced. The scene feels like a slow, deliberate transition between spaces.",
+            "21:21": "The rival artist returns to the studio, now moving with a more subdued rhythm. The camera captures a subtle hesitation before they enter, as if pausing to observe the surroundings. The space appears slightly colder, with the studio lights flickering intermittently.",
+            "21:23": "The artist emerges from the gallery and walks toward the street, their silhouette elongated by the evening light. The wind picks up, creating gentle ripples in the window panes. Their expression is unreadable, as if they're carrying something unspoken.",
+            "21:28": "The patron is seen standing on the street, facing the building. As the camera pans, a sharp motion is captured—a sudden, decisive movement. The lights flicker momentarily, then stabilize. The scene feels tense, as if a quiet confrontation is unfolding.",
+            "21:31": "The patron stands motionless at the storage entrance, their posture now relaxed. The camera captures a slow, deliberate movement as they walk toward the storage area. The light from the building illuminates their face, revealing a faint sheen of resolve. The scene feels resolved, yet still tinged with melancholy."
+        },
+        "digital_logs": {
+            "21:00": "Motion sensors in gallery and studio registered activity at 21:00. Keycard access logs show patron, gallery owner, and artist entering respective zones. Critic's entry via street access point logged but no entry timestamp due to intermittent signal.",
+            "21:06": "Motion sensor in studio triggered at 21:06. No keycard access logged for rival artist; system notes 'minor signal fluctuation' and suggests possible manual entry.",
+            "21:09": "Access to storage area logged at 21:09 via proximity sensor. Keycard swipe confirmed; system records entry time accurately.",
+            "21:15": "Motion sensor in gallery registered movement at 21:15. No keycard access recorded; system indicates 'motion detected but no credential scan', suggesting possible unattended entry.",
+            "21:21": "Motion sensor in studio registered at 21:21. No keycard access recorded; system flags 'incomplete sensor sequence' and suggests potential unlogged exit.",
+            "21:23": "Motion sensor in gallery and street corridor registered movement at 21:23. Keycard exit from gallery logged; however, no entry into street corridor recorded, suggesting possible unrecorded transition.",
+            "21:28": "Alarm triggered at 21:28: 'Patron detected at street entry with sudden motion. No entry or exit keycard scan recorded. Motion sensor confirms movement at 21:28, but no access event logged. Sensor malfunction reported in street corridor during this period.",
+            "21:31": "Motion sensor in storage area registered entry at 21:31. Keycard access to storage logged with timestamp. System logs: 'Entry confirmed. No anomaly detected.'"
+        },
+        "locations": {
+            "patron": {
+                "21:00": "gallery",
+                "21:28": "street",
+                "21:31": "storage"
+            },
+            "rival_artist": {
+                "21:00": "studio",
+                "21:06": "studio",
+                "21:21": "studio"
+            },
+            "gallery_owner": {
+                "21:00": "storage",
+                "21:28": "studio"
+            },
+            "critic": {
+                "21:00": "street",
+                "21:09": "storage",
+                "21:15": "gallery"
+            }
+        },
+        "physical_evidence": {
+            "trophy": "The murder weapon. Found in street.",
+            "unidentified_key_0": "Suspicious item found in gallery.",
+            "unidentified_key_1": "Suspicious item found in studio."
+        },
+        "physical_discovery": {
+            "automatic": [
+                "trophy",
+                "unidentified_key_0",
+                "unidentified_key_1"
+            ]
+        },
+        "all_locations": [
+            "gallery",
+            "studio",
+            "storage",
+            "street",
+            "cafe"
+        ]
+    },
+    "solution": {
+        "killer": "patron",
+        "method": "Used trophy in the street at 21:28.",
+        "motive": "Elena believes the artist has been stealing credit for her own work and undermining her career. The murder at 21:28, just as the artist was preparing to unveil her final piece, represents the culmination of years of quiet sabotage.",
+        "timeline_summary": {
+            "21:00": "artist arrives at the gallery.",
+            "21:06": "rival_artist enters the studio.",
+            "21:09": "critic enters the storage.",
+            "21:15": "critic enters the gallery.",
+            "21:21": "rival_artist enters the studio.",
+            "21:23": "artist goes to the street.",
+            "21:28": "patron kills artist with trophy.",
+            "21:31": "patron flees to the storage."
+        },
+        "key_evidence": [
+            "trophy found in street",
+            "unidentified_key_0 found in gallery",
+            "unidentified_key_1 found in studio"
+        ]
+    },
+    "suspects": [
+        {
+            "id": "patron",
+            "name": "Elena Marlowe",
+            "alias": [
+                "patron",
+                "elena"
+            ],
+            "avatar": "avatars/patron.png",
+            "currentLocation": "unknown",
+            "role": "rival",
+            "isGuilty": true,
+            "alibi": "Elena claims she was at her favorite café on the corner of 5th and Maple, arriving at 20:45 and staying until 21:30. She says she saw a man entering the café at 21:28 and heard him talking to the barista about 'a surprise opening.' She believes the man might have been the artist's friend, but she has no way of confirming this. She has been working late to finalize her own gallery submission and may have been distracted.",
+            "motive": "Elena believes the artist has been stealing credit for her own work and undermining her career. The murder at 21:28, just as the artist was preparing to unveil her final piece, represents the culmination of years of quiet sabotage.",
+            "secrets": [
+                {
+                    "id": "affair",
+                    "text": "Elena has been in a secret affair with the artist's longtime assistant, who recently expressed interest in joining the artist's gallery. The assistant has been quietly documenting the artist's daily routines and has noticed subtle changes in the artist's behavior, including growing distant from the assistant.",
+                    "trigger": {
+                        "keywords": [
+                            "assistant",
+                            "growing distant",
+                            "exhibition"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "deep_secret",
+                    "text": "Elena discovered that she was the one who originally commissioned the artist to create a series of paintings for a gallery space that she now owns. The artist had been painting these works without credit, and when Elena asked for recognition, the artist declined, citing 'creative differences.' This secret has been building for years and represents a deep betrayal of trust.",
+                    "trigger": {
+                        "keywords": [
+                            "commission",
+                            "gallery",
+                            "credit",
+                            "declined"
+                        ],
+                        "minPressure": 40
+                    }
+                }
+            ],
+            "traits": [
+                "Suspicious"
+            ]
+        },
+        {
+            "id": "rival_artist",
+            "name": "Elena Marquez",
+            "alias": [
+                "rival_artist",
+                "elena"
+            ],
+            "avatar": "avatars/rival_artist.png",
+            "currentLocation": "unknown",
+            "role": "rival",
+            "isGuilty": false,
+            "alibi": "Elena claims she was at a late-night gallery opening at the corner of 5th and Oak, which ended at 21:30. She says she walked home through the neighborhood, stopping at a streetlamp near the park to sketch. However, her sketchbook shows only a few pages of notes and faint pencil lines, suggesting she was not actively engaged in the event.",
+            "motive": "Elena feels betrayed when the victim publicly praised a former collaborator—someone Elena had hoped would become her next muse. She believes the victim’s recent success is a direct threat to her own career and has been secretly working to undermine her.",
+            "secrets": [
+                {
+                    "id": "rivalry_stakes",
+                    "text": "Elena has been secretly submitting paintings to the same gallery that the victim curated, but under a different name to avoid direct competition. She also borrowed a set of the victim’s sketches from a past exhibition, which she claims were used for inspiration.",
+                    "trigger": {
+                        "keywords": [
+                            "gallery",
+                            "sketches",
+                            "submission"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "deep_secret",
+                    "text": "Elena discovered that the victim had been secretly planning to retire and hand over her gallery space to a younger artist—someone Elena had recently been mentoring. The victim had even offered a generous share of the profits from the upcoming exhibit to this new artist. This revelation explains the depth of the motive and suggests a personal betrayal.",
+                    "trigger": {
+                        "keywords": [
+                            "retirement",
+                            "gallery",
+                            "mentor",
+                            "profit"
+                        ],
+                        "minPressure": 40
+                    }
+                }
+            ],
+            "traits": [
+                "Suspicious"
+            ]
+        },
+        {
+            "id": "gallery_owner",
+            "name": "Suspect gallery_owner",
+            "alias": [
+                "gallery_owner",
+                "suspect"
+            ],
+            "avatar": "avatars/gallery_owner.png",
+            "currentLocation": "unknown",
+            "role": "Unknown Suspect",
+            "isGuilty": false,
+            "alibi": "I was somewhere else.",
+            "motive": "Unknown motive.",
+            "secrets": [],
+            "traits": [
+                "Suspicious"
+            ]
+        },
+        {
+            "id": "critic",
+            "name": "Elena Marlowe",
+            "alias": [
+                "critic",
+                "elena"
+            ],
+            "avatar": "avatars/critic.png",
+            "currentLocation": "unknown",
+            "role": "rival",
+            "isGuilty": false,
+            "alibi": "Elena claims she was at a late-night gallery opening at the corner of 5th and Maple, where she had been scheduled to speak at 8:00 PM. She says she left around 9:30 PM to catch a cab, but her phone records show she was still at the gallery until 10:15 PM. Her cab receipt lists a drop-off at the street corner near the murder scene at 10:30 PM, which aligns with the timeline but doesn't account for the murder occurring at 21:28.",
+            "motive": "Elena believes the victim’s latest exhibition will overshadow her own upcoming solo show. With the victim's recent success, Elena fears her own career momentum will slow down. She has been secretly planning to sabotage the exhibition by subtly altering key pieces and even delaying the opening.",
+            "secrets": [
+                {
+                    "id": "affair",
+                    "text": "Elena has been in a secret affair with the victim’s longtime assistant, who has been quietly working on a side project that could rival the victim’s own work. The assistant has recently expressed growing interest in pursuing her own art career.",
+                    "trigger": {
+                        "keywords": [
+                            "affair",
+                            "assistant",
+                            "artistic",
+                            "competition"
+                        ],
+                        "minPressure": 25
+                    }
+                },
+                {
+                    "id": "deep_secret",
+                    "text": "Elena discovered that the victim had been secretly writing a memoir about their early years, which included a chapter dedicated to Elena—claiming she had once been a protégé and had been passed over for key recognition. The chapter reveals that the victim had a deep personal debt to Elena’s family, which she never acknowledged publicly. This secret could be a major point of contention if revealed.",
+                    "trigger": {
+                        "keywords": [
+                            "memoir",
+                            "debt",
+                            "family",
+                            "betrayal"
+                        ],
+                        "minPressure": 40
+                    }
+                }
+            ],
+            "traits": [
+                "Suspicious"
+            ]
+        }
+    ],
+    "settings": {
+        "timeLimit": 1200,
+        "startingPoints": 50,
+        "difficulty": "medium"
+    },
+    "meta": {
+        "generatedAt": 1770519261541,
+        "verified": false,
+        "solvabilityScore": 0
+    }
+}

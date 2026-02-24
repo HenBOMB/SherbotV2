@@ -29,13 +29,20 @@ export async function handleAccuse(
         return;
     }
 
-    const suspectId = interaction.options.getString('suspect', true);
-    const suspect = activeGame.getSuspect(suspectId);
+    const suspectQuery = interaction.options.getString('suspect', true);
+    const matches = manager.getSuspectByFuzzyMatch(suspectQuery);
 
-    if (!suspect) {
-        await interaction.reply({ content: 'Suspect not found.', ephemeral: true });
+    if (matches.length === 0) {
+        await interaction.reply({ content: `Suspect matching "${suspectQuery}" not found.`, ephemeral: true });
+        return;
+    } else if (matches.length > 1) {
+        const names = matches.map(m => m.data.name).join(', ');
+        await interaction.reply({ content: `Multiple suspects found matching "${suspectQuery}": **${names}**.\nPlease be more specific.`, ephemeral: true });
         return;
     }
+
+    const suspect = matches[0].data;
+    const suspectId = suspect.id;
 
     // Prevent double voting
     if (activeGame.state?.accusations[interaction.user.id]) {

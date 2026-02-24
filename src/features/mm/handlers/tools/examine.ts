@@ -9,6 +9,29 @@ import { createToolEmbed } from '../../commands.js';
 import GameManager from '../../game.js';
 
 /**
+ * Helper to find the best matching evidence ID given a query
+ */
+function findBestMatch(query: string, discovered: Iterable<string>): string | null {
+    const q = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let bestMatch: string | null = null;
+    let fallbackMatch: string | null = null;
+
+    for (const item of discovered) {
+        // Strip the prefix for matching (e.g., physical_, secret_, logs_)
+        const rawName = item.includes('_') ? item.substring(item.indexOf('_') + 1) : item;
+        const normalizedItem = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        if (normalizedItem === q) {
+            return item; // Exact match on name
+        }
+        if (normalizedItem.includes(q) || q.includes(normalizedItem)) {
+            fallbackMatch = item; // Partial match
+        }
+    }
+    return bestMatch || fallbackMatch;
+}
+
+/**
  * Handle /mm examine command
  */
 export async function handleExamine(
@@ -67,20 +90,29 @@ export async function handleExamine(
         }
         targetItem = evidenceList[0];
     } else {
-        // Fallback for specific item validation
+        // Fuzzy match specific item validation
         const discovered = manager.getDiscoveredEvidence();
-        if (!discovered.has(`physical_${targetItem.toLowerCase()}`)) {
+        const matchedItem = findBestMatch(targetItem, discovered);
+
+        if (!matchedItem) {
             await interaction.reply({
-                content: `You haven't discovered any item named "${targetItem}" yet. Explore more to find clues!`,
+                content: `You haven't discovered any item matching "${targetItem}" yet. Explore more to find clues!`,
                 ephemeral: true
             });
             return;
         }
+
+        targetItem = matchedItem;
         // If they provided a specific item, we still might want to let them cycle if they are in the correct room
         const roomList = getRoomEvidence();
-        if (roomList.includes(targetItem)) {
-            evidenceList = roomList;
+        if (roomList.includes(targetItem) || roomList.map(i => `physical_${i}`).includes(targetItem)) {
+            evidenceList = roomList.map(i => `physical_${i}`);
+        } else {
+            evidenceList = [targetItem]; // fallback if not in room
         }
+
+        // Let's make targetItem the pure name without prefix for the tool manager
+        if (targetItem.startsWith('physical_')) targetItem = targetItem.replace('physical_', '');
     }
 
     const processExamine = (itemId: string) => {

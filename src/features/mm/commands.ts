@@ -2,9 +2,15 @@ import {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
     EmbedBuilder,
+    AttachmentBuilder,
     Colors,
     PermissionFlagsBits,
 } from 'discord.js';
+import path from 'path';
+
+function capitalize(str: string): string {
+    return str.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
 
 // Authorized Admin User ID
 export const AUTHORIZED_ADMIN_ID = '348547981253017610';
@@ -69,15 +75,15 @@ export const mmCommands = new SlashCommandBuilder()
             )
     )
     .addSubcommand(sub =>
-        sub.setName('explore')
-            .setDescription('Explore your current location for hidden rooms')
+        sub.setName('search')
+            .setDescription('Search your current location for physical evidence')
     )
     .addSubcommand(sub =>
         sub.setName('examine')
             .setDescription('Examine physical evidence in detail')
             .addStringOption(opt =>
                 opt.setName('item')
-                    .setDescription('Evidence ID to examine (e.g., blood_splatter, safe). Leave empty to cycle through room items.')
+                    .setDescription('Item name to examine (e.g. "blood", "safe"). Leave empty to see all.')
                     .setRequired(false)
                     .setAutocomplete(true)
             )
@@ -87,23 +93,23 @@ export const mmCommands = new SlashCommandBuilder()
             .setDescription('Present evidence to a suspect (Phoenix Wright style!)')
             .addStringOption(opt =>
                 opt.setName('evidence')
-                    .setDescription('Evidence ID to present')
+                    .setDescription('Evidence name to present (e.g. "blood")')
                     .setRequired(true)
                     .setAutocomplete(true)
             )
             .addStringOption(opt =>
                 opt.setName('suspect')
-                    .setDescription('Suspect to present to')
+                    .setDescription('Suspect name to present to (e.g. "victoria")')
                     .setRequired(true)
                     .setAutocomplete(true)
             )
     )
     .addSubcommand(sub =>
         sub.setName('accuse')
-            .setDescription('Cast your vote for the killer')
+            .setDescription('Accuse a suspect of the murder! (Ends the game if threshold reached)')
             .addStringOption(opt =>
                 opt.setName('suspect')
-                    .setDescription('Suspect ID to accuse')
+                    .setDescription('The suspect to accuse (e.g. "victoria")')
                     .setRequired(true)
                     .setAutocomplete(true)
             )
@@ -289,10 +295,10 @@ export function createToolEmbed(
     // --- DNA SEQUENCER ---
     if (tool === 'dna') {
         const samples = Array.isArray(result) ? result : [];
-        const location = query.toUpperCase().replace(/_/g, ' ');
+        const location = capitalize(query);
 
         let visual = '```ansi\n';
-        visual += `\u001b[1;34m[ SCANNING LOCATION: ${location} ]\u001b[0m\n`;
+        visual += `\u001b[1;34m[ SEQUENCING LOCATION: ${location} ]\u001b[0m\n`;
         visual += '----------------------------------------\n\n';
 
         if (samples.length > 0) {
@@ -383,53 +389,43 @@ export function createToolEmbed(
         return embed;
     }
 
-    // --- EXPLORE ---
-    if (tool === 'explore') {
-        const location = query.toUpperCase().replace(/_/g, ' ');
+    // --- SEARCH ---
+    if (tool === 'search') {
+        const location = capitalize(query);
         const discovered = Array.isArray(result) ? result : [];
 
         let visual = '```ansi\n';
-        visual += `\u001b[1;33m[ EXPLORING: ${location} ]\u001b[0m\n`;
+        visual += `\u001b[1;33m[ SEARCHING: ${location} ]\u001b[0m\n`;
         visual += '----------------------------------------\n\n';
 
         if (discovered.length > 0) {
-            const rooms = discovered.filter(d => d.startsWith('ROOM:')).map(d => d.replace('ROOM:', ''));
             const items = discovered.filter(d => d.startsWith('ITEM:')).map(d => d.replace('ITEM:', ''));
-
-            if (rooms.length > 0) {
-                visual += '\u001b[1;32m✓ NEW AREAS DISCOVERED\u001b[0m\n';
-                rooms.forEach(room => {
-                    const roomName = room.replace(/_/g, ' ').toUpperCase();
-                    visual += `  🚪 \u001b[1;37m${roomName}\u001b[0m\n`;
-                });
-                visual += '\n';
-            }
 
             if (items.length > 0) {
                 visual += '\u001b[1;36m🔎 PHYSICAL EVIDENCE FOUND\u001b[0m\n';
                 items.forEach(item => {
-                    const itemName = item.replace(/_/g, ' ').toUpperCase();
+                    const itemName = capitalize(item);
                     visual += `  📦 \u001b[1;37m${itemName}\u001b[0m\n`;
                 });
             }
         } else {
             visual += '\u001b[1;30m- NO NEW FINDINGS -\u001b[0m\n';
-            visual += 'Area is fully mapped and searched.\n';
+            visual += 'Area has been fully searched.\n';
         }
 
         visual += '\n----------------------------------------\n';
-        visual += `Cost: ${cost} pts | Mapper: AUTO_NAV`;
+        visual += `Cost: ${cost} pts | Scanner: FORENSIC_SWEEP`;
         visual += '```';
 
         return embed
             .setColor(Colors.Gold)
-            .setTitle('🧭 Area Mapper')
+            .setTitle('🧭 Evidence Scanner')
             .setDescription(visual);
     }
 
     // --- EXAMINE ---
     if (tool === 'examine') {
-        const itemName = query.toUpperCase().replace(/_/g, ' ');
+        const itemName = capitalize(query);
         const description = typeof result === 'string' ? result : 'No details available.';
 
         let visual = '```ansi\n';
@@ -490,11 +486,11 @@ export function createHelpEmbed(): EmbedBuilder {
     const embed = new EmbedBuilder()
         .setColor(Colors.Blurple)
         .setTitle('🔍 Murder Mystery - How to Play')
-        .setDescription('Become a detective and solve the murder! You must physically explore the scene, find clues, and interrogate suspects where they stand.')
+        .setDescription('Become a detective and solve the murder! You must interrogate suspects where they stand.')
         .addFields(
             {
                 name: '🚪 Exploration',
-                value: '• Use `/mm explore` in your current room to find adjacent areas.\n• New rooms will appear as channels (e.g., `#📍┃kitchen`).\n• Click these channels to move there.',
+                value: '• All accessible rooms are visible as channels from the start.\n• Click these channels (e.g., `#📍┃kitchen`) to move there and investigate.',
                 inline: false
             },
             {
@@ -504,7 +500,7 @@ export function createHelpEmbed(): EmbedBuilder {
             },
             {
                 name: '🔬 Detective Tools',
-                value: '• `/mm explore` - Search for hidden rooms (1 pt)\n• `/mm dna` - Analyze DNA in your current room (0.5 pts)\n• `/mm footage <time>` - View camera footage (0.25 pts)\n• `/mm examine <item>` - Inspect discovered items (Free)\n• `/mm present <evidence> <suspect>` - **Show evidence to a suspect!** (Free)',
+                value: '• `/mm search` - Search current room for physical evidence (1 pt)\n• `/mm dna` - Analyze DNA in your current room (0.5 pts)\n• `/mm footage <time>` - View camera footage (0.25 pts)\n• `/mm examine <item>` - Inspect discovered items (Free)\n• `/mm present <evidence> <suspect>` - **Show evidence to a suspect!** (Free)',
                 inline: false
             },
             {
@@ -534,6 +530,8 @@ export function createHelpEmbed(): EmbedBuilder {
     return embed;
 }
 
+
+
 /**
  * Create a creative multi-embed briefing for a new case
  */
@@ -544,8 +542,9 @@ export function createCaseBriefingEmbeds(
         points: number;
         players: string[];
     }
-): EmbedBuilder[] {
+): { embeds: EmbedBuilder[]; files: AttachmentBuilder[] } { // Changed return type
     const embeds: EmbedBuilder[] = [];
+    const files: AttachmentBuilder[] = [];
 
     // 1. HEADER / TOP SECRET
     const headerEmbed = new EmbedBuilder()
@@ -579,13 +578,28 @@ export function createCaseBriefingEmbeds(
             },
             {
                 name: '📍 PRIMARY SCENE',
-                value: `\`${caseConfig.murderLocation.replace(/_/g, ' ').toUpperCase()}\``,
+                value: `\`${capitalize(caseConfig.murderLocation)}\``,
                 inline: true
             }
         );
 
-    // Add victim image if available in caseConfig.victim.avatar (this might be a new field we could use)
-    if (victim.avatar) sceneEmbed.setThumbnail(victim.avatar);
+    // Add victim image if available
+    if (victim.avatar) {
+        if (victim.avatar.startsWith('http')) {
+            sceneEmbed.setThumbnail(victim.avatar);
+        } else {
+            // Local file
+            const filename = `victim_${path.basename(victim.avatar)}`;
+            try {
+                const fullPath = path.isAbsolute(victim.avatar) ? victim.avatar : path.join(process.cwd(), 'public', victim.avatar);
+                const attachment = new AttachmentBuilder(fullPath, { name: filename });
+                files.push(attachment);
+                sceneEmbed.setThumbnail(`attachment://${filename}`);
+            } catch (e) {
+                console.error("Failed to attach victim avatar", e);
+            }
+        }
+    }
 
     embeds.push(sceneEmbed);
 
@@ -612,11 +626,26 @@ export function createCaseBriefingEmbeds(
             .setAuthor({ name: `SUSPECT DATA: ${s.name.toUpperCase()}`, iconURL: 'https://em-content.zobj.net/source/twitter/376/bust-in-silhouette_1f464.png' })
             .setDescription(`**Statement:** "${s.alibi}"`)
             .addFields(
-                { name: 'IDENTIFIER', value: `\`${s.id}\``, inline: true },
+                { name: 'IDENTIFIER', value: `\`${capitalize(s.id)}\``, inline: true },
                 { name: 'STATUS', value: s.motive ? '\`KNOWN INTEREST\`' : '\`UNRESTRICTED\`', inline: true }
             );
 
-        if (s.avatar) sEmbed.setThumbnail(s.avatar);
+        if (s.avatar) {
+            if (s.avatar.startsWith('http')) {
+                sEmbed.setThumbnail(s.avatar);
+            } else {
+                // Local file
+                const filename = `suspect_${s.id}.png`; // Use ID to avoid name collisions
+                try {
+                    const fullPath = path.isAbsolute(s.avatar) ? s.avatar : path.join(process.cwd(), 'public', s.avatar);
+                    const attachment = new AttachmentBuilder(fullPath, { name: filename });
+                    files.push(attachment);
+                    sEmbed.setThumbnail(`attachment://${filename}`);
+                } catch (e) {
+                    console.error(`Failed to attach avatar for ${s.name}`, e);
+                }
+            }
+        }
         embeds.push(sEmbed);
     });
 
@@ -629,10 +658,10 @@ export function createCaseBriefingEmbeds(
             { name: '💎 ALLOCATED POINTS', value: `\`${options.points}\``, inline: true },
             { name: '👥 CURRENT AGENTS', value: `<@${options.players[0]}>`, inline: true }
         )
-        .setDescription('```ansi\n\u001b[1;32mUNITS READY\u001b[0m | \u001b[1;36mLOGS INITIALIZED\u001b[0m | \u001b[1;33mSCANNING...\u001b[0m\n```\nUse your tools wisely. Every minute spent and every log accessed will deplete your department resources.')
+        .setDescription('```ansi\n\u001b[1;32mDETECTIVES READY\u001b[0m | \u001b[1;36mINITIALIZED\u001b[0m | \u001b[1;33mIDENTIFYING...\u001b[0m\n```\nUse your tools wisely. Every minute spent and every log accessed will deplete your department resources.')
         .setFooter({ text: 'Use /mm help for tactical instructions • /mm status to review progress' });
 
     embeds.push(resourceEmbed);
 
-    return embeds;
+    return { embeds, files };
 }

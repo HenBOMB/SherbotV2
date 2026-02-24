@@ -53,7 +53,13 @@ export default async function (client: Client) {
                     await command.init(client).catch(err => logger.error(`   ✗ /${name} init error`, err));
                 }
             }
-            logger.info(`   ✓ /${name} (${command.guild || 'any'})`);
+
+            let guild: any = null;
+
+            if (command.guild) {
+                guild = await client.guilds.fetch(command.guild);
+            }
+            logger.info(`   ✓ /${name} (${guild?.name || 'any'})`);
         } catch (error) {
             logger.error(`   ✗ /${file.slice(0, file.lastIndexOf('.'))}`, error);
         }

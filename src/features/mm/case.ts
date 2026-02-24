@@ -8,6 +8,7 @@ export interface Victim {
     name: string;
     cause: string;
     description?: string;
+    avatar?: string;
 }
 
 /**
@@ -66,7 +67,7 @@ export interface SuspectData {
 /**
  * Difficulty settings
  */
-export type DifficultyLevel = 'watson' | 'sherlock' | 'irene';
+export type DifficultyLevel = 'watson' | 'sherlock' | 'irene' | 'easy' | 'medium' | 'hard';
 
 /**
  * Case configuration loaded from JSON
@@ -79,7 +80,7 @@ export interface CaseConfig {
     murderTime: string;
     murderLocation: string;
     evidence: Evidence;
-    solution: string; // suspect id
+    solution: SolutionData; // suspect id or full solution object
     map?: Record<string, string[]>; // adjacency list: "kitchen": ["hallway", "dining"]
     suspects: SuspectData[];
     settings: {
@@ -87,6 +88,24 @@ export interface CaseConfig {
         startingPoints: number;
         difficulty?: DifficultyLevel;
     };
+    meta?: {
+        generatedAt: number;
+        verified: boolean;
+        solvabilityScore: number;
+    };
+}
+
+/**
+ * Detailed solution data
+ */
+export interface SolutionData {
+    killer: string;
+    accomplice?: string;
+    accomplice_knowledge?: string;
+    method: string;
+    motive: string;
+    timeline_summary?: Record<string, string>;
+    key_evidence: string[];
 }
 
 /**
@@ -399,7 +418,8 @@ export default class Case {
                 }
             }
 
-            const correct = finalistId === this.config.solution;
+            const correct = finalistId === this.getSolutionId();
+
             this.state.phase = 'accused';
             this.state.accusation = {
                 accusedId: finalistId,
@@ -407,7 +427,8 @@ export default class Case {
                 votes: { ...this.state.accusations }
             };
 
-            return { finished: true, correct, solution: this.config.solution };
+            return { finished: true, correct, solution: this.getSolutionId() };
+
         }
 
         return { finished: false, totalNeeded: votesNeeded, currentCount: totalVotes };
@@ -434,5 +455,15 @@ export default class Case {
      */
     getSuspectsPublic(): Omit<SuspectData, 'isGuilty' | 'secrets'>[] {
         return this.config.suspects.map(({ isGuilty, secrets, ...rest }) => rest);
+    }
+
+    /**
+     * Get the solution suspect ID regardless of config format
+     */
+    getSolutionId(): string {
+        if (typeof this.config.solution === 'string') {
+            return this.config.solution;
+        }
+        return this.config.solution.killer;
     }
 }

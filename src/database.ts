@@ -65,6 +65,16 @@ export class BotState extends Model<InferAttributes<BotState>, InferCreationAttr
     declare value: string;
 }
 
+// Define InterrogationCache model for storing embeddings
+export class InterrogationCache extends Model<InferAttributes<InterrogationCache>, InferCreationAttributes<InterrogationCache>> {
+    declare id: CreationOptional<string>;
+    declare suspectId: string;
+    declare question: string;
+    declare embedding: string; // JSON string of number[]
+    declare response: string; // JSON string of SuspectResponse
+    declare createdAt: CreationOptional<Date>;
+}
+
 Server.init({
     id: {
         type: DataTypes.STRING,
@@ -238,6 +248,41 @@ BotState.init({
     timestamps: false
 });
 
+InterrogationCache.init({
+    id: {
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
+        primaryKey: true,
+    },
+    suspectId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    question: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    embedding: {
+        type: DataTypes.TEXT, // Storing as JSON string
+        allowNull: false,
+    },
+    response: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    createdAt: DataTypes.DATE
+}, {
+    sequelize,
+    tableName: 'InterrogationCache',
+    timestamps: true,
+    updatedAt: false, // Immutable cache entries
+    indexes: [
+        {
+            fields: ['suspectId']
+        }
+    ]
+});
+
 export async function initializeDatabase() {
     try {
         await sequelize.authenticate();
@@ -274,6 +319,9 @@ export async function initializeDatabase() {
             }
 
             logger.info('Database models synced.');
+
+            // Ensure InterrogationCache table exists (sync should handle it, but for safety in dev)
+            await InterrogationCache.sync();
         }
 
         // Initialize default guild if configured

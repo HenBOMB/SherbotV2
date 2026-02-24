@@ -36,7 +36,7 @@ export async function handleStatus(
         const suspect = activeGame.getSuspect(state.accusation.accusedId);
         accusedName = suspect?.name;
 
-        const killer = activeGame.getSuspect(activeGame.config.solution);
+        const killer = activeGame.getSuspect(activeGame.getSolutionId());
         killerName = killer?.name;
     }
 

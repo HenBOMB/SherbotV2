@@ -43,7 +43,7 @@ import InterrogationManager from './interrogation.js';
 import { handleStart } from './handlers/start.js';
 import { handleStatus } from './handlers/status.js';
 import { handleJoin } from './handlers/join.js';
-import { handleDNA, handleFootage, handleLogs, handleExplore, handleExamine, handlePresent, handleEvidence } from './handlers/tools.js';
+import { handleDNA, handleFootage, handleLogs, handleSearch, handleExamine, handlePresent, handleEvidence } from './handlers/tools.js';
 import { handleAccuse } from './handlers/accuse.js';
 
 /**
@@ -118,6 +118,32 @@ export default class GameManager {
     public getTools() { return this.tools; }
     public setTools(tools: ToolsManager | null) { this.tools = tools; }
     public getSuspectsMap() { return this.suspects; }
+
+    /**
+     * Helper to find a suspect by their exact ID, alias, or fuzzy matched name/ID
+     * Returns an array of matches. If there is an exact match, it returns an array of length 1.
+     */
+    public getSuspectByFuzzyMatch(query: string): Suspect[] {
+        // Try exact match first
+        const idQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+        let exactMatch = this.suspects.get(query) || this.suspects.get(idQuery);
+        if (exactMatch) return [exactMatch];
+
+        // Try fuzzy match
+        const matches = new Set<Suspect>();
+        for (const [id, suspect] of this.suspects.entries()) {
+            const rawId = id.replace(/[^a-z0-9]/g, '');
+            const rawName = suspect.data.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+            if (rawId === idQuery || rawName === idQuery) {
+                matches.add(suspect); // Strong match
+            } else if (rawId.includes(idQuery) || rawName.includes(idQuery) || idQuery.includes(rawName)) {
+                matches.add(suspect); // Weak match
+            }
+        }
+        return Array.from(matches);
+    }
+
     public getChannelsMap() { return this.channels; }
     public getDashboard() { return this.dashboard; }
     public getClient() { return this.client; }
@@ -201,8 +227,8 @@ export default class GameManager {
         return handleLogs(this, interaction);
     }
 
-    async handleExplore(interaction: ChatInputCommandInteraction) {
-        return handleExplore(this, interaction);
+    async handleSearch(interaction: ChatInputCommandInteraction) {
+        return handleSearch(this, interaction);
     }
 
     async handleEvidence(interaction: ChatInputCommandInteraction) {
@@ -289,7 +315,7 @@ export default class GameManager {
             } else {
                 topic += ` | Area is clear`;
             }
-            topic += ` | /mm explore to search`;
+            // topic += ` | /mm explore to search`;
 
             const locTag = `Location: ${loc.replace(/_/g, ' ')}`;
             let channel = this.category.children.cache.find(c => {
@@ -298,7 +324,8 @@ export default class GameManager {
                 return txt.topic?.includes(locTag) || txt.name === name;
             }) as TextChannel | undefined;
 
-            const isDiscovered = !!(this.activeGame?.state?.discoveredLocations.has(loc));
+            // const isDiscovered = !!(this.activeGame?.state?.discoveredLocations.has(loc));
+            const isDiscovered = true; // All rooms visible by default
             const isMurderLoc = this.activeGame?.config.murderLocation === loc;
 
             if (!channel) {

@@ -1,15 +1,14 @@
-import OpenAI from "openai";
+import { aiService } from './ai-service.js';
 import { GuildMember, TextChannel, Webhook, EmbedBuilder, Colors } from "discord.js";
 import { SuspectData, SecretData, SuspectState } from './case.js';
 import { buildSystemPrompt, buildPressureHint } from './prompts.js';
 import { tokenTracker } from '../../utils/token-tracker.js';
 import { logger } from '../../utils/logger.js';
+import { InterrogationCache } from '../../database.js';
+import { cosineSimilarity } from '../../utils/math.js';
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const OPENAI_MODEL = 'gpt-4o-mini';
-
-// Initialize OpenAI SDK
-const ai = new OpenAI({ apiKey: OPENAI_API_KEY });
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const LOCAL_MODEL = 'goekdenizguelmez/JOSIEFIED-Qwen3:0.6b';
 
 /**
  * Split a message into natural chunks for Discord
@@ -430,6 +429,34 @@ export default class Suspect {
     }
 
     /**
+     * Smart delay helper that keeps the typing indicator active for long pauses
+     */
+    private async smartDelay(channel: TextChannel, ms: number): Promise<void> {
+        if (ms <= 0) return;
+
+        // precise delay for short durations
+        if (ms < 8000) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        const startTime = Date.now();
+        while (Date.now() - startTime < ms) {
+            const remaining = ms - (Date.now() - startTime);
+            // Wait in chunks, refreshing typing status every ~8 seconds
+            const waitTime = Math.min(remaining, 8000);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+
+            if (Date.now() - startTime < ms) {
+                try {
+                    await channel.sendTyping();
+                } catch (e) {
+                    // Ignore errors (e.g. missing permissions or rate limits)
+                }
+            }
+        }
+    }
+
+    /**
      * Present evidence to the suspect (Phoenix Wright style)
      * Deals massive pressure if evidence is relevant to their secrets
      */
@@ -532,23 +559,37 @@ export default class Suspect {
                 []
             );
 
-            const response = await ai.chat.completions.create({
-                model: OPENAI_MODEL,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: reactionPrompt }
-                ],
+            const startTime = Date.now();
+            const response = await aiService.chatCompletion([
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: reactionPrompt }
+            ], {
                 max_tokens: 150,
                 temperature: 0.9,
+                model: LOCAL_MODEL // Use fast local model for reactions
             });
 
             // Track token consumption
-            tokenTracker.track(this.data.id, OPENAI_MODEL, response.usage);
+            if (response.usage) {
+                tokenTracker.track(this.data.id, LOCAL_MODEL, response.usage);
+            }
 
-            let text = response.choices[0].message.content || '*stares silently*';
+            // Calculate AI latency
+            const duration = Date.now() - startTime;
+
+            let text = response.content || '*stares silently*';
 
             // Apply behavioral tells
             text = this.applyBehavioralTells(text);
+
+            // Calculate typing delay
+            const msPerChar = 50;
+            const typeTime = (text.length * msPerChar) + (Math.random() * 300);
+            const delay = Math.max(0, typeTime - duration);
+
+            if (delay > 0) {
+                await this.smartDelay(channel, delay);
+            }
 
             // Send via webhook
             await hook.send({
@@ -627,6 +668,108 @@ export default class Suspect {
                 evaluation
             });
 
+            // --- SMART CACHING START ---
+            let cachedResponse: SuspectResponse | null = null;
+            let queryEmbedding: number[] | null = null;
+
+            try {
+                // 1. Generate embedding for current question
+                queryEmbedding = await aiService.getEmbedding(message);
+
+                // 2. Query cache for this suspect
+                const cachedEntries = await InterrogationCache.findAll({
+                    where: { suspectId: this.data.id }
+                });
+
+                // 3. Check for similarity
+                let bestSimilarity = 0;
+                let bestMatch: InterrogationCache | null = null;
+
+                for (const entry of cachedEntries) {
+                    try {
+                        const cachedEmbedding = JSON.parse(entry.embedding);
+                        const similarity = cosineSimilarity(queryEmbedding, cachedEmbedding);
+
+                        if (similarity > bestSimilarity) {
+                            bestSimilarity = similarity;
+                            bestMatch = entry;
+                        }
+                    } catch (e) {
+                        // Ignore parse errors
+                    }
+                }
+
+                logger.debug(`Cache similarity check: Best match ${bestSimilarity.toFixed(4)}`);
+
+                // 4. Use cache if similarity > 0.88 (Tunable threshold)
+                if (bestSimilarity > 0.80 && bestMatch) {
+                    logger.info(`✨ CACHE HIT! Serving cached response for ${this.data.id} (Sim: ${bestSimilarity.toFixed(2)})`);
+                    const cachedData = JSON.parse(bestMatch.response) as SuspectResponse;
+
+                    // We need to re-process the cached response to match current context somewhat?
+                    // For now, we return it as is, but we might want to update the 'messages' part if we were storing full objects.
+                    // Actually, let's just use the text and re-chunk it to simulate "live" typing again, 
+                    // OR just return the whole object if it fits. 
+                    // The cache stores the result of `respond`? No, it stores the data needed to reconstruction.
+                    // Let's assume we stored the *result* object.
+
+                    // IMPORTANT: We need to ensure we don't return stale "revealedSecrets" if they are already known?
+                    // Actually, if the user asks the same thing, they get the same answer.
+                    // But we should probably strip "messages" array and re-generate it for the new channel/hook?
+                    // The `respond` method returns `SuspectResponse`.
+
+                    // Let's reconstruct the flow for a cache hit
+
+                    // Update memory
+                    this.addMemory(channel.id, `${asker.displayName}: ${message}`);
+                    this.addMemory(channel.id, `${this.data.name}: ${cachedData.message}`);
+
+                    // Split and send
+                    const chunks = splitIntoChunks(cachedData.message);
+                    const sentMessages: any[] = [];
+
+                    let latencyBalance = 0; // Cache is instant, so we simulate full typing time
+                    const msPerChar = 50;
+
+                    for (let i = 0; i < chunks.length; i++) {
+                        const chunk = chunks[i];
+                        const typeTime = (chunk.length * msPerChar) + (Math.random() * 300);
+                        const delay = Math.max(0, typeTime - latencyBalance);
+                        latencyBalance = Math.max(0, latencyBalance - typeTime);
+
+                        if (i > 0) {
+                            await channel.sendTyping();
+                        }
+
+                        if (delay > 0) {
+                            await this.smartDelay(channel, delay);
+                        }
+
+                        const sent = await hook.send({
+                            content: chunk,
+                            username: this.data.name,
+                            avatarURL: this.data.avatar,
+                            wait: true
+                        } as any);
+                        sentMessages.push(sent);
+                    }
+
+                    this._focused = asker.id;
+                    this._busy = false; // RELEASE LOCK
+
+                    return {
+                        ...cachedData,
+                        messages: sentMessages, // Update with new message objects
+                        teamworkBonusActive // Keep current bonus status
+                    };
+                }
+
+            } catch (err) {
+                logger.warn(`Smart cache lookup failed:`, err);
+                // Continue to generation on error
+            }
+            // --- SMART CACHING END ---
+
             // Build the prompt
             // memory is already declared above
 
@@ -665,22 +808,24 @@ export default class Suspect {
 
             const startTime = Date.now();
             // Call OpenAI API
-            const response = await ai.chat.completions.create({
-                model: OPENAI_MODEL,
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: message }
-                ],
-                max_tokens: 200,
-                temperature: 0.8,
+            const response = await aiService.chatCompletion([
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: message }
+            ], {
+                // max_tokens: 200,
+                // temperature: 0.8,
+                // model: 'deepseek-r1:1.5b'
+                model: GEMINI_MODEL
             });
 
             // Track token consumption
-            tokenTracker.track(this.data.id, OPENAI_MODEL, response.usage);
+            if (response.usage) {
+                tokenTracker.track(this.data.id, GEMINI_MODEL, response.usage);
+            }
 
             const duration = Date.now() - startTime;
 
-            const text = response.choices[0].message.content || '';
+            const text = response.content || '';
             logger.debug(`AI Response for ${this.data.name} (${duration}ms): "${text}"`);
 
             // Parse response
@@ -726,16 +871,34 @@ export default class Suspect {
             const chunks = splitIntoChunks(actualMessage);
             const sentMessages: any[] = [];
 
+            // We want to "discount" the time we already waited for the AI to generate the response
+            // So if the AI took 3s, and the first chunk takes 1s to type, we send it immediately (0s wait)
+            // If the AI took 3s, and the first chunk takes 5s to type, we wait 2s
+            let latencyBalance = duration;
+            const msPerChar = 50; // Speed of typing simulation
+
             for (let i = 0; i < chunks.length; i++) {
                 const chunk = chunks[i];
 
-                // Show typing before each message (except the first, we already did that)
+                // Calculate how long this chunk *should* take to type
+                // Add some randomness for organic feel
+                const typeTime = (chunk.length * msPerChar) + (Math.random() * 300);
+
+                // Calculate required delay after accounting for "banked" latency
+                const delay = Math.max(0, typeTime - latencyBalance);
+
+                // Update our balance - we've "used up" the wait time equivalent to the typing time
+                latencyBalance = Math.max(0, latencyBalance - typeTime);
+
+                // Show typing before message
+                // For the first chunk (i=0), we already sent a typing indicator before the AI call.
+                // However, if the calculated delay is significant, smartDelay will refresh it.
                 if (i > 0) {
                     await channel.sendTyping();
-                    // Random delay between 800-1500ms to simulate typing
-                    const msPerChar = 60; // Based on average typing speed
-                    const typingDelay = chunk.length * msPerChar;
-                    await new Promise(resolve => setTimeout(resolve, typingDelay + Math.random() * 500));
+                }
+
+                if (delay > 0) {
+                    await this.smartDelay(channel, delay);
                 }
 
                 const sent = await hook.send({
@@ -752,7 +915,7 @@ export default class Suspect {
 
             this._busy = false;
 
-            return {
+            const responseData: SuspectResponse = {
                 message: actualMessage,
                 roleplay,
                 revealedSecret: evaluation.triggeredSecret,
@@ -760,6 +923,25 @@ export default class Suspect {
                 messages: sentMessages,
                 teamworkBonusActive
             };
+
+            // --- SAVE TO CACHE START ---
+            if (queryEmbedding && actualMessage.length > 5) {
+                // Don't cache very short responses or failed ones
+                try {
+                    await InterrogationCache.create({
+                        suspectId: this.data.id,
+                        question: message,
+                        embedding: JSON.stringify(queryEmbedding),
+                        response: JSON.stringify(responseData)
+                    });
+                    logger.debug(`Saved response to smart cache for ${this.data.id}`);
+                } catch (e) {
+                    logger.error(`Failed to save to smart cache:`, e);
+                }
+            }
+            // --- SAVE TO CACHE END ---
+
+            return responseData;
         } catch (error) {
             this._busy = false;
             logger.error(`Suspect ${this.data.name} failed to respond:`, error);

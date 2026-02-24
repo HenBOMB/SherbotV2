@@ -93,7 +93,7 @@ export async function handleStart(
         const channels = manager.getChannelsMap();
         const briefingChannel = channels.get('case-briefing');
 
-        const bEmbeds = createCaseBriefingEmbeds(newCase.config, {
+        const { embeds, files } = createCaseBriefingEmbeds(newCase.config, {
             timeLimit: newCase.config.settings.timeLimit,
             points: newCase.config.settings.startingPoints,
             players: [userId]
@@ -103,7 +103,7 @@ export async function handleStart(
             try {
                 // Clear previous messages
                 await briefingChannel.bulkDelete(20, true).catch(() => { });
-                await briefingChannel.send({ embeds: bEmbeds });
+                await briefingChannel.send({ embeds, files });
                 // Also ping the players
                 await briefingChannel.send(`📢 **DETECTIVES NEEDED!** <@${interaction.user.id}> has initiated a Crime Scene Investigation. Review the dossier above and report to the scene.`);
             } catch (e) {
