@@ -237,7 +237,20 @@ export default class GameManager {
      * Load a case by ID
      */
     public loadCase(caseId: string): Case {
-        const caseDir = path.join(this.dataDir, 'cases', caseId);
+        // SECURITY: Prevent path traversal by sanitizing caseId
+        const sanitizedId = caseId.replace(/[^a-z0-9_-]/gi, '');
+
+        // FUNNY: Catch them in the act
+        if (caseId.includes('..') || caseId.includes('/') || caseId.includes('\\')) {
+            throw new Error(`Nice try, Moriarty. Trying to path traverse into my folder structure? I expected a bit more effort from a 'criminal genius'. Let's stick to the case before you embarrass us both.`);
+        }
+
+        const caseDir = path.join(this.dataDir, 'cases', sanitizedId);
+
+        if (!fs.existsSync(caseDir)) {
+            throw new Error(`Case identification failed: Investigation file "${sanitizedId}" not found in archives.`);
+        }
+
         return Case.load(caseDir);
     }
 

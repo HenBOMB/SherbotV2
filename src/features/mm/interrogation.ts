@@ -56,9 +56,9 @@ export default class InterrogationManager {
                 if (!content) return;
 
                 // MAX LENGTH CAP: Prevent abuse and token waste
-                if (content.length > 200) {
+                if (content.length > 400) {
                     await message.reply({
-                        content: `⚠️ **Message too long!** (Max 200 characters)\n*Please keep your interrogation concise to avoid overwhelming the suspect.*`
+                        content: `⚠️ **Message too long!** (${message.content.length} > 400 characters)\n*Please keep your interrogation concise to avoid overwhelming the suspect.*`
                     });
                     return;
                 }

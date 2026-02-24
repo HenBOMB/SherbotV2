@@ -13,8 +13,21 @@ export async function handleGenerate(manager: GameManager, interaction: ChatInpu
         return;
     }
 
-    const theme = interaction.options.getString('theme') as 'noir' | 'modern' | 'mansion' | null;
-    const difficulty = interaction.options.getString('difficulty') as 'easy' | 'medium' | 'hard' | null;
+    const theme = interaction.options.getString('theme');
+    const difficulty = interaction.options.getString('difficulty');
+
+    // SECURITY: Validate inputs even if they are from slash command choices
+    if (theme && (theme.length > 20 || !/^[a-z0-9_-]+$/i.test(theme))) {
+        await interaction.reply({ content: '❌ Invalid theme format.', ephemeral: true });
+        return;
+    }
+    if (difficulty && (difficulty.length > 20 || !/^[a-z]+$/i.test(difficulty))) {
+        await interaction.reply({ content: '❌ Invalid difficulty format.', ephemeral: true });
+        return;
+    }
+
+    const finalTheme = theme as 'noir' | 'modern' | 'mansion' | null;
+    const finalDifficulty = difficulty as 'easy' | 'medium' | 'hard' | null;
 
     // Check Daily Limit
     if (interaction.guildId) {
@@ -114,8 +127,8 @@ export async function handleGenerate(manager: GameManager, interaction: ChatInpu
     };
 
     const config: GeneratorConfig = {
-        theme: theme || 'noir',
-        difficulty: difficulty || 'medium',
+        theme: finalTheme || 'noir',
+        difficulty: finalDifficulty || 'medium',
         seed: Date.now().toString(),
         useLLM: true, // Need LLM for good stories
         guildId: interaction.guildId || undefined,
