@@ -29,7 +29,7 @@ export async function handleEvidence(
     const discovered = manager.getDiscoveredEvidence();
     if (discovered.size === 0) {
         await interaction.reply({
-            content: 'No evidence has been discovered yet. Try exploring or using investigation tools!',
+            content: 'No evidence has been discovered yet. Try using investigation tools!',
             ephemeral: true
         });
         return;

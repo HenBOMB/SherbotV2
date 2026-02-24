@@ -200,10 +200,14 @@ export default class InterrogationManager {
 
         try {
             logger.debug(`Processing interrogation buffer for ${suspect.data.name} (Channel: ${channelId})`);
+            const activeGame = this.context.getActiveGame();
+            if (!activeGame) return;
+
             const response = await suspect.respond(
                 member,
                 combinedContent,
                 channel,
+                activeGame.config.id,
                 discoveredEvidence
             );
 

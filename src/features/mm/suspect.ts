@@ -4,7 +4,7 @@ import { SuspectData, SecretData, SuspectState } from './case.js';
 import { buildSystemPrompt, buildPressureHint } from './prompts.js';
 import { tokenTracker } from '../../utils/token-tracker.js';
 import { logger } from '../../utils/logger.js';
-import { InterrogationCache } from '../../database.js';
+import { InterrogationCache, InterrogationLog } from '../../database.js';
 import { cosineSimilarity } from '../../utils/math.js';
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
@@ -464,6 +464,7 @@ export default class Suspect {
         asker: GuildMember,
         evidenceId: string,
         channel: TextChannel,
+        caseId: string,
         discoveredEvidence: Set<string> = new Set()
     ): Promise<{ wasRelevant: boolean; revealedSecret: SecretData | null; composureLost: number } | null> {
         if (this._busy) return null;
@@ -600,6 +601,21 @@ export default class Suspect {
 
             this._busy = false;
 
+            // Log interaction
+            try {
+                await InterrogationLog.create({
+                    caseId: caseId,
+                    suspectId: this.data.id,
+                    userId: asker.id,
+                    question: `[PRESENTED EVIDENCE]: ${evidenceId}`,
+                    response: text,
+                    composureLost,
+                    secretRevealed: revealedSecret ? revealedSecret.id : null
+                });
+            } catch (e) {
+                logger.error('Failed to log evidence presentation to DB:', e);
+            }
+
             return { wasRelevant, revealedSecret, composureLost };
         } catch (error) {
             this._busy = false;
@@ -615,6 +631,7 @@ export default class Suspect {
         asker: GuildMember,
         message: string,
         channel: TextChannel,
+        caseId: string,
         discoveredEvidence: Set<string> = new Set()
     ): Promise<SuspectResponse | null> {
         if (this._busy) return null;
@@ -940,6 +957,21 @@ export default class Suspect {
                 }
             }
             // --- SAVE TO CACHE END ---
+
+            // Log interaction
+            try {
+                await InterrogationLog.create({
+                    caseId: caseId,
+                    suspectId: this.data.id,
+                    userId: asker.id,
+                    question: message,
+                    response: actualMessage,
+                    composureLost: evaluation.composureLost,
+                    secretRevealed: evaluation.triggeredSecret ? evaluation.triggeredSecret.id : null
+                });
+            } catch (e) {
+                logger.error('Failed to log interrogation to DB:', e);
+            }
 
             return responseData;
         } catch (error) {

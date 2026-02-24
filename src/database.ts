@@ -65,13 +65,25 @@ export class BotState extends Model<InferAttributes<BotState>, InferCreationAttr
     declare value: string;
 }
 
-// Define InterrogationCache model for storing embeddings
 export class InterrogationCache extends Model<InferAttributes<InterrogationCache>, InferCreationAttributes<InterrogationCache>> {
     declare id: CreationOptional<string>;
     declare suspectId: string;
     declare question: string;
     declare embedding: string; // JSON string of number[]
     declare response: string; // JSON string of SuspectResponse
+    declare createdAt: CreationOptional<Date>;
+}
+
+// Define InterrogationLog model for logging user messages and AI responses
+export class InterrogationLog extends Model<InferAttributes<InterrogationLog>, InferCreationAttributes<InterrogationLog>> {
+    declare id: CreationOptional<number>;
+    declare caseId: string;
+    declare suspectId: string;
+    declare userId: string;
+    declare question: string;
+    declare response: string;
+    declare composureLost: number;
+    declare secretRevealed: string | null;
     declare createdAt: CreationOptional<Date>;
 }
 
@@ -275,11 +287,58 @@ InterrogationCache.init({
     sequelize,
     tableName: 'InterrogationCache',
     timestamps: true,
-    updatedAt: false, // Immutable cache entries
     indexes: [
         {
             fields: ['suspectId']
         }
+    ]
+});
+
+InterrogationLog.init({
+    id: {
+        type: DataTypes.INTEGER,
+        autoIncrement: true,
+        primaryKey: true,
+    },
+    caseId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    suspectId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    userId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    question: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    response: {
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },
+    composureLost: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+        defaultValue: 0,
+    },
+    secretRevealed: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
+    createdAt: DataTypes.DATE
+}, {
+    sequelize,
+    tableName: 'InterrogationLogs',
+    timestamps: true,
+    updatedAt: false,
+    indexes: [
+        { fields: ['caseId'] },
+        { fields: ['suspectId'] },
+        { fields: ['userId'] }
     ]
 });
 
@@ -320,8 +379,9 @@ export async function initializeDatabase() {
 
             logger.info('Database models synced.');
 
-            // Ensure InterrogationCache table exists (sync should handle it, but for safety in dev)
+            // Ensure InterrogationCache and Logs tables exist (sync should handle it, but for safety in dev)
             await InterrogationCache.sync();
+            await InterrogationLog.sync();
         }
 
         // Initialize default guild if configured

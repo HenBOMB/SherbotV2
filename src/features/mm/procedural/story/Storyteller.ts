@@ -1,6 +1,8 @@
 import { aiService, RapidAPIService } from '../../ai-service.js';
 import { CaseSkeleton } from '../types.js';
 
+const MAX_RETRIES = 2;
+
 export class Storyteller {
     private api: RapidAPIService;
 
@@ -9,44 +11,45 @@ export class Storyteller {
     }
 
     async fleshOutSkeleton(skeleton: CaseSkeleton): Promise<any> {
-        console.log("🧩 Starting sequential narrative generation...");
+        console.log("🧩 Starting narrative generation...");
 
         try {
-            // 1. Generate Title & Intro
-            const basicInfo = await this.generateBasicInfo(skeleton);
-            console.log("✅ Title & Intro generated");
+            // Run independent generations in parallel
+            const [basicInfo, victim, mediaAtmosphere] = await Promise.all([
+                this.generateBasicInfo(skeleton),
+                this.generateVictim(skeleton),
+                this.generateLogsAndFootage(skeleton),
+            ]);
+            console.log("✅ Basic info, victim, and atmosphere generated");
 
-            // 2. Generate Victim Details
-            const victim = await this.generateVictim(skeleton);
-            console.log("✅ Victim details generated");
+            // Suspects in parallel
+            const suspectEntries = await Promise.all(
+                skeleton.suspectIds.map(async (suspectId) => {
+                    const isKiller = suspectId === skeleton.killerId;
+                    const data = await this.generateSuspect(skeleton, suspectId, isKiller);
+                    console.log(`✅ Suspect '${suspectId}' generated`);
+                    return [suspectId, data] as const;
+                })
+            );
+            const suspects = Object.fromEntries(suspectEntries);
 
-            // 3. Generate Suspects (One by one)
-            const suspects: Record<string, any> = {};
-            for (const suspectId of skeleton.suspectIds) {
-                const role = suspectId === skeleton.killerId ? 'Killer' : 'Suspect'; // Internal hint used for prompting
-                suspects[suspectId] = await this.generateSuspect(skeleton, suspectId, role);
-                console.log(`✅ Suspect '${suspectId}' generated`);
-            }
-
-            // 4. Generate Locations (One by one or batched if small)
-            const locationDescriptions: Record<string, string> = {};
-            for (const roomId of skeleton.rooms) {
-                locationDescriptions[roomId] = await this.generateLocation(skeleton, roomId);
-                console.log(`✅ Location '${roomId}' generated`);
-            }
-
-            // 5. Generate Atmospheric Logs & Footage
-            console.log("🧩 Generating atmosphere for logs and footage...");
-            const mediaAtmosphere = await this.generateLogsAndFootage(skeleton);
-            console.log("✅ Media atmosphere generated");
+            // Locations in parallel
+            const locationEntries = await Promise.all(
+                skeleton.rooms.map(async (roomId) => {
+                    const description = await this.generateLocation(skeleton, roomId);
+                    console.log(`✅ Location '${roomId}' generated`);
+                    return [roomId, description] as const;
+                })
+            );
+            const location_descriptions = Object.fromEntries(locationEntries);
 
             return {
                 title: basicInfo.title,
                 intro: basicInfo.intro,
-                victim: victim,
-                suspects: suspects,
-                location_descriptions: locationDescriptions,
-                media_atmosphere: mediaAtmosphere
+                victim,
+                suspects,
+                location_descriptions,
+                media_atmosphere: mediaAtmosphere,
             };
 
         } catch (e) {
@@ -87,11 +90,11 @@ export class Storyteller {
         - Theme: ${skeleton.theme}
         - Murder Weapon: ${skeleton.murderWeapon}
         - Location: ${skeleton.rooms[0]}
-        
+
         OUTPUT JSON:
         {
             "title": "catchy title",
-            "intro": "short atmospheric (simple language) paragraph first person, from the perspective of the detective"
+            "intro": "short atmospheric paragraph in first person, from the detective's perspective"
         }
         `;
         return this.fetchJson(prompt);
@@ -113,7 +116,14 @@ export class Storyteller {
         return this.fetchJson(prompt);
     }
 
-    private async generateSuspect(skeleton: CaseSkeleton, suspectId: string, roleHint: string) {
+    private async generateSuspect(skeleton: CaseSkeleton, suspectId: string, isKiller: boolean) {
+        // Behavioral framing instead of explicit "KILLER" label
+        const killerGuidance = isKiller
+            ? `- This suspect has a strong concealed motive and their alibi contains subtle inconsistencies.
+               - Their secrets, if uncovered, directly implicate them in the crime.`
+            : `- This suspect has a motive and suspicious behavior but is ultimately innocent.
+               - Their secrets are embarrassing or incriminating on the surface, but unrelated to the murder.`;
+
         const prompt = `
         TASK: Create a suspect profile for a murder mystery game.
         CONTEXT:
@@ -123,7 +133,7 @@ export class Storyteller {
         - Location of murder: ${skeleton.murderLocation}
         - Time of murder: ${skeleton.murderTime}
         - Murder Weapon: ${skeleton.murderWeapon}
-        ${roleHint === 'Killer' ? '- NOTE: This person is the KILLER. Ensure their motive and secrets reflect this.' : ''}
+        ${killerGuidance}
 
         OUTPUT JSON:
         {
@@ -132,11 +142,11 @@ export class Storyteller {
             "role": "Connection to victim (e.g. gardener, rival)",
             "bio": "Short backstory",
             "motive": "Deep reason they might have done it",
-            "alibi": "Their story of where they were at ${skeleton.murderTime}. If killer, they should have a plausible lie.",
+            "alibi": "Their account of where they were at ${skeleton.murderTime}",
             "secrets": [
                 {
                     "id": "short_id",
-                    "text": "The hidden truth about this suspect (e.g. a secret affair, an old debt, a stolen item).",
+                    "text": "A hidden truth about this suspect",
                     "trigger": {
                         "keywords": ["keyword1", "keyword2"],
                         "minPressure": 25
@@ -144,7 +154,7 @@ export class Storyteller {
                 },
                 {
                     "id": "deep_secret",
-                    "text": "A more damaging secret that requires more investigation.",
+                    "text": "A more damaging secret requiring deeper investigation",
                     "trigger": {
                         "keywords": ["keyword1", "keyword2", "keyword3"],
                         "minPressure": 40
@@ -156,7 +166,7 @@ export class Storyteller {
         return this.fetchJson(prompt);
     }
 
-    private async generateLocation(skeleton: CaseSkeleton, roomId: string) {
+    private async generateLocation(skeleton: CaseSkeleton, roomId: string): Promise<string> {
         const prompt = `
         TASK: Describe a room in a murder mystery.
         CONTEXT:
@@ -170,68 +180,63 @@ export class Storyteller {
         }
         `;
         const res = await this.fetchJson(prompt);
-        return res?.description || "A dark room.";
+        return res?.description ?? "A dimly lit room shrouded in silence.";
     }
 
-    private async fetchJson(prompt: string): Promise<any> {
-        const jsonStr = await this.api.generateText(
-            "You are a backend JSON API. Output ONLY valid JSON. Do not include markdown formatting.",
-            prompt
-        );
+    private async fetchJson(prompt: string, attempt = 0): Promise<any> {
+        try {
+            const raw = await this.api.generateText(
+                "You are a backend JSON API. Output ONLY valid JSON with no markdown, no explanation, no code fences.",
+                prompt
+            );
 
-        // Clean up potentially dirty JSON (e.g. markdown blocks)
-        let cleanJson = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
+            // Strip markdown fences if present
+            const cleaned = raw
+                .replace(/^```(?:json)?\s*/i, '')
+                .replace(/\s*```$/, '')
+                .trim();
 
-        // Find all JSON-like objects in the string
-        const objects: any[] = [];
-        let braceCount = 0;
-        let startIdx = -1;
+            // Fast path: direct parse
+            try {
+                return JSON.parse(cleaned);
+            } catch (_) { }
 
-        for (let i = 0; i < cleanJson.length; i++) {
-            if (cleanJson[i] === '{') {
-                if (braceCount === 0) startIdx = i;
-                braceCount++;
-            } else if (cleanJson[i] === '}') {
-                braceCount--;
-                if (braceCount === 0 && startIdx !== -1) {
-                    const objStr = cleanJson.substring(startIdx, i + 1);
+            // Extract first valid JSON object or array
+            const extracted = this.extractFirstJson(cleaned);
+            if (extracted !== null) return extracted;
+
+            throw new Error("No valid JSON found in LLM response");
+
+        } catch (e) {
+            if (attempt < MAX_RETRIES) {
+                console.warn(`⚠️  JSON parse failed (attempt ${attempt + 1}/${MAX_RETRIES}), retrying...`);
+                return this.fetchJson(prompt, attempt + 1);
+            }
+            console.error("❌ fetchJson exhausted retries:", e);
+            return {};
+        }
+    }
+
+    private extractFirstJson(text: string): any | null {
+        // Try objects first, then arrays
+        for (const [open, close] of [['{', '}'], ['[', ']']]) {
+            const start = text.indexOf(open);
+            if (start === -1) continue;
+
+            let depth = 0;
+            for (let i = start; i < text.length; i++) {
+                if (text[i] === open) depth++;
+                else if (text[i] === close) depth--;
+
+                if (depth === 0) {
                     try {
-                        objects.push(JSON.parse(objStr));
-                    } catch (e) {
-                        // Attempt a simple repair for common small errors
-                        try {
-                            objects.push(JSON.parse(objStr + '}'));
-                        } catch (e2) { }
+                        return JSON.parse(text.substring(start, i + 1));
+                    } catch (_) {
+                        break; // Malformed — stop trying this bracket type
                     }
                 }
             }
         }
-
-        if (objects.length === 0) {
-            // Fallback for array-wrapped JSON if not caught by manual brace matching
-            if (cleanJson.startsWith('[') && cleanJson.endsWith(']')) {
-                try {
-                    return JSON.parse(cleanJson);
-                } catch (e) { }
-            }
-            return {};
-        }
-
-        // If multiple objects found, merge them (first one wins for top-level keys)
-        if (objects.length > 1) {
-            console.log(`⚠️  Merged ${objects.length} JSON fragments from LLM response.`);
-            const merged = {};
-            for (const obj of objects) {
-                Object.assign(merged, obj);
-                // Special case for secrets array - append them instead of overwrite
-                if (obj.secrets && Array.isArray(obj.secrets)) {
-                    if (!(merged as any).secrets) (merged as any).secrets = [];
-                    (merged as any).secrets = [...(merged as any).secrets, ...obj.secrets];
-                }
-            }
-            return merged;
-        }
-
-        return objects[0];
+        return null;
     }
 }

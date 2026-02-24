@@ -102,6 +102,7 @@ export async function handlePresent(
         interaction.member as any,
         evidenceId,
         channel as any,
+        activeGame.config.id,
         discovered
     );
 
