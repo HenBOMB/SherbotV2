@@ -1,0 +1,652 @@
+id: the_gilded_cage
+name: The Gilded Cage
+description: >
+  Chief Appraiser Elias Thorne was found dead inside Vault B of the Aethelgard Auction House at 10:55 PM during the Winter VIP Gala. 
+  The vault's Halon fire-suppression system triggered at 10:45 PM, instantly purging all oxygen from the sealed room. 
+  The security cameras were manually disabled, the vault was locked from the outside, and the Director was on stage giving a toast to 200 people when the alarms rang.
+context:
+  setup: >
+    The Aethelgard Auction House is hosting its most lucrative event of the decade, featuring the sale of a recently discovered Renaissance masterpiece expected to fetch $80 million. 
+    The ground floor is a lavish ballroom filled with billionaires; the basement is a high-tech fortress of climate-controlled vaults and security checkpoints. 
+    Elias Thorne, a legendary and uncompromising appraiser, went down to the vaults at 10:30 PM to verify a final piece. 
+    Twenty-five minutes later, he was dead.
+  house_layout:
+    ground_floor:
+      - foyer
+      - ballroom
+    basement:
+      access_required: RFID badge
+      rooms:
+        - basement_stairwell
+        - east_hallway
+        - security_office
+        - restoration_studio
+        - director_office
+        - vault_a
+        - vault_b
+        - staff_breakroom
+    vault_notes: The vaults require physical rotary combination locks that simultaneously arm the internal security systems when spun closed.
+  halon_system_rules: 'CRITICAL MECHANICS: The Halon fire-suppression system is designed to save priceless art by instantly sucking oxygen out of the room and replacing it with Halon gas, extinguishing any flame. However, for the Halon to deploy, TWO conditions must be met simultaneously: 1) The ceiling smoke detectors must detect particulate matter, AND 2) The heavy steel vault door must be physically locked from the outside (which seals the room airtight). If smoke is detected while the door is open, regular alarms sound but the gas does NOT deploy.'
+victim:
+  id: elias_thorne
+  name: Elias Thorne
+  age: 62
+  cause: Asphyxiation (Halon gas deployment)
+  time_of_death: 10:45 PM
+  description: Chief Appraiser at Aethelgard. Renowned for his encyclopedic knowledge of art history and his absolute, incorruptible morality. He had recently delayed the appraisal of several high-profile lots, citing "provenance irregularities."
+  avatar: avatars/the_gilded_cage/elias.png
+  autopsy_findings:
+    cause: Hypoxia (rapid oxygen deprivation) due to Halon gas inhalation
+    contact_point: N/A - atmospheric replacement
+    time_of_death: 10:45 PM
+    instant_death: Loss of consciousness within 15 seconds, death within 3 minutes
+    defensive_wounds: Bruising on knuckles and palms, consistent with desperately beating on the inside of the solid steel vault door.
+    toxicology: Negative
+    other_findings: Traces of theatrical-grade glycol (smoke machine fluid) and a specific polymer (Cryo-Melt Gel) found on the victim's fingertips and the soles of his shoes.
+murderTime: '10:45'
+murderLocation: vault_b
+map:
+  foyer:
+    description: Marble floors, vaulted ceilings, and the faint smell of expensive champagne. The coat check is empty. A grand staircase leads down to the basement level, blocked by a velvet rope and an RFID-scanning security gate.
+    image: locations/the_gilded_cage/foyer.png
+    connects_to:
+      - ballroom
+      - basement_stairwell
+    interactables:
+      - name: RFID Security Gate
+        description: "A waist-high glass turnstile. The digital log shows the last three people to enter the basement: 10:28 PM (Leo Thorne), 10:30 PM (Elias Thorne), 10:38 PM (Marcus Sterling - VIP Guest Pass)."
+  ballroom:
+    description: A sea of tuxedos and ballgowns. A jazz quartet plays softly in the corner. The main stage features a podium where the Director gave his welcoming toast. The room is currently in a state of nervous murmuring after the fire department arrived.
+    image: locations/the_gilded_cage/ballroom.png
+    connects_to:
+      - foyer
+    interactables:
+      - name: Podium Microphone
+        evidence_id: av_audio_recording
+        description: Still live. The AV tech's recording equipment is set up next to it, capturing the audio of the entire evening.
+      - name: Champagne Pyramid Table
+        evidence_id: clara_purse
+        description: A massive table of drinks. Clara Reed's clutch purse is sitting on the edge, abandoned in the chaos.
+      - name: Clara's Smartphone
+        evidence_id: clara_phone
+        description: A sleek modern phone sitting next to her purse on the table. It is currently locked.
+      - name: Viktor Renn (Event Sommelier)
+        description: Standing near the stage, still holding an open bottle of Montrachet. He looks shaken but composed.
+        dialogue:
+          default: "Terrible business. I've worked twenty galas here and nothing like this."
+          on_ask_about_podium: "I refilled Mr. Vance's glass during his walkabout — around 10:38 or so. He came back to the stage at 10:42, maybe 10:43. I remember because he looked at his watch the moment he sat down. I thought it was rude, honestly — I'd just topped up his glass and he didn't even acknowledge me."
+          on_ask_about_haramoto: "The Japanese delegation? Yes, he spoke with them briefly at the back. Five minutes at most. He seemed distracted the whole time, kept glancing toward the stage."
+      - name: Podium Water Glass
+        description: "A crystal water glass sitting on the podium beside the microphone, still half-full. A faint wet ring on the lacquered wood sits about six inches to the left of where the glass now rests — consistent with the glass having been set down in one position and later moved slightly to the right."
+  basement_stairwell:
+    description: Concrete and steel replace the marble of upstairs. The air is cool and smells faintly of ozone and old canvas.
+    image: locations/the_gilded_cage/stairs.png
+    connects_to:
+      - foyer
+      - east_hallway
+  east_hallway:
+    description: The main artery of the restricted basement. Stark white walls, LED lighting. There are normally three active security cameras monitoring this hall. Currently, all three camera lenses have a small, blinking yellow light indicating "Local Loop Mode."
+    image: locations/the_gilded_cage/east_hallway.png
+    connects_to:
+      - basement_stairwell
+      - security_office
+      - restoration_studio
+      - director_office
+      - vault_a
+      - vault_b
+      - staff_breakroom
+    interactables:
+      - name: Hallway Cameras
+        description: Advanced Pan-Tilt-Zoom cameras. The yellow light means they are currently broadcasting a pre-recorded static image of the empty hallway to the security desk.
+  security_office:
+    description: A cramped room dominated by a wall of monitors. Half-eaten takeout on the desk. The fire alarm control panel on the wall is blinking red on Zone 4 (Vault B).
+    image: locations/the_gilded_cage/security.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Main Terminal
+        description: Logged in under Anya Sokolov. Command history shows the East Hallway cameras were placed into "Local Loop Mode" manually from this terminal at 10:35 PM.
+      - name: Cash Envelope
+        evidence_id: sterling_envelope
+        description: Found crumpled at the bottom of the waste bin... the right edge of the paper is jaggedly torn and warped.
+  restoration_studio:
+    description: Smells intensely of turpentine, linseed oil, and harsh chemicals. Workbenches are covered in UV lights, magnifying glasses, and half-cleaned canvases.
+    image: locations/the_gilded_cage/restoration.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Chemical Inventory Log
+        description: 'A handwritten note clipped to the entry reads: "NB — Gel used in humidity-seal tests..."'
+      - name: Clara's Workstation
+        description: Meticulously clean. A framed photo shows Clara and Julian at a gala. Julian's hand is resting securely on the bare lower back of Clara’s dress. A small sticky note on the corner of the monitor reads "JV Bday - Apr 12 🎂 - don't forget!!" in Clara's handwriting.
+  director_office:
+    description: Julian Vance's private sanctuary. Mahogany desk, leather chairs, walls lined with books on antiquities. The door frame shows fresh scratch marks near the lock.
+    image: locations/the_gilded_cage/director_office.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Scratched Door Lock
+        description: Fresh brass shavings on the carpet. Someone was trying to pick this lock tonight using professional tension tools. They failed.
+      - name: Shredder
+        evidence_id: shredder_reconstruction
+        requires_analysis: true
+        description: Under the desk. It is absolutely full of freshly shredded documents — far more than routine disposal. The machine is still slightly warm to the touch. A forensics officer glances at it and says, "We could reconstruct this, but the DA won't prioritize it without something pointing here specifically."
+        unlocked_description: "Painstaking reconstruction of the documents in Julian's office shredder reveals a shadow ledger. It proves Julian has been using fake auction lots (including the 18th Century Tapestry) to launder millions of dollars for an offshore syndicate. Elias had discovered this."
+      - name: Staff Directory
+        description: A laminated sheet pinned to the corkboard. Lists all department override codes. DIR-001 is assigned to Julian Vance, Director.
+  vault_a:
+    description: A secondary high-tech storage unit. Secure climate control and industrial-grade shelving. Currently empty, awaiting the next big auction lot.
+    image: locations/the_gilded_cage/vault_a.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Vault A Inventory Manifest
+        description: 'A printed sheet clipped to the inside of the door. Tonight''s listed contents — one item — reads "Lot 312: Study in Amber, attributed school of Rubens. Pre-auction staging, Level 2 clearance required." The shelves behind it are bare. No painting is present.'
+  vault_b:
+    description: The murder scene. A 20x20 foot steel cube. The heavy rotary door is currently wedged open by firefighters. The air is still hazy with dissipating Halon gas. Elias Thorne's body lies near the door. In the center of the room is a long, heavy cardboard tube used for storing tapestries.
+    image: locations/the_gilded_cage/vault_b.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Vault Door Lock
+        description: A manual rotary spin-dial. RFID logs show Clara Reed swiped her badge to access the outer handle mechanism at 10:42 PM, followed by the mechanical engagement of the sealing bolts.
+      - name: Tapestry Tube
+        evidence_id: tapestry_tube_residue
+        description: A thick cardboard shipping tube lying on the appraisal table. The cap is off. Inside, at the very bottom, is a pile of black ash, a small burnt metallic disc, and melted polymer residue. A sharp, unnaturally sweet chemical smell lingers around it, completely lacking the charred wood scent of a standard fire.
+      - name: Elias's Clipboard
+        description: "Dropped near the body. Contains a handwritten inventory checklist. Most entries have a small checkmark beside them. One entry — 'Lot 404: 18th Century French Tapestry (Est. $80M)' — is circled heavily in red ink, with no checkmark. In the margin beside it, in a different pen, is a handwritten note: 'Ref. file 18C-FR-09. Do NOT proceed. Call DCI Harmon — tomorrow AM.' The margin note is written in a dark blue gel ink which smudges slightly to the touch. The main checklist is written in dry, black ballpoint."
+      - name: Monogrammed Handkerchief
+        evidence_id: sterling_handkerchief
+        description: A folded white pocket square near the appraisal table. High-thread-count linen. The monogram reads "M.S."
+  staff_breakroom:
+    description: A sparse room behind the restoration studio. A folding table, a microwave, and a corkboard covered in shift schedules. A box of tissues sits on the counter. It smells like instant noodles. This is where Leo Thorne claims he spent the entire murder window.
+    image: locations/the_gilded_cage/staff_breakroom.png
+    connects_to:
+      - east_hallway
+    interactables:
+      - name: Tissue Box
+        description: Several used tissues in the nearby waste bin. Consistent with someone who had been crying. Not conclusive, but not nothing.
+      - name: Shift Schedule Corkboard
+        description: Tonight's event roster. Leo Thorne is assigned to "Ballroom Floor — VIP Liaison" from 8:00 PM onward. Someone has crossed this out in red marker and written "PULLED - E.T." The initials match Elias Thorne. Leo was personally removed from his post by his uncle tonight — publicly, on paper, hours before the murder.
+evidence:
+  dna:
+    vault_b:
+      - elias
+      - julian
+    director_office:
+      - julian
+      - marcus
+    security_office:
+      - anya
+      - marcus
+    restoration_studio:
+      - clara
+  dna_notes:
+    vault_b: "Julian Vance's DNA is present from his visit at 9:05 PM earlier that evening, when security footage shows him entering carrying the tapestry tube."
+    security_office: "Marcus's DNA is present from when he delivered the cash bribe to Anya in person earlier that evening."
+  digital_logs:
+    '10:28': 'Basement Stairwell Entry: Leo Thorne'
+    '10:30': 'Basement Stairwell Entry: Elias Thorne'
+    '10:33': 'Vault B Entry: Elias Thorne'
+    '10:35': 'Security Terminal: East Hallway Cameras looped (User: Anya Sokolov)'
+    '10:38': 'Basement Stairwell Entry: Marcus Sterling (VIP Pass)'
+    '10:42a': 'Vault B Outer Mechanism: Clara Reed'
+    '10:42b': 'Vault B Status: Mechanically Sealed & Armed'
+    '10:42c': 'Basement Stairwell Entry: Clara Reed (Restoration - Level 2 Clearance)'
+    '10:45': 'Vault B Sensor: Smoke Detected. Halon Deployed.'
+    '10:48a': 'Basement Stairwell Exit: Marcus Sterling (VIP Pass)'
+    '10:48b': 'Fire Department Automated Dispatch'
+  footage:
+    '09:05 (earlier)': "(Earlier that day) A figure in a dark evening suit enters Vault B carrying a long cardboard tapestry tube. They exit 3 minutes later without it. The camera angle does not capture their face clearly."
+    '10:28': Leo Thorne enters the basement, pacing rapidly and aggressively rubbing his face.
+    '10:30': Elias Thorne enters... walking at a steady, brisk pace with his shoulders squared.
+    '10:35': All basement hallway cameras go dark/loop static. No further visual evidence exists for the basement during the murder window.
+  physical_evidence:
+    sterling_envelope: "A heavy-stock envelope bearing the Sterling Enterprises watermark, found in the security office trash. Empty, corners torn as if opened in a rush. Confirms a financial transaction took place."
+    tapestry_tube_residue: "Chemical analysis of the ash inside the tapestry tube reveals it was a theatrical smoke pellet. The melted residue around it is 'Cryo-Melt Gel', a restoration polymer that dissolves slowly over 100 minutes. If planted at 9:05 PM, it would perfectly expose the smoke pellet to the air—igniting it via a simple chemical oxidizer—at exactly 10:45 PM."
+    av_audio_recording: "The AV recording of Julian Vance's stage toast. At 10:44 PM, there is a 15-second pause in the speech followed by three slow, deliberate taps on the podium. Staff familiar with Julian note this is a recognized habit — he taps when searching for a word during public speaking. The speech resumes. At 10:45 PM, basement fire alarms are audible and Julian immediately responds: 'My god, what is that?' — with a cadence and pitch consistent with genuine surprise according to the audio forensics report."
+    shredder_reconstruction:
+      description: "Painstaking reconstruction reveals a shadow ledger proving Julian used fake auction lots to launder millions for an offshore syndicate. One page fragment is particularly striking: a staff payment record showing a $3,000 cash disbursement to 'L. Thorne — Research Consultancy' six months ago. The amount is trivial in context, but the payment is undocumented and Leo has never mentioned any consultancy work."
+      requires_discovery:
+        - marcus_lockpicks
+      unlocked_description: "Painstaking reconstruction of the documents in Julian's office shredder reveals a shadow ledger. It proves Julian has been using fake auction lots (including the 18th Century Tapestry) to launder millions of dollars for an offshore syndicate. Elias had discovered this."
+    marcus_lockpicks: "A set of titanium lockpicks found ditched in a potted plant in the Foyer. They match the scratch marks on Julian's office door."
+    clara_purse: "Found abandoned in the ballroom. Contains her lipstick, keys, and some business cards."
+    clara_phone:
+      description: "Clara's smartphone. The screen is locked with a 4-digit numeric passcode. A small heart emoji sticker is on the back."
+      required: "0412"
+      unlocked_description: "Access Granted. One recent unread text message from 'Julian' (10:40 PM): 'Clara, darling, I'm stuck on stage. Could you do me a huge favor and spin the vault door locked for me? I forgot to do it when I left Elias. You're a lifesaver.'"
+    sterling_handkerchief: "A monogrammed handkerchief belonging to Marcus Sterling, found inside Vault B. However, the security footage from 09:05 PM (earlier that day) shows the unidentified figure entering Vault B carrying the tapestry tube — the figure's breast pocket contains what appears to be a white pocket square. The physical evidence report notes the handkerchief was found on the floor near the appraisal table, approximately 3 feet from the tapestry tube."
+  physical_discovery:
+    vault_b:
+      - tapestry_tube_residue
+      - sterling_handkerchief
+    director_office:
+      - shredder_reconstruction
+    ballroom:
+      - clara_purse
+      - clara_phone
+      - av_audio_recording
+    foyer:
+      - marcus_lockpicks
+    security_office:
+      - sterling_envelope
+  initial_police_statements:
+    julian: I was on stage, yes — but I stepped off briefly around 10:38 to greet the Haramoto delegation at the back of the room. Ask them. I was away from the microphone for perhaps four minutes. But I was in that ballroom the entire time.
+    clara: I... I was in the basement. Julian texted me to close the vault door. I just spun the wheel and came right back up! I didn't know Elias was still inside! You have to believe me, I didn't know!
+    marcus: I was in the ballroom drinking champagne. The auction doesn't start until tomorrow, I was just here to socialize. I have no idea why my VIP badge registered in the stairwell, someone must have cloned it.
+    anya: I was in the security office. The camera systems have been glitching all week, the loop mode engaged itself due to a software error. When the Halon alarm went off, I followed protocol and called the fire department.
+    leo: I argued with my uncle earlier, yes. He was threatening to cut me out of the will. I went down to the basement at 10:28 to cool off in the staff breakroom. I never went near the vault.
+  all_locations:
+    - foyer
+    - ballroom
+    - basement_stairwell
+    - east_hallway
+    - security_office
+    - restoration_studio
+    - director_office
+    - vault_a
+    - vault_b
+    - staff_breakroom
+solution:
+  killer: julian
+  key_evidence:
+    - tapestry_tube_residue
+    - av_audio_recording
+    - clara_purse
+    - shredder_reconstruction
+  accomplice: clara
+  accomplice_knowledge: none - completely unwitting. She believed she was just securing an empty room.
+  silent_witness: anya
+  silent_witness_knowledge: Anya took a bribe from Marcus to blind the cameras. She knows Marcus was in the hallway, but she doesn't know who killed Elias. She is lying about the cameras glitching to save herself from accessory charges.
+  method: Julian Vance was embezzling millions using fake art provenances. Elias discovered this and put the evidence inside a tapestry tube in Vault B. Knowing Elias would go to Vault B at 10:30 PM to inspect it, Julian enacted a perfect locked-room trap. At 9:05 PM, Julian placed a theatrical smoke pellet coated in a 100-minute time-release restoration gel inside the tapestry tube. Because the Halon system requires the door to be sealed to arm, Julian needed the door closed after Elias entered, but couldn't do it himself without leaving a digital footprint. At 10:40 PM, while in the ballroom, he texted Clara to close the vault, knowing Elias was inside. Clara closed it at 10:42 PM, trapping Elias and arming the system. At 10:45 PM, the gel dissolved, the pellet smoked, and the Halon deployed, suffocating Elias while Julian was highly visible on stage. Anya turning off the cameras at 10:35 PM for Marcus's break-in was purely coincidental, but brilliantly served to obfuscate Julian's mechanical trap.
+  motive: Elias was going to the police the next morning with the shadow ledger proving Julian was laundering money for an offshore syndicate. If exposed, Julian wouldn't just go to prison—the syndicate would kill him.
+  twist: "The entire camera blackout and hallway infiltration had nothing to do with the murder. Marcus Sterling was blackmailing Julian, and paid Anya $50,000 to turn off the cameras at 10:35 PM so Marcus could break into Julian's office and steal the blackmail files. Julian had no idea the cameras were off. Julian's murder plot relied entirely on chemical timing and manipulating Clara via text message. The presence of Marcus sneaking around the basement at the exact time of the murder is a massive, highly suspicious coincidence that hides the elegant simplicity of the real crime."
+suspects:
+  - id: julian
+    name: Julian Vance
+    alias:
+      - julian
+      - vance
+      - director
+    avatar: avatars/the_gilded_cage/julian.png
+    currentLocation: foyer
+    age: 48
+    role: Director of Aethelgard Auction House
+    gender: male
+    isGuilty: true
+    alibi: I was standing on a brightly lit stage in front of 200 billionaires giving a 15-minute toast. You can check the AV recordings. I am physically incapable of having locked Elias in that vault.
+    motive: Elias discovered Julian's money laundering ring and was preparing to turn him in to the authorities.
+    secrets:
+      - id: embezzlement_ledger
+        text: Julian has been using fake historical tapestries and minor artifacts to launder cartel money. He would create fake buyers, 'sell' the worthless art for millions, and clean the cash. Elias found the real ledger and hid it in Vault B pending a police investigation.
+        trigger:
+          requiresEvidence:
+            - shredder_reconstruction
+          keywords:
+            - shredder
+            - documents
+            - ledger
+            - laundering
+            - cartel
+            - fake lots
+            - tapestry
+            - dna
+            - vault b
+            - your dna
+          minPressure: 35
+      - id: planted_the_trap
+        text: Julian stole the 100-minute Cryo-Melt Gel from the restoration studio yesterday morning using his admin override. At 9:05 PM tonight, he wrapped a smoke pellet in the gel and dropped it into the tapestry tube in Vault B. He knew the gel would dissolve in exactly 100 minutes, triggering the smoke at 10:45 PM.
+        trigger:
+          requiresEvidence:
+            - tapestry_tube_residue
+          keywords:
+            - gel
+            - 9:05
+            - pellet
+            - smoke
+            - 100 minutes
+            - planted
+            - checked out
+          minPressure: 45
+      - id: used_clara
+        text: Julian knew the Halon system would only arm if the massive steel door was spun locked. If the door was open, the smoke pellet would just set off a noisy alarm and Elias would walk out. Because Julian had to be on stage for his alibi, he coldly texted Clara at 10:40 PM, using her crush on him to manipulate her into doing his dirty work. He made her the executioner without her knowing it.
+        trigger:
+          requiresEvidence:
+            - clara_purse
+          keywords:
+            - clara
+            - text
+            - locked
+            - door
+            - asked her
+            - manipulated
+            - spun the lock
+          minPressure: 50
+      - id: the_stall
+        text: Confronted with the audio recording of his speech, Julian's polished veneer cracks. The 15-second awkward silence at 10:44 PM wasn't him losing his place—he was staring at his watch, waiting for the chemical timer to hit exactly 100 minutes, ensuring the alarms interrupted him perfectly to cement his alibi.
+        trigger:
+          requiresEvidence:
+            - av_audio_recording
+          keywords:
+            - audio
+            - recording
+            - pause
+            - waiting
+            - stall
+            - 10:44
+            - silence
+          minPressure: 55
+      - id: full_confession
+        text: "Julian snaps, adjusting his cuffs with shaking hands. 'Elias was a dinosaur! An absolute relic! He cared more about the dust on a canvas than the survival of this institution. Do you know what those people would have done to me if the money stopped moving? I didn't want to kill him. It was a mathematical necessity. And it was brilliant. If you hadn't found the gel residue, it would have been ruled a tragic mechanical failure. A ghost in the machine.'"
+        trigger:
+          requiresSecrets:
+            - embezzlement_ledger
+            - planted_the_trap
+            - used_clara
+            - the_stall
+          requiresEvidence:
+            - shredder_reconstruction
+            - tapestry_tube_residue
+            - clara_purse
+            - av_audio_recording
+          keywords:
+            - confess
+            - killed
+            - murdered
+            - did it
+            - trap
+            - guilty
+          minPressure: 60
+      - id: vault_dna_deflection
+        text: Julian waves a dismissive hand. "I'm the Director. I inspect every vault before a major auction — it's due diligence. Of course my DNA is in Vault B. I was in there at nine PM this evening, before the gala opened to guests, checking the tapestry lot was staged correctly. You'll see it on the security footage."
+        trigger:
+          keywords:
+            - dna
+            - vault b
+            - your dna
+            - traces
+            - fingerprints
+          minPressure: 10
+    traits:
+      - Charismatic, silver-tongued, and impeccably dressed.
+      - Expresses deep, poetic sorrow over Elias's death.
+      - Frequently redirects suspicion toward the security failures (Anya/Marcus).
+      - Condescending when technical details of the fire system are discussed.
+    resistance_level: expert
+    tells: Over-enunciates his words and smiles thinly when his alibi on stage is questioned.
+  - id: clara
+    name: Clara Reed
+    alias:
+      - clara
+      - reed
+    avatar: avatars/the_gilded_cage/clara.png
+    currentLocation: ballroom
+    age: 28
+    role: Head of Restoration (holds general basement clearance for climate-sensitive artifact handling)
+    gender: female
+    isGuilty: false
+    isAccomplice: true
+    alibi: I was at the champagne table. Then I went down to the basement at 10:40 just to close the vault door. I came right back up.
+    motive: Had a brief romantic entanglement with Julian. She desperately seeks his approval and wants a promotion to Chief Appraiser now that Elias is gone.
+    secrets:
+      - id: the_promotion_email
+        text: "Clara finally breaks. 'After the auction this weekend, Julian was going to announce me as the new Chief Appraiser. He told me last week. With Elias gone... I know how that looks. But I swear I didn't know Elias was in that vault. I thought he'd gone home. The promotion was real — it wasn't a motive, it was a coincidence.' She pulls out a saved email on a tablet: a draft from Julian, dated three days ago, subject line 'Succession Planning — Confidential.'"
+        trigger:
+          keywords:
+            - promotion
+            - chief appraiser
+            - replace
+            - take his job
+            - benefit
+            - motive
+            - why you
+          minPressure: 35
+      - id: the_text_message
+        text: 'Clara left her purse in the ballroom because she panicked when the police arrived. She knows the text from Julian is on her phone. "He told me to close it! He said Elias left it open. I thought Elias had gone home! I was so focused on my phone... wait, I did see a shadow near the Director''s door. But Julian told me to hurry, so I ignored it. I just spun the wheel and left. I locked him in..." She is hyperventilating.'
+        trigger:
+          requiresEvidence:
+            - clara_purse
+          keywords:
+            - text
+            - julian
+            - purse
+            - close the door
+            - locked him in
+            - asked you
+          minPressure: 25
+      - id: stolen_gel
+        text: When confronted with the missing Cryo-Melt Gel, Clara is baffled. "I didn't take that. Julian's admin code checked it out yesterday. I assumed he needed it for a private client demonstration. It's a highly sensitive solvent, it dissolves strictly based on ambient temperature exposure over 100 minutes." She genuinely did not know it was used as a time-delay fuse.
+        trigger:
+          keywords:
+            - gel
+            - missing
+            - inventory
+            - cryo
+            - solvent
+            - 100 minutes
+            - stolen
+          minPressure: 30
+      - id: unwitting_killer
+        text: "Clara realizes she was the one who armed the Halon system by closing the door. She collapses into a chair, sobbing uncontrollably. 'I killed him. Julian used me and I killed Elias. I heard a thumping sound when I spun the lock... I thought it was just the air pressure changing in the room. He was knocking. He was knocking and I walked away.'"
+        trigger:
+          requiresSecrets:
+            - the_text_message
+          requiresEvidence:
+            - clara_purse
+          keywords:
+            - armed
+            - system
+            - sealed
+            - halon
+            - heard him
+            - knocking
+            - trapped
+          minPressure: 40
+    traits:
+      - Nervous, eager to please, intensely passionate about art.
+      - Blindly loyal to Julian until she realizes what he did.
+      - Fastidious about her tools and chemicals.
+    resistance_level: low
+    tells: Rubs her hands together obsessively, mimicking the motion of spinning the vault lock.
+  - id: marcus
+    name: Marcus Sterling
+    alias:
+      - marcus
+      - sterling
+    avatar: avatars/the_gilded_cage/marcus.png
+    currentLocation: ballroom
+    age: 55
+    role: Billionaire Collector & VIP Guest
+    gender: male
+    isGuilty: false
+    alibi: I told you, I was upstairs mingling. If my badge swiped downstairs, it was stolen or cloned.
+    motive: Julian Vance has blackmail material on Marcus (photographs of Marcus purchasing looted conflict-antiquities). Marcus hates Julian and wants his leverage back.
+    secrets:
+      - id: the_cash_delivery
+        text: Before the gala began, Marcus met Anya briefly in the security office to hand over the cash envelope in person. He needed to confirm she understood the exact timing window he required.
+        trigger:
+          requiresEvidence:
+            - sterling_envelope
+          keywords:
+            - security office
+            - anya
+            - dna
+            - met her
+            - envelope
+            - cash
+          minPressure: 25
+      - id: the_bribe
+        text: Marcus paid Anya Sokolov $50,000 in cash (the envelope in the security trash) to blind the East Hallway cameras from 10:35 to 10:50. He needed exactly 15 minutes of dead air.
+        trigger:
+          requiresEvidence:
+            - sterling_envelope
+          keywords:
+            - bribe
+            - envelope
+            - cash
+            - anya
+            - paid
+            - cameras
+            - blind
+          minPressure: 35
+      - id: the_break_in
+        text: 'Marcus admits he went downstairs. "Fine! I paid the guard. I picked the lock to Julian''s office. He has... sensitive photographs of my previous acquisitions. I was in his office tearing the place apart from 10:38 to 10:48. I heard heels clicking down the hallway at 10:41! I panicked and ducked into the dark Restoration Studio. I saw a woman in a dress hurry past to the vaults. I didn''t see her face, but she came back a minute later. I heard the vault alarm go off, panicked, dumped my lockpicks in the foyer, and blended into the crowd. I am a thief tonight, Detective, but I am not a murderer."'
+        trigger:
+          requiresSecrets:
+            - the_bribe
+          requiresEvidence:
+            - marcus_lockpicks
+            - sterling_envelope
+          keywords:
+            - picks
+            - scratched
+            - office
+            - julian's door
+            - thief
+            - what were you doing
+            - blackmail
+          minPressure: 45
+    traits:
+      - Arrogant, used to buying his way out of trouble.
+      - Highly defensive of his reputation.
+      - Views the police as a nuisance rather than an authority.
+    resistance_level: high
+    tells: Adjusts his expensive watch when lying about his location.
+  - id: anya
+    name: Anya Sokolov
+    alias:
+      - anya
+      - sokolov
+    avatar: avatars/the_gilded_cage/anya.png
+    currentLocation: security_office
+    age: 34
+    role: Head of Security
+    gender: female
+    isGuilty: false
+    isSilentWitness: true
+    alibi: I was at my desk eating pad thai. The camera software is old and glitches all the time, entering local loop mode randomly. It's an IT problem.
+    motive: Deep in credit card debt. Willing to look the other way for cash.
+    secrets:
+      - id: took_the_bribe
+        text: "When shown the Sterling envelope, Anya goes pale. 'Okay. Okay. Marcus approached me. Offered me 50k to loop the East Hallway for 15 minutes. He said he just wanted an early look at a painting in Vault A so he could prepare his bid. I just typed the override command. That\u2019s it! If I admit I turned off the cameras while a man was murdered... they\u2019ll charge me as an accessory!'"
+        trigger:
+          requiresEvidence:
+            - sterling_envelope
+          keywords:
+            - envelope
+            - cash
+            - marcus
+            - bribe
+            - 50k
+            - loop
+            - command
+            - typed
+          minPressure: 40
+      - id: the_camera_blindspot
+        text: Anya's action unintentionally created the perfect cover for Julian's murder plot. Because she blinded the cameras for Marcus, there is no footage of Clara going down to lock the door at 10:42. Anya is innocent of the murder, but her corruption made it possible.
+        trigger:
+          requiresSecrets:
+            - took_the_bribe
+          requiresEvidence:
+            - sterling_envelope
+          keywords:
+            - cover
+            - clara
+            - blind
+            - helped the killer
+            - accessory
+          minPressure: 45
+      - id: the_smell
+        text: "Anya pauses, thinking. 'Actually... when I walked the basement at 10:50 after the fire department arrived, I noticed something. The hallway smelled faintly chemical. Not like the Halon — I know what that smells like. Something else. Sweeter. Like the restoration studio, almost. I assumed one of Clara's chemicals had spilled during the panic.' She doesn't realize she's just described theatrical glycol vapor bleeding from the tapestry tube residue."
+        trigger:
+          keywords:
+            - smell
+            - chemical
+            - hallway
+            - after the alarm
+            - noticed anything
+            - walk the floor
+          minPressure: 30
+    traits:
+      - Cynical and exhausted.
+      - Highly protective of her job and pension.
+      - Terrified of going to prison.
+    resistance_level: moderate
+    tells: Refuses to look directly at the camera monitors when discussing the "glitch."
+  - id: leo
+    name: Leo Thorne
+    alias:
+      - leo
+      - thorne
+    avatar: avatars/the_gilded_cage/leo.png
+    currentLocation: staff_breakroom
+    age: 24
+    role: Junior Appraiser (Nephew to Victim)
+    gender: male
+    isGuilty: false
+    alibi: I went to the basement breakroom at 10:28. I was crying. Uncle Elias had just told me I was useless and he was cutting me off. I didn't leave the breakroom until the alarms went off.
+    motive: Deeply in debt to bookies. Needed his inheritance. Elias told him at 10:15 PM that he was rewriting his will to leave everything to charity.
+    secrets:
+      - id: the_argument
+        text: "Leo admits the fight was vicious. 'He told me I lacked the moral fortitude for the art world. That I was a parasite. I hated him in that moment, I really did. But I couldn't kill him! I don't even know the code to the Halon system!'"
+        trigger:
+          keywords:
+            - argument
+            - fight
+            - will
+            - inheritance
+            - cut off
+            - crying
+            - parasite
+          minPressure: 20
+      - id: witnessed_marcus
+        text: Leo mentions that while he was in the breakroom, he heard metallic clicking noises coming from down the hall around 10:40. He peeked out and saw Marcus Sterling hovering near the Director's office. This helps corroborate Marcus's lockpicking story.
+        trigger:
+          keywords:
+            - hear anything
+            - see anyone
+            - clicking
+            - marcus
+            - breakroom
+            - hallway
+          minPressure: 25
+      - id: the_consultancy_payment
+        text: "Caught with the ledger fragment, Leo deflates. 'Alright. Yes. Six months ago, Julian paid me $3,000 cash to 'verify' the provenance of a tapestry he wanted to acquire. It was a fake. I knew it was a fake. But I needed the money to pay off a bookie, so I wrote the appraisal report anyway. Elias found out tonight. That's why he was cutting me off. But I swear, I didn't know Julian was laundering millions! I thought it was just one bad piece!'"
+        trigger:
+          requiresEvidence:
+            - shredder_reconstruction
+          keywords:
+            - 3000
+            - payment
+            - cash
+            - consultancy
+            - ledger
+            - shredder
+            - fake appraisal
+            - paid you
+          minPressure: 35
+    traits:
+      - Emotionally volatile and immature.
+      - Grieving but also incredibly self-centered.
+      - Quick to point fingers at others to deflect from his own awful motive.
+    resistance_level: low
+    tells: Voice cracks and pitches upward when he feels cornered.
+settings:
+  timeLimit: 1800
+  startingPoints: 150
+  difficulty: expert
+point_system:
+  description: Points represent investigative resources (questions, pressure tactics, evidence analysis). Each question costs 1 point. Correct deductions refund 2 points. Finding key evidence grants 3 points.
+  question_cost: 1
+  search_cost: 1
+  correct_deduction_reward: 2
+  key_evidence_reward: 3
+evidence_system:
+  automatic_evidence: Digital RFID logs, Autopsy, and Initial Statements are available immediately.
+  search_required: Physical evidence in specific locations requires spending 2 points to search.
+  secret_revealed_evidence: Chemical analysis and document reconstruction require pushing suspects to reveal their actions.
+win_conditions:
+  standard_win: Identify Julian Vance as the killer and deduce the method (Gel + Smoke Pellet + Clara sealing the door).
+  full_win: Identify Julian, clear Clara of malicious intent, and expose Marcus/Anya's separate bribery plot.
+  partial_win: Identify Julian but fail to explain how the Halon system was triggered remotely.

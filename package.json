@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "start:dev": "clear && npm run dev",
+    "supervisor": "tsx src/supervisor.ts",
     "build": "tsc"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
     "chart.js": "^4.5.1",
     "discord.js": "^14.25.1",
     "dotenv": "^16.6.1",
+    "js-yaml": "^4.1.1",
     "ollama": "^0.6.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
@@ -34,6 +36,7 @@
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^25.0.9",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",

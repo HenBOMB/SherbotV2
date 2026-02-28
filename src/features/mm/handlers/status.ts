@@ -43,7 +43,7 @@ export async function handleStatus(
     const totalVotes = Object.keys(state.accusations || {}).length;
     const votesNeeded = Math.ceil(state.participants.size / 2);
 
-    const embed = createStatusEmbed(
+    const { embed, files } = createStatusEmbed(
         activeGame.config.name,
         activeGame.getRemainingTime(),
         state.points,
@@ -54,5 +54,5 @@ export async function handleStatus(
         killerName
     );
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], files, ephemeral: true });
 }

@@ -19,6 +19,10 @@ const sherlockFormat = winston.format.printf(({ level, message, timestamp }) => 
             colorizedLevel = `\x1b[31mCRITICAL\x1b[0m`;   // Red
             prefix = '🚨 ';
             break;
+        case 'debug':
+            colorizedLevel = `\x1b[90mDIAGNOSTIC\x1b[0m`; // Grey
+            prefix = '🔬 ';
+            break;
         default:
             colorizedLevel = level.toUpperCase();
     }

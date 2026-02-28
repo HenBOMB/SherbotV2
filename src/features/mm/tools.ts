@@ -211,9 +211,9 @@ export default class ToolsManager {
             return { success: false, tool: 'examine' as any, cost: 0, query: evidenceId, result: null, error: 'No active game' };
         }
 
-        const description = this.case.getPhysicalEvidence(evidenceId);
+        const rawDescription = this.case.getPhysicalEvidence(evidenceId);
 
-        if (!description) {
+        if (!rawDescription) {
             return {
                 success: false,
                 tool: 'examine' as any,
@@ -222,6 +222,23 @@ export default class ToolsManager {
                 result: null,
                 error: `No information found for item: "${evidenceId}"`
             };
+        }
+
+        // Resolve PhysicalItem objects to a description string
+        let description: string;
+        if (typeof rawDescription === 'string') {
+            description = rawDescription;
+        } else {
+            // If item has been unlocked (passcode) or has no passcode lock,
+            // show unlocked_description if available
+            const isUnlocked = this.case.state.unlockedItems.has(evidenceId.toLowerCase());
+            const hasPasscode = !!rawDescription.required;
+
+            if (!hasPasscode || isUnlocked) {
+                description = rawDescription.unlocked_description || rawDescription.description;
+            } else {
+                description = rawDescription.description;
+            }
         }
 
         const result: ToolResult = {

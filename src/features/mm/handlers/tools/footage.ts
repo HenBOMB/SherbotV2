@@ -5,7 +5,7 @@ import { createToolEmbed } from '../../commands.js';
 import { logger } from '../../../../utils/logger.js';
 import GameManager from '../../game.js';
 
-const BATTERY_COST = 10;
+const BATTERY_COST = 5;
 
 /**
  * Handle /mm footage command
@@ -65,7 +65,7 @@ export async function handleFootage(
         result.cost,
         result.success,
         result.error,
-        { battery }
+        { battery, hintEngine: activeGame.hints }
     );
 
     // Ensure our selected time is in the list for buttons (it really should be if valid)
@@ -128,7 +128,7 @@ export async function handleFootage(
                 0, // Subsequent navigations are free
                 newResult.success,
                 newResult.error,
-                { battery: Math.max(0, battery) }
+                { battery: Math.max(0, battery), hintEngine: activeGame.hints }
             );
 
             // If expired, or end of list, disable buttons
@@ -147,7 +147,7 @@ export async function handleFootage(
             // Attempt to notify user if interaction is still valid/open
             try {
                 if (!i.replied && !i.deferred) {
-                    await i.reply({ content: '❌ A system error occurred while switching footage.', ephemeral: true });
+                    await i.reply({ content: '❌ An unexpected complication occurred while reviewing testimony.', ephemeral: true });
                 }
             } catch (e) {
                 // Ignore double-reply errors

@@ -1,0 +1,177 @@
+- id: camera_loop_footage
+  tool: footage
+  condition:
+    queryMatch:
+      - '03:35'
+      - 03:35-03:39
+      - '03:36'
+      - '03:37'
+      - '03:38'
+      - '03:39'
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The footage appears unnaturally still. The timestamps are advancing, but there is zero digital noise or movement. Could this be a loop?
+  spoiler: true
+- id: cam3_analysis_examine
+  tool: examine
+  condition:
+    queryContains: hallway_cam_3
+  label: INDUCTION
+  emoji: 💡
+  text: This analysis confirms the footage was replaced with a pre-recorded clip. Cross-reference with the **Digital Logs at 03:34:58** — the upload came from Guest Room 4's workstation tablet, not the Home Office.
+  spoiler: true
+- id: drag_marks_examine
+  tool: examine
+  condition:
+    queryContains: floor_marks
+  label: ABDUCTION
+  emoji: ⚠️
+  text: If she fell backward from the shock, why is her body 3 feet closer to the rack now? Someone repositioned her after the surge. The drag force suggests a person of significant physical strength. This was staged.
+  spoiler: true
+- id: safe_access_examine
+  tool: examine
+  condition:
+    queryContains: safe_access
+  label: INDUCTION
+  emoji: 💡
+  text: The biometric log shows entry at 11:58 PM with no authorized user present. The spoofed mold used on the safe scanner was cast from residue left by Celeste's earlier legitimate access. Someone studied that scanner carefully.
+  spoiler: true
+- id: camera_loop_logs
+  tool: logs
+  condition:
+    queryMatch:
+      - '03:34:58'
+      - '03:35'
+  label: OBSERVATION
+  emoji: 🔎
+  text: A loop file was uploaded to hallway cam 3 from a tablet in **Guest Room 4** — Marcus's room — just before the blind window opened. The upload was timer-triggered. Marcus didn't need to be in the room when it fired.
+  spoiler: true
+- id: irene_laptop_examine
+  tool: examine
+  condition:
+    queryContains: irene_laptop
+  label: INDUCTION
+  emoji: 💡
+  text: The editing script runs on a timer, making changes every 2-3 minutes automatically — Irene built her own fake alibi. But internal sensor logs show no motion in the Home Office after 3:28 AM. Her alibi is manufactured, but her location is confirmed. Someone else was moving.
+  spoiler: true
+- id: home_office_dna
+  tool: dna
+  condition:
+    location: home_office
+  label: DEDUCTION
+  emoji: ⚠️
+  text: Celeste Miller's DNA is here, but she claims to have stayed in the Master Bedroom. She may have visited the Home Office — and whatever she found or touched in this room may have been used against Vivienne.
+  spoiler: true
+- id: fingerprint_kit_examine
+  tool: examine
+  condition:
+    queryContains: fingerprint_mold
+  label: INDUCTION
+  emoji: 💡
+  text: The kit belongs to Irene — but the degraded used mold doesn't match her plan. Someone else accessed this kit, cast a working mold using Celeste's safe-scanner residue, and used it once. Cross-reference with the **03:37 server room entry**.
+  spoiler: true
+- id: admin_override_examine
+  tool: examine
+  condition:
+    queryContains: admin_override
+  label: ABDUCTION
+  emoji: 🔎
+  text: This device belongs in Vivienne's home office safe. It was stolen at 11:58 PM via a spoofed fingerprint. The cleaning solvent residue on the device matches traces found in a jacket on the foyer coat rack — check whose coat that is.
+  spoiler: true
+- id: alex_phone_examine
+  tool: examine
+  condition:
+    queryContains: alex_phone
+  label: INDUCTION
+  emoji: 💡
+  text: 'Alex received this request from Marcus, not Vivienne. An investor with no technical role was relaying server maintenance instructions at midnight. Ask yourself: what did Marcus gain by having Alex''s biometric entry appear in the server room logs at 3:15?'
+  spoiler: true
+- id: server_rack_examine
+  tool: examine
+  condition:
+    queryContains: server_rack
+  label: DEDUCTION
+  emoji: ⚠️
+  text: Alex accessed Bay 12 at 3:15 AM — but only ran diagnostics. The lethal modification happened during the 3:37 AM entry under the camera loop. Who entered at 3:37, and why did the logs show Vivienne's fingerprint when she was asleep?
+  spoiler: true
+- id: priya_note_examine
+  tool: examine
+  condition:
+    queryContains: priya_note
+  label: ABDUCTION
+  emoji: 🔎
+  text: '''M — I know what you built. Whatever you''re planning — I won''t be awake at 3 AM.'' Who is M? At first glance it seems to point toward Irene. Look again at the acquisition documents Priya was reviewing — and who the wire fraud records point to.'
+  spoiler: true
+- id: backup_corruption_logs
+  tool: logs
+  condition:
+    queryMatch:
+      - '03:45'
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The backup corruption triggered an alert to Vivienne's bedside monitor at 3:45:47 AM. She responded immediately and entered the server room at 3:46. The destruction was targeted — specifically the PROMETHEUS folder. Was the corruption designed to lure her in?
+  spoiler: true
+- id: marcus_burner_examine
+  tool: examine
+  condition:
+    queryContains: burner_phone_found
+  label: OBSERVATION
+  emoji: 🔎
+  text: Three threads — 'PROMETHEUS — she has everything', 'window closes at 9 AM', and 'it has to be tonight.' The phone is registered to a TechVault Partners shell company. That name appears in Vivienne's PROMETHEUS file. Decrypt the messages.
+  spoiler: true
+- id: marcus_burner_decrypt_examine
+  tool: examine
+  condition:
+    queryContains: burner_phone_decrypt
+  label: INDUCTION
+  emoji: 💡
+  text: '''Proceeding.'' Sent at 3:02 AM — eighteen minutes before Marcus claims he went to the wine cellar. He wasn''t selecting a bottle. He was confirming a plan. Cross-reference with the **biometric exit gap at 03:41**.'
+  spoiler: true
+- id: silicone_glove_examine
+  tool: examine
+  condition:
+    queryContains: silicone_glove
+  label: INDUCTION
+  emoji: 💡
+  text: Thermal curing compound — used for biometric mold casting. The glove size is consistent with a large male hand, not Irene's. Someone discarded this in the garage's camera blind spot. Check the **foyer coat rack** for matching solvent residue.
+  spoiler: true
+- id: prometheus_file_examine
+  tool: examine
+  condition:
+    queryContains: prometheus_file
+  label: DEDUCTION
+  emoji: ⚠️
+  text: Vivienne had built an airtight SEC fraud case against Marcus Zhao — wire transfers, shell company diagrams, and a draft complaint ready to file at 10 AM. She planned to secure the $200M at 9 AM, then destroy him. He had one window to stop it.
+  spoiler: true
+- id: wine_cellar_gap_examine
+  tool: examine
+  condition:
+    queryContains: biometric_exit_log_gap
+  label: ABDUCTION
+  emoji: 🔎
+  text: Marcus exited the wine cellar at 03:41 and re-entered at 03:44 — a three-minute gap he can't account for. The server room is 30-45 seconds from the cellar. That gap is enough time to reach the second floor, use an override device, and return.
+  spoiler: true
+- id: wine_glass_cellar_examine
+  tool: examine
+  condition:
+    queryContains: wine_glass_cellar
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The wine is room temperature at 3:47 AM — it was poured at least 90 minutes earlier, around 2:10 AM. Marcus wasn't driven to the cellar by insomnia. He pre-staged his alibi before going upstairs to commit the murder.
+  spoiler: true
+- id: marcus_briefcase_examine
+  tool: examine
+  condition:
+    queryContains: marcus_briefcase
+  label: INDUCTION
+  emoji: 💡
+  text: '''Window closes at 9 AM.'' ''Alex handles Bay 12 at 3:15. Room clear by 3:20.'' This is a murder plan written in Marcus''s own hand. He planned around Alex''s access — using an innocent man as a timed distraction.'
+  spoiler: true
+- id: server_room_dna
+  tool: dna
+  condition:
+    location: server_room
+  label: DEDUCTION
+  emoji: ⚠️
+  text: Marcus Zhao's DNA is present in the server room — but he claims he never left the wine cellar. Either he's lying, or someone planted it. Combined with the biometric gap in the cellar log, this places him at the scene.
+  spoiler: true

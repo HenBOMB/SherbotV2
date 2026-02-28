@@ -47,7 +47,7 @@ export class AIService {
         // Initialize Gemini
         const geminiKey = process.env.GEMINI_API_KEY || '';
         this.geminiClient = new GoogleGenerativeAI(geminiKey);
-        this.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+        this.geminiModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
 
         // Determine provider (Default to Gemini)
         this.provider = (process.env.AI_PROVIDER as any) || 'gemini';

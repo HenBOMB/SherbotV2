@@ -10,7 +10,8 @@ export default class Features {
             'mod.js',
             'dailytips.js',
             'secret.js',
-            'profiler.js'
+            'profiler.js',
+            'ai.js'
         ];
 
         for (const file of features) {

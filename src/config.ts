@@ -36,9 +36,13 @@ export const config = {
         autoModEnabled: process.env.AUTO_MOD_ENABLED !== 'false',
         profiler: {
             enabled: true,
-            ignoredKeywords: ['welcome', 'rules', 'announcement'],
+            ignoredKeywords: ['welcome', 'rules', 'announcement', 'info', 'bot', 'server', 'role', 'roles', 'channel', 'channels', 'member', 'members', 'user', 'users', 'moderation', 'moderator', 'moderators', 'admin', 'admins', 'owner', 'owners'],
             // Add guild IDs here to restrict scanning, or leave empty to scan all guilds the bot is in
             targetGuilds: [process.env.MAIN_GUILD_ID || '670107546480017409'],
+        },
+        n8n: {
+            webhookUrl: process.env.N8N_WEBHOOK_URL || '',
+            apiApiKey: process.env.N8N_API_KEY || '', // In case we need it
         }
     }
 };

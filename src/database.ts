@@ -41,11 +41,12 @@ export class MMGame extends Model<InferAttributes<MMGame>, InferCreationAttribut
     declare roleId: string;
     declare points: number;
     declare phase: string;
+    declare hostId: string;
     declare endsAt: Date;
     declare participants: CreationOptional<string>; // JSON stringified
     declare usedTools: CreationOptional<string>; // JSON stringified
     declare discoveredEvidence: CreationOptional<string>; // JSON stringified
-    declare discoveredLocations: CreationOptional<string>; // JSON stringified
+    declare unlockedItems: CreationOptional<string>; // JSON stringified
     declare playerStats: CreationOptional<string>; // JSON stringified
     declare accusations: CreationOptional<string>; // JSON stringified
     declare suspectState: CreationOptional<string>; // JSON stringified
@@ -75,6 +76,7 @@ export class InterrogationCache extends Model<InferAttributes<InterrogationCache
     declare embedding: string; // JSON string of number[]
     declare response: string; // JSON string of SuspectResponse
     declare createdAt: CreationOptional<Date>;
+    declare updatedAt: CreationOptional<Date>;
 }
 
 // Define InterrogationLog model for logging user messages and AI responses
@@ -197,6 +199,11 @@ MMGame.init({
         type: DataTypes.STRING,
         allowNull: false,
     },
+    hostId: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        defaultValue: '',
+    },
     endsAt: {
         type: DataTypes.DATE,
         allowNull: false,
@@ -216,7 +223,7 @@ MMGame.init({
         allowNull: true,
         defaultValue: '[]',
     },
-    discoveredLocations: {
+    unlockedItems: {
         type: DataTypes.TEXT,
         allowNull: true,
         defaultValue: '[]',
@@ -313,7 +320,8 @@ InterrogationCache.init({
         type: DataTypes.TEXT,
         allowNull: false,
     },
-    createdAt: DataTypes.DATE
+    createdAt: DataTypes.DATE,
+    updatedAt: DataTypes.DATE
 }, {
     sequelize,
     tableName: 'InterrogationCache',
@@ -369,6 +377,7 @@ InterrogationLog.init({
     indexes: [
         { fields: ['caseId'] },
         { fields: ['suspectId'] },
+        { fields: ['userId'] },
     ]
 });
 
@@ -461,10 +470,11 @@ export async function initializeDatabase() {
             // MMGames migration helper
             const mmColumns = [
                 ['discoveredEvidence', "TEXT DEFAULT '[]'"],
-                ['discoveredLocations', "TEXT DEFAULT '[]'"],
+                ['unlockedItems', "TEXT DEFAULT '[]'"],
                 ['playerStats', "TEXT DEFAULT '{}'"],
                 ['accusations', "TEXT DEFAULT '{}'"],
-                ['suspectState', "TEXT DEFAULT '{}'"]
+                ['suspectState', "TEXT DEFAULT '{}'"],
+                ['hostId', "VARCHAR(255) DEFAULT ''"]
             ];
 
             for (const [col, def] of mmColumns) {
@@ -473,6 +483,11 @@ export async function initializeDatabase() {
                     logger.info(`Added ${col} column to MMGames table.`);
                 } catch (e) { /* ignore */ }
             }
+
+            try {
+                await sequelize.query('ALTER TABLE InterrogationCache ADD COLUMN updatedAt DATETIME;');
+                logger.info('Added updatedAt column to InterrogationCache table.');
+            } catch (e) { /* ignore */ }
 
             logger.info('Database models synced.');
 

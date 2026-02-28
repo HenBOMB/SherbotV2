@@ -4,14 +4,15 @@ import {
     Colors,
     ButtonBuilder,
     ActionRowBuilder,
-    ButtonStyle
+    ButtonStyle,
+    AttachmentBuilder
 } from 'discord.js';
 import { hasPermission, denyPermission } from '../commands.js';
 import { logger } from '../../../utils/logger.js';
 import ToolsManager from '../tools.js';
 import Suspect from '../suspect.js';
 import GameManager from '../game.js';
-import { createCaseBriefingEmbeds } from '../commands.js';
+import { createCaseBriefingEmbeds, createSuspectCard, createRoomBriefingEmbed } from '../commands.js';
 
 /**
  * Handle /mma start command
@@ -89,13 +90,16 @@ export async function handleStart(
 
         // Start the game with the command user as first participant
         const userId = interaction.user.id;
-        newCase.start([userId], difficulty);
+        newCase.start(userId, [], difficulty, interaction.guildId || 'unknown');
 
         manager.setActiveGame(newCase);
         manager.setTools(new ToolsManager(newCase));
 
         // Initialize stats for the starter
         manager.getOrCreateStats(userId, interaction.user.username);
+
+        // Clear all history (RAM and DB Cache) for this game
+        await manager.clearAllHistory();
 
         // Ensure the starter user gets the MM role
         try {
@@ -162,7 +166,6 @@ export async function handleStart(
                     .setColor(Colors.Green)
                     .setTitle('🕵🏻 Join the Investigation')
                     .setDescription('Click the button below to join the detective team. Only joined members can participate in interrogations and use detective tools.')
-                    .setFooter({ text: 'Detective Role required to send messages in case channels' });
 
                 await briefingChannel.send({
                     embeds: [joinEmbed],
@@ -176,8 +179,47 @@ export async function handleStart(
             }
         }
 
+        // Send room briefings to EVERY location channel
+        const map = newCase.config.map || {};
+        for (const locId in map) {
+            const locChannel = channels.get(locId);
+            if (locChannel) {
+                try {
+                    const { embed, file } = createRoomBriefingEmbed(locId, map[locId], channels);
+                    await locChannel.send({
+                        embeds: [embed],
+                        files: file ? [file] : []
+                    });
+                } catch (e) {
+                    logger.error(`Failed to send briefing for room ${locId}`, e);
+                }
+            }
+        }
+
+        // Send suspect briefings to their respective location channels
+        for (const suspectData of newCase.config.suspects) {
+            const locChannel = channels.get(suspectData.currentLocation);
+            if (locChannel) {
+                try {
+                    const { embed, file } = createSuspectCard(suspectData, channels);
+                    await locChannel.send({
+                        embeds: [embed],
+                        files: file ? [file] : []
+                    });
+                } catch (e) {
+                    logger.error(`Failed to send briefing for suspect ${suspectData.id} to ${suspectData.currentLocation}`, e);
+                }
+            }
+        }
+
         await interaction.editReply({
-            content: `🕵️ **The game is afoot!**\nA scene awaits your inspection in <#${briefingChannel?.id}>. Review the dossier and begin your investigation.`
+            embeds: [
+                new EmbedBuilder()
+                    .setColor(Colors.Green)
+                    .setTitle('🕵️ The game is afoot!')
+                    .setDescription(`A scene awaits your inspection in <#${briefingChannel?.id}>. Review the dossier and begin your investigation.`)
+            ],
+            content: ''
         });
 
         // Update dashboard

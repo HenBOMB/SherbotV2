@@ -59,8 +59,8 @@ export async function handleSearch(
         embeds: [
             new EmbedBuilder()
                 .setColor(Colors.Yellow)
-                .setTitle('🧭 Area Search Initialized')
-                .setDescription(`\`\`\`ansi\n\u001b[1;33m[ SCANNING AREA: ${locationId.toUpperCase()} ]\u001b[0m\n\u001b[0;37mDeployment of FORENSIC_SWEEP drones... 20%\u001b[0m\n\`\`\`\nSearching for physical evidence. This will take a moment...`)
+                .setTitle('🕯️ Investigating the Scene')
+                .setDescription(`\`\`\`ansi\n\u001b[1;33m[ SURVEYING THE SCENE: ${locationId.toUpperCase()} ]\u001b[0m\n\u001b[0;37mExamining the room with a keen eye...\u001b[0m\n\`\`\`\nSearching for clues. This will take a moment...`)
         ]
     });
 
@@ -70,7 +70,7 @@ export async function handleSearch(
     // Safety check: Is the game still active?
     if (!activeGame.isActive()) {
         manager.setExploring(channel.id, false);
-        await interaction.editReply({ content: 'The investigation has ended. Scanning aborted.' });
+        await interaction.editReply({ content: 'The investigation has ended. Search interrupted.' });
         return;
     }
 
@@ -81,7 +81,8 @@ export async function handleSearch(
         result.result,
         result.cost,
         result.success,
-        result.error
+        result.error,
+        { hintEngine: activeGame.hints }
     );
 
     // Update the original message with findings

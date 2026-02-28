@@ -4,6 +4,7 @@ import {
 } from 'discord.js';
 import { createToolEmbed } from '../../commands.js';
 import GameManager from '../../game.js';
+import { normalizeLocationId } from '../../discord-utils.js';
 
 /**
  * Handle /mm dna command
@@ -29,13 +30,13 @@ export async function handleDNA(
     }
 
     const channel = interaction.channel;
-    let location: string | null = null;
+    let rawLocation: string | null = null;
 
     if (channel instanceof TextChannel) {
-        location = manager.getLocationFromChannel(channel);
+        rawLocation = manager.getLocationFromChannel(channel);
     }
 
-    if (!location) {
+    if (!rawLocation) {
         await interaction.reply({
             content: 'DNA analysis can only be performed while inside a location channel (e.g., #📍server-room).',
             ephemeral: true
@@ -43,15 +44,7 @@ export async function handleDNA(
         return;
     }
 
-    // Double check discovery (though being in the channel usually implies it)
-    if (!activeGame.state?.discoveredLocations.has(location.toLowerCase())) {
-        await interaction.reply({
-            content: 'You cannot analyze DNA in an undiscovered location.',
-            ephemeral: true
-        });
-        return;
-    }
-
+    const location = normalizeLocationId(rawLocation);
     const result = tools.analyzeDNA(location);
     const embed = createToolEmbed(
         'dna',
@@ -59,7 +52,8 @@ export async function handleDNA(
         result.result,
         result.cost,
         result.success,
-        result.error
+        result.error,
+        { hintEngine: activeGame.hints }
     );
 
     await interaction.reply({ embeds: [embed] });

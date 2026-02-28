@@ -12,7 +12,7 @@ import {
     RoleSelectMenuInteraction,
     RoleSelectMenuBuilder
 } from 'discord.js';
-import { mmaCommands, hasPermission, denyPermission, AUTHORIZED_ADMIN_ID, hasServerPremium, denyServerPremium } from '../mm/commands.js';
+import { mmaCommands, hasPermission, denyPermission, AUTHORIZED_ADMIN_ID, hasServerPremium, denyServerPremium, parseTime } from '../mm/commands.js';
 import GameManager from '../mm/game.js';
 import { Server } from '../../database.js';
 import { Command } from '../../types.js';
@@ -34,7 +34,7 @@ const command: Command = {
 
         let gameManager = GameManager.getInstance(interaction.guildId || undefined);
 
-        // Lazy init if first time
+        // Lazy init if first time (usually handled by boot init, but safe for new guilds)
         if (!gameManager && interaction.guild) {
             gameManager = new GameManager(
                 interaction.client,
@@ -51,18 +51,43 @@ const command: Command = {
             return;
         }
 
+        if (gameManager.getInitializing()) {
+            await interaction.reply({
+                content: '⏳ **Investigation files are currently being restored...** Please stand by.',
+                ephemeral: true,
+            });
+            return;
+        }
+
         const subcommand = interaction.options.getSubcommand();
 
         switch (subcommand) {
             case 'start': {
                 const caseId = interaction.options.getString('case', true);
-                const time = interaction.options.getInteger('time') ?? undefined;
-                await gameManager.startGame(interaction, caseId, time);
+                const timeStr = interaction.options.getString('time') ?? undefined;
+                let timeMinutes: number | undefined = undefined;
+
+                if (timeStr) {
+                    timeMinutes = parseTime(timeStr) ?? undefined;
+                    if (timeMinutes === undefined) {
+                        await interaction.reply({
+                            content: '❌ **Invalid time format.**\nPlease use formats like "2d", "4h", "30m", or just a number for minutes (e.g., "60").',
+                            ephemeral: true
+                        });
+                        return;
+                    }
+                }
+
+                await gameManager.startGame(interaction, caseId, timeMinutes);
                 break;
             }
 
-            case 'end':
-                await gameManager.handleEnd(interaction);
+            case 'terminate':
+                await gameManager.handleTerminate(interaction);
+                break;
+
+            case 'finalize':
+                await gameManager.handleFinalize(interaction);
                 break;
 
             case 'cleanup':
@@ -72,6 +97,20 @@ const command: Command = {
             case 'generate':
                 await gameManager.handleGenerate(interaction);
                 break;
+
+            case 'hints':
+                await gameManager.handleHints(interaction);
+                break;
+
+            case 'sync':
+                await gameManager.handleSync(interaction);
+                break;
+
+            case 'points': {
+                const amount = interaction.options.getNumber('amount', true);
+                await gameManager.handleSetPoints(interaction, amount);
+                break;
+            }
 
             // case 'shutdown': {
             //     const row = new ActionRowBuilder<ButtonBuilder>()
@@ -198,9 +237,17 @@ const command: Command = {
     },
 
     async autocomplete(interaction: AutocompleteInteraction) {
-        const gameManager = GameManager.getInstance(interaction.guildId || undefined);
+        let gameManager = GameManager.getInstance(interaction.guildId || undefined);
+        if (!gameManager && interaction.guild) {
+            gameManager = new GameManager(interaction.client, interaction.guild.id, 'data');
+        }
+
         if (gameManager) {
-            await gameManager.handleAutocomplete(interaction);
+            const focused = interaction.options.getFocused(true);
+            // 'case' autocomplete doesn't need a fully loaded game
+            if (focused.name === 'case' || !gameManager.getInitializing()) {
+                await gameManager.handleAutocomplete(interaction);
+            }
         }
     }
 };

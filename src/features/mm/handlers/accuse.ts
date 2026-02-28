@@ -29,6 +29,15 @@ export async function handleAccuse(
         return;
     }
 
+    // GAMEPLAY: Prevent blind accusations without a single shred of evidence
+    if (activeGame.state && activeGame.state.discoveredEvidence.size === 0) {
+        await interaction.reply({
+            content: '⚖️ **The Courtyard of Hubris**\nYou cannot make an accusation without a single shred of evidence. Even an armchair detective needs *something* to point a finger at. Go find some clues first!',
+            ephemeral: true
+        });
+        return;
+    }
+
     const suspectQuery = interaction.options.getString('suspect', true);
     const matches = manager.getSuspectByFuzzyMatch(suspectQuery);
 
@@ -74,13 +83,18 @@ export async function handleAccuse(
 
         const killer = activeGame.getSuspect(result.solution || '');
 
-        const embed = createAccusationEmbed(
+        const { embed, files } = createAccusationEmbed(
             !!result.correct,
             activeGame.getSuspect(activeGame.state?.accusation?.accusedId || '')?.name || 'Unknown',
             killer?.name || 'Unknown'
         );
 
-        await interaction.reply({ embeds: [embed] });
+        await interaction.reply({ embeds: [embed], files });
+
+        // Collective Verdict Reached: Cleanup
+        await manager.removeDetectiveRoleFromAll();
+        manager.stopTimer();
+        manager.purgeEphemeralState();
 
         // Update dashboard
         manager.getDashboard().addEvent('accusation',

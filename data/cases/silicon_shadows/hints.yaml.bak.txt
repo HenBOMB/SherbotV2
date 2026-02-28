@@ -1,0 +1,129 @@
+- id: camera_loop_footage
+  tool: footage
+  condition:
+    queryMatch:
+      - '03:35'
+      - 03:35-03:39
+      - '03:36'
+      - '03:37'
+      - '03:38'
+      - '03:39'
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The footage appears unnaturally still. The timestamps are advancing, but there is zero digital noise or movement. Could this be a loop?
+  spoiler: true
+- id: cam3_analysis_examine
+  tool: examine
+  condition:
+    queryContains: hallway_cam_3
+  label: INDUCTION
+  emoji: 💡
+  text: This analysis confirms the footage was replaced. Cross-reference this with the **Digital Logs at 03:35** to see where the source file originated.
+  spoiler: true
+- id: drag_marks_examine
+  tool: examine
+  condition:
+    queryContains: floor_marks
+  label: ABDUCTION
+  emoji: ⚠️
+  text: If she fell backward from the shock, why is her body 3 feet closer to the rack now? Someone repositioned her after the surge. This was staged.
+  spoiler: true
+- id: safe_access_examine
+  tool: examine
+  condition:
+    queryContains: safe_access
+  label: INDUCTION
+  emoji: 💡
+  text: The biometric log shows entry at 11:58 PM, but no authorized person was near the safe. Silicone residue on the scanner suggests a spoofed fingerprint. Search the Home Office for mold-making materials.
+  spoiler: true
+- id: camera_loop_logs
+  tool: logs
+  condition:
+    queryMatch:
+      - '03:34:58'
+      - '03:35'
+  label: OBSERVATION
+  emoji: 🔎
+  text: A file was uploaded to hallway cam 3 from the Home Office workstation just before the camera loop began. This wasn't a glitch — it was a deliberate override.
+  spoiler: true
+- id: irene_laptop_examine
+  tool: examine
+  condition:
+    queryContains: irene_laptop
+  label: INDUCTION
+  emoji: 💡
+  text: The editing script runs on a timer, making changes every 2-3 minutes automatically. She didn't need to be at the keyboard for the presentation to show 'activity'. Her alibi is manufactured.
+  spoiler: true
+- id: home_office_dna
+  tool: dna
+  condition:
+    location: home_office
+  label: DEDUCTION
+  emoji: ⚠️
+  text: Celeste Miller's DNA is here, but she claims to have stayed in the Master Bedroom all night. Is she hiding a visit, or was something of hers planted here?
+  spoiler: true
+- id: fingerprint_kit_examine
+  tool: examine
+  condition:
+    queryContains: fingerprint_mold
+  label: INDUCTION
+  emoji: 💡
+  text: A complete mold of a right index fingerprint. Cross-reference this with the biometric access logs — particularly the 'Vivienne' entry at 03:37 while she was still asleep in the Master Bedroom.
+  spoiler: true
+- id: admin_override_examine
+  tool: examine
+  condition:
+    queryContains: admin_override
+  label: ABDUCTION
+  emoji: 🔎
+  text: This device belongs in Vivienne's home office safe. Check the safe access log — someone retrieved it during the dinner party using a spoofed fingerprint.
+  spoiler: true
+- id: alex_phone_examine
+  tool: examine
+  condition:
+    queryContains: alex_phone
+  label: INDUCTION
+  emoji: 💡
+  text: Alex believed this message was relayed from Vivienne. But was it? Consider who sent this text — and what they gained by having the safety protocols disabled before 3 AM.
+  spoiler: true
+- id: server_rack_examine
+  tool: examine
+  condition:
+    queryContains: server_rack
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The modification took 5-7 minutes — but only because safety protocols were already disabled. Who disabled them, and who asked them to? Check the logs at 03:15.
+  spoiler: true
+- id: priya_note_examine
+  tool: examine
+  condition:
+    queryContains: priya_note
+  label: ABDUCTION
+  emoji: 🔎
+  text: '''I saw what''s in the desk. I won''t be awake at 3 AM.'' What desk? What was in it? And why does Priya want to be asleep when something happens? Search the Home Office desk.'
+  spoiler: true
+- id: backup_corruption_logs
+  tool: logs
+  condition:
+    queryMatch:
+      - '03:45'
+  label: DEDUCTION
+  emoji: ⚠️
+  text: The backup corruption triggered an alert to Vivienne's bedside monitor at 3:45:47 AM. She responded immediately and entered the server room at 3:46. Was the corruption designed to lure her?
+  spoiler: true
+- id: marcus_burner_examine
+  tool: examine
+  condition:
+    queryContains: marcus_burner_phone
+  label: OBSERVATION
+  emoji: 🔎
+  text: The messages sound incriminating, but they're encrypted. Decrypting them may reveal whether Marcus is the killer — or just a man making a deal. Don't jump to conclusions.
+  spoiler: true
+- id: silicone_glove_examine
+  tool: examine
+  condition:
+    queryContains: silicone_glove
+  label: INDUCTION
+  emoji: 💡
+  text: Thermal curing compound is used for creating biometric fingerprint molds. Someone discarded this in a camera blind spot. Search the **Home Office** for the tools that match this compound.
+  spoiler: true

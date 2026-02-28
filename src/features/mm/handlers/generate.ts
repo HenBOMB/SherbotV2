@@ -4,6 +4,7 @@ import { CaseBuilder } from '../procedural/CaseBuilder.js';
 import { GeneratorConfig } from '../procedural/types.js';
 import fs from 'fs';
 import path from 'path';
+import yaml from 'js-yaml';
 import { logger } from '../../../utils/logger.js';
 import GameManager from '../game.js';
 
@@ -153,8 +154,8 @@ export async function handleGenerate(manager: GameManager, interaction: ChatInpu
         }
 
         fs.writeFileSync(
-            path.join(outputDir, 'case.json'),
-            JSON.stringify(caseConfig, null, 4)
+            path.join(outputDir, 'case.yaml'),
+            yaml.dump(caseConfig, { indent: 2, lineWidth: -1 })
         );
 
         const successEmbed = new EmbedBuilder()

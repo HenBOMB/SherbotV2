@@ -40,25 +40,47 @@ export default function (client: Client) {
 
         // ? 🔑┃verification
         if (message.channelId === config.channels.verification) {
-            if (
-                (content.match(/(\d[-) .]+.+)/mg) ||
-                    content.includes('Have you read the rules?') ||
-                    content.includes('Why are you interested in deduction?') ||
-                    content.includes('What is your favorite field of study?')) &&
-                content.toLowerCase().includes('deduct')
-            ) {
-                setTimeout(async () => {
-                    try {
-                        // Check if message still exists
-                        if (message.partial) await message.fetch();
-                        await message.react(['✅', '👍'][Math.floor(Math.random() * 2)]);
-                        if (message.member) {
-                            await message.member.roles.add(config.roles.verified);
+            const hasNumberedList = (content.match(/^\d+[-) .]+/mg) || []).length >= 3;
+            const hasQuestionHeaders =
+                content.includes('Have you read the rules?') ||
+                content.toLowerCase().includes('why are you interested') ||
+                content.toLowerCase().includes('favourite field of study');
+
+            const hasKeywords =
+                content.toLowerCase().includes('deduct') ||
+                content.toLowerCase().includes('sherlock') ||
+                content.toLowerCase().includes('detective') ||
+                content.toLowerCase().includes('holmes') ||
+                content.toLowerCase().includes('mystery');
+
+            // If it looks like a verification attempt:
+            if (hasNumberedList || hasQuestionHeaders || (content.length > 50 && hasKeywords)) {
+                try {
+                    // Immediate feedback
+                    await message.react('🔍');
+
+                    setTimeout(async () => {
+                        try {
+                            if (message.partial) await message.fetch();
+
+                            // Random success reaction
+                            await message.react(['✅', '🕵️', '👍'][Math.floor(Math.random() * 3)]);
+
+                            if (message.member && !message.member.roles.cache.has(config.roles.verified)) {
+                                await message.member.roles.add(config.roles.verified);
+                                logger.info(`Auto-verified user: ${message.author.tag}`);
+
+                                // Optional: Welcome reply that deletes itself
+                                const welcome = await message.reply(`Welcome to the agency, Investigator **${message.author.username}**. You now have access to the rest of the server.`);
+                                setTimeout(() => welcome.delete().catch(() => { }), 10000);
+                            }
+                        } catch (e) {
+                            logger.error('Error in verification role assignment:', e);
                         }
-                    } catch (e) {
-                        logger.error('Error in verification auto-role:', e);
-                    }
-                }, 9000);
+                    }, 5000); // Reduced to 5s for better UX
+                } catch (e) {
+                    logger.error('Error in verification initial reaction:', e);
+                }
             }
         }
         // ? 🙋┃introductions

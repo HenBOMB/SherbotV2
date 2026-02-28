@@ -63,12 +63,16 @@ export class CaseBuilder {
             // Pull psychological data from skeleton archetypes for richer trait display
             const archetype = skeleton.suspectArchetypes?.[id];
 
+            // Find initial location from timeline
+            const firstEvent = skeleton.timeline.find(e => e.actorId === id && e.action === 'move');
+            const initialLocation = firstEvent?.location || 'unknown';
+
             suspects.push({
                 id,
                 name,
                 alias: [id, name.split(' ')[0].toLowerCase()],
                 avatar: avatarRelativePath,
-                currentLocation: 'unknown',
+                currentLocation: initialLocation,
                 isGuilty: id === skeleton.killerId,
                 alibi: bio.alibi || "Claims to have been elsewhere.",
                 motive: bio.motive || "Unknown motive.",

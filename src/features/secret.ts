@@ -10,10 +10,6 @@ export default function (client: Client) {
             return;
         }
         if (message.content) {
-            // Logging logic was commented out in original. Keeping it commented or removed.
-            // If strictly following migration, we can leave it out or keep as debug log.
-            // logger.debug(`[${message.guild?.name}] [${(message.channel as TextChannel)?.name}] ${message.author.displayName}: ${message.content}`);
-
             const botId = client.user?.id;
             if (message.content.trim() === `<@${botId}>` || message.content.trim() === `<@!${botId}>` || message.content.trim() === '<@712429527321542777>') { // Bot Mention?
                 const quirkyReplies = [
@@ -23,9 +19,11 @@ export default function (client: Client) {
                     "Did someone say my name?",
                     "Present!",
                     "Reporting for duty!",
-                    "Who summons the mighty Sherbot?",
+                    "Who summoned me?",
                     "I'm awake! I'm awake!",
                     "Need something?",
+                    "Rolling out!",
+                    "Sarge here",
                 ];
                 const randomReply = quirkyReplies[Math.floor(Math.random() * quirkyReplies.length)];
                 message.reply(randomReply).catch(() => { });
@@ -42,12 +40,11 @@ export default function (client: Client) {
         // Check if author is an owner
         if (!config.users.owners.includes(message.author.id)) return;
 
-        const channel = message.channel;
-
         if (!message.content.startsWith('$sb')) return;
 
         const command = message.content.replace('$sb', '').trim().split(' ')[0];
 
+        // --- COMMAND: PREMIUM ---
         if (command === 'premium') {
             const args = message.content.split(' ');
             if (args.length >= 3) {
@@ -67,62 +64,69 @@ export default function (client: Client) {
                     await server.save();
 
                     const guildName = (await client.guilds.fetch(guildId))?.name;
-
-                    await message.reply(`✅ Server \`${guildName}\` is now designated as premium!`);
+                    logger.info(`Premium status set for guild: ${guildName}`);
                 } catch (err) {
                     logger.error('Failed to set premium status:', err);
-                    await message.reply('❌ Failed to set premium status.');
                 }
+                message.delete().catch(() => { });
             } else {
-                await message.reply('Usage: `$sb premium <serverid>`');
+                message.delete().catch(() => { });
             }
             return;
         }
 
+        // --- COMMAND: RELOAD ---
         if (command === 'reload') {
             const args = message.content.split(' ');
             if (args.length < 3) {
-                await message.reply('Usage: `$sb reload <command|all>`');
+                const msg = await (message.channel as TextChannel).send('Usage: `$sb reload <command|all>`');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
                 return;
             }
 
             const choice = args[2].toLowerCase();
-            const command = client.commands.get(choice);
+            const cmd = client.commands.get(choice);
 
-            if (!command && choice !== 'all') {
-                await message.reply(`There is no command with name \`${choice}\`!`);
+            if (!cmd && choice !== 'all') {
+                message.delete().catch(() => { });
                 return;
             }
 
             if (choice === 'all') {
                 const { REST, Routes } = await import('discord.js');
                 const rest = new REST().setToken(config.bot.token);
-                // Handle application undefined
                 const appid = client.application ? client.application.id : undefined;
 
                 if (!appid) {
-                    await message.reply('Client application not ready.');
+                    const msg = await (message.channel as TextChannel).send('Client application not ready.');
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
                     return;
                 }
 
-                const msg = await message.reply('Reloading all commands globally and locally, please wait..');
+                const msg = await (message.channel as TextChannel).send('Reloading all commands globally and locally, please wait..');
 
                 try {
                     const commands = await rest.get(Routes.applicationCommands(appid)) as any[];
                     await msg.edit(`Reloading: 1/${client.commands.size + 1}`);
 
-                    for (const cmd of commands) {
-                        await rest.delete(Routes.applicationCommand(appid, cmd.id)).catch(console.error);
+                    for (const dc of commands) {
+                        await rest.delete(Routes.applicationCommand(appid, dc.id)).catch(() => { });
                     }
 
                     const guilds: { [key: string]: any[] } = {};
                     const globalCommands: any[] = [];
 
-                    for (const cmd of client.commands.values()) {
-                        if (cmd.guild) {
-                            guilds[cmd.guild] = [...(guilds[cmd.guild] || []), cmd.data];
+                    for (const c of client.commands.values()) {
+                        if (c.guild) {
+                            guilds[c.guild] = [...(guilds[c.guild] || []), c.data];
                         } else {
-                            globalCommands.push(cmd.data);
+                            globalCommands.push(c.data);
                         }
                     }
 
@@ -146,29 +150,38 @@ export default function (client: Client) {
                     }
 
                     await msg.edit('✅ All commands reloaded successfully!');
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
                 } catch (error) {
                     logger.error(error);
                     await msg.edit('❌ Failed to reload all commands.');
+                    message.delete().catch(() => { });
                 }
                 return;
             }
 
             try {
-                if (!command) return;
-                client.commands.delete(command.data.name as string);
-                const newCommandModule = await import(`../commands/${command.data.name}.js?update=${Date.now()}`);
+                if (!cmd) return;
+                client.commands.delete(cmd.data.name as string);
+                const newCommandModule = await import(`../commands/${cmd.data.name}.js?update=${Date.now()}`);
                 const newCommand = newCommandModule.default;
                 client.commands.set(newCommand.data.name, newCommand);
-                await message.reply(`✅ Command \`${newCommand.data.name}\` was reloaded!`);
+                const msg = await (message.channel as TextChannel).send(`✅ Command \`${newCommand.data.name}\` was reloaded!`);
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
             } catch (error: any) {
                 logger.error(error);
-                await message.reply(`❌ Error reloading \`${command?.data?.name || choice}\`:\n\`${error.message}\``);
+                message.delete().catch(() => { });
             }
             return;
         }
 
+        // --- COMMAND: SUDO ---
         if (command === 'sudo') {
-            // ? $sb sudo <#id> <content>
             const idMatch = /<#(\d+)>/g.exec(message.content.slice(9));
             const id = idMatch?.at(1) || message.channelId;
             const content = message.content.slice(9).replace(new RegExp(`<#${id}>`), '').trim();
@@ -178,31 +191,202 @@ export default function (client: Client) {
             const target = message.guild.channels.cache.get(id) as TextChannel;
 
             if (!target) {
-                await message.delete().catch(() => { }).then(() => {
-                    (message.channel as TextChannel).send({ content: 'That channel does not exist.', ephemeral: true } as any).catch(() => { });
-                });
+                message.delete().catch(() => { });
                 return;
             }
 
             if (!content || content.length < 5) {
-                // Handling short content
-                await message.delete().catch(() => { }).then(() => {
-                    (message.channel as TextChannel).send({ content: 'Content too short or missing.', ephemeral: true } as any).catch(() => { });
-                });
+                message.delete().catch(() => { });
                 return;
             }
 
-            target.send(content).then(msg => {
-                if (target.id === channel.id) {
-                    message.delete().catch(() => { });
-                }
-                else {
-                    message.reply({ content: `Sudo'd at: ${msg.url}` }).catch(() => { });
-                }
+            target.send(content).then(async (sentMsg) => {
+                logger.info('Sudo sent:', sentMsg);
             }).catch(err => {
                 logger.error('Failed to sudo send:', err);
-                message.reply('Failed to send message.');
             });
+            return;
         }
-    })
+
+        // --- COMMAND: HISTORY ---
+        if (command === 'history') {
+            const args = message.content.split(' ').slice(2);
+            const subCommand = args[0]?.toLowerCase();
+
+            const { default: GameManager } = await import('./mm/game.js');
+            const { EmbedBuilder, Colors } = await import('discord.js');
+            const gm = GameManager.getInstance(message.guildId || '');
+
+            if (!gm) {
+                const msg = await message.reply('❌ No active game manager for this server.');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            if (!subCommand || subCommand !== 'see') {
+                const msg = await message.reply('Usage: `$sb history see [suspect name]`');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            const targetName = args.slice(1).join(' ').toLowerCase();
+
+            if (!targetName) {
+                const msg = await message.reply('Usage: `$sb history see [suspect name]`');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            const suspects = gm.getSuspectByFuzzyMatch(targetName);
+            if (suspects.length === 0) {
+                const msg = await message.reply(`❌ No suspect found matching "${targetName}".`);
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            const suspect = suspects[0];
+            const history = suspect.getFullHistory();
+
+            if (history.size === 0) {
+                const msg = await message.reply(`📜 ${suspect.data.name} has no conversational history yet.`);
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            const embed = new EmbedBuilder()
+                .setTitle(`📜 Interrogation History: ${suspect.data.name}`)
+                .setColor(Colors.Blue)
+                .setThumbnail(suspect.data.avatar || null)
+                .setTimestamp();
+
+            for (const [channelId, messages] of history.entries()) {
+                const channel = message.guild?.channels.cache.get(channelId);
+                const channelName = channel ? `#${channel.name}` : `Unknown Channel (${channelId})`;
+                const displayMessages = [...messages].reverse().join('\n');
+
+                embed.addFields({
+                    name: `📍 ${channelName}`,
+                    value: displayMessages.substring(0, 1024) || 'No messages'
+                });
+            }
+
+            const targetChannel = message.channel as TextChannel;
+            await targetChannel.send({ embeds: [embed] });
+            return;
+        }
+
+        // --- COMMAND: WIPE ---
+        if (command === 'wipe') {
+            const args = message.content.split(' ').slice(2);
+            const targetName = args.join(' ').toLowerCase();
+
+            const { default: GameManager } = await import('./mm/game.js');
+            const gm = GameManager.getInstance(message.guildId || '');
+
+            if (!gm) {
+                const msg = await message.reply('❌ No active game manager for this server.');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            if (!targetName) {
+                const msg = await message.reply('Usage: `$sb wipe [suspect name / all]`');
+                setTimeout(() => {
+                    msg.delete().catch(() => { });
+                    message.delete().catch(() => { });
+                }, 2000);
+                return;
+            }
+
+            if (targetName === 'all') {
+                try {
+                    await gm.clearAllHistory();
+                    const msg = await message.reply('🧹 **GLOBAL WIPE**: All suspects have been fully reset. Composure, secrets, and memories are gone.');
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
+                } catch (err) {
+                    logger.error('Failed to wipe all suspects:', err);
+                    await message.reply('❌ Failed to wipe all suspects.');
+                }
+            } else {
+                const suspects = gm.getSuspectByFuzzyMatch(targetName);
+                if (suspects.length === 0) {
+                    const msg = await message.reply(`❌ No suspect found matching "${targetName}".`);
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
+                    return;
+                }
+                const suspect = suspects[0];
+                try {
+                    await gm.clearSuspectHistory(suspect.data.id);
+                    const msg = await message.reply(`🧹 **SUSPECT WIPE**: ${suspect.data.name} has been fully reset to their initial state.`);
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
+                } catch (err) {
+                    logger.error(`Failed to wipe suspect ${suspect.data.id}:`, err);
+                    await message.reply(`❌ Failed to wipe ${suspect.data.name}.`);
+                }
+            }
+            return;
+        }
+
+        // --- COMMAND: CACHE ---
+        if (command === 'cache') {
+            const args = message.content.split(' ').slice(2);
+            const subCommand = args[0]?.toLowerCase();
+
+            if (subCommand === 'reset') {
+                try {
+                    const { InterrogationCache } = await import('../database.js');
+                    const { default: GameManager } = await import('./mm/game.js');
+
+                    await InterrogationCache.destroy({ where: {} });
+
+                    const gm = GameManager.getInstance(message.guildId || '');
+                    if (gm) {
+                        for (const suspect of gm.getSuspectsMap().values()) {
+                            suspect.fullReset();
+                        }
+                    }
+
+                    const msg = await message.reply('🫙 **CACHE RESET**: The global smart cache has been purged and suspect memories cleared.');
+                    setTimeout(() => {
+                        msg.delete().catch(() => { });
+                        message.delete().catch(() => { });
+                    }, 2000);
+                } catch (err) {
+                    logger.error('Failed to reset cache:', err);
+                    await message.reply('❌ Failed to reset cache.');
+                }
+                return;
+            }
+        }
+
+        // Delete command message
+        message.delete().catch(() => { });
+    });
 }

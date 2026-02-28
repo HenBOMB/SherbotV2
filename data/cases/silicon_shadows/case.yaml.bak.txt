@@ -1,0 +1,1075 @@
+id: silicon_shadows
+name: Silicon Shadows
+description: Tech CEO Vivienne Turing was found dead in her smart home at 3:47 AM, electrocuted in her biometric-sealed server room. Security logs show no forced entry. Six people had authorized access. The backup files were corrupted at exactly 3:45 AM. One of them is the killer.
+context:
+  setup: The six suspects attended Vivienne's high-stakes investor dinner party on the evening of the murder, staying overnight at her smart home for the crucial 9 AM Series C presentation worth $200M. Tensions were high—the company's future depended on this funding. Vivienne's AI algorithm patent had been officially approved three days earlier, and she planned to announce it at the presentation.
+  house_layout: 'Modern two-story smart home. Ground floor: foyer, kitchen, wine cellar, garage (off kitchen). Second floor: hallway (central), master bedroom, 4 guest rooms, home office, server room (all off hallway). All second-floor rooms have biometric access. Travel time between any two second-floor rooms: 30-45 seconds.'
+  biometric_secured_rooms:
+    - server_room
+    - home_office
+    - master_bedroom
+    - wine_cellar
+  timeline_note: All times are based on smart home system logs, which are considered reliable except during the 3:35-3:39 camera loop period.
+victim:
+  name: Vivienne Turing
+  age: 38
+  cause: Electrocution (modified server rack, 240V direct contact)
+  time_of_death: 3:47 AM (confirmed by smart home power surge log and medical examiner estimate of 3:45-3:50 AM)
+  description: Founder and CEO of NexusAI, a controversial AI startup valued at $800M. Known for ruthless IP protection and aggressive acquisition tactics. Her core AI algorithm patent was approved 3 days before her death.
+  avatar: avatars/silicon_shadows/vivienne.png
+  autopsy_findings:
+    cause: Cardiac arrest due to electrocution, 240V AC current
+    contact_point: Right hand, palm and fingers, consistent with grasping energized metal surface
+    time_of_death: Between 3:45-3:50 AM, most likely 3:47 AM based on power surge log
+    instant_death: Yes, death was instantaneous upon contact
+    defensive_wounds: None
+    toxicology: Negative for drugs, alcohol, or sedatives
+    other_findings: Minor contusions on back and left hip consistent with falling backward after electrical shock. Body was then dragged approximately 3 feet forward toward the server rack — inconsistent with an accidental death scenario. Staging attempt detected.
+murderTime: '03:47'
+murderLocation: server_room
+map:
+  foyer:
+    description: The entrance hall is all polished white marble and careful restraint — a single abstract sculpture, pre-lit for morning visitors who will never arrive. The security panel by the front door blinks twice, then goes dark. It smells like money and unfinished arguments.
+    image: locations/silicon_shadows/foyer.png
+    connects_to:
+      - hallway
+      - kitchen
+    interactables:
+      - name: Security Panel
+        description: A SmartHome Pro MAX entry system. All access logs are timestamped and stored to the cloud. The last external entry was yesterday at 6:14 PM — the guests arriving for dinner.
+      - name: Coat Rack
+        description: Six coats. One of them — a dark blazer — has a faint chemical smell. Not perfume. Something sharper. Industrial.
+  kitchen:
+    description: 'Commercial-grade everything: six-burner gas range, sub-zero refrigerator, a marble island that cost more than most apartments. A chamomile tea mug sits on the counter, half full, still faintly warm. Someone was here recently.'
+    image: locations/silicon_shadows/kitchen.png
+    connects_to:
+      - foyer
+      - hallway
+      - garage
+      - wine_cellar
+    interactables:
+      - name: Chamomile Tea Mug
+        description: 'Left on the island, still warm. Printed on the side: ''I function better on spite.'' Whoever made this didn''t finish it.'
+      - name: Refrigerator Whiteboard
+        description: 'A magnetic whiteboard covered in Post-it notes and a shared grocery list. One note in a different handwriting: ''9 AM. No delays. —V'''
+  hallway:
+    description: A connecting hall between the foyer and kitchen. Motion-sensor lights, still active. One of the overhead panels flickers when you step under it — briefly, then stabilizes. On the console table by the staircase, a phone charger sits empty, its cable draped over the edge.
+    image: locations/silicon_shadows/hallway.png
+    connects_to:
+      - foyer
+      - kitchen
+      - stairs_to_second_floor
+    interactables:
+      - name: Console Table
+        description: A slim oak piece under the stairs. A phone charger is plugged in — USB-C, no phone attached. Someone came down to retrieve it.
+      - name: Flickering Light Fixture
+        description: The center fixture stutters when the server room circuit trips. Consistent with the 3:47 AM power surge. Whatever happened up there, this felt it.
+  stairs_to_second_floor:
+    description: Fifteen steps of dark hardwood, each one silent unless you know how to walk them. A motion-activated camera halfway up — currently offline. The handrail is cold.
+    image: locations/silicon_shadows/stairs.png
+    connects_to:
+      - hallway
+      - second_floor_hallway
+    interactables:
+      - name: Staircase Camera
+        description: A discrete wide-angle lens mounted in the corner. The LED is red — offline. The gap in the footage record begins at 3:34:58 AM. It did not capture what came down these stairs at 3:38.
+  second_floor_hallway:
+    description: The spine of the upper floor. Six doors, all biometric. A side table near the top of the stairs holds a small vase — and underneath it, just barely visible, the edge of a folded piece of paper on NexusAI letterhead.
+    image: locations/silicon_shadows/second_floor_hallway.png
+    connects_to:
+      - stairs_to_second_floor
+      - master_bedroom
+      - guest_room_1
+      - guest_room_2
+      - guest_room_3
+      - guest_room_4
+      - home_office
+      - server_room
+    interactables:
+      - name: Hallway Side Table
+        description: A small console with a dried flower arrangement. A folded note is tucked beneath the vase — NexusAI letterhead, handwritten. At first glance it reads like professional correspondence. The timestamp at the bottom reads 1:17 AM.
+      - name: Biometric Door Panel (Server Room)
+        description: 'SmartLock Pro. Access log shows three entries after midnight: Basil Whitfield at 03:15 (authorized), an unresolved biometric at 03:37 (fingerprint match: Vivienne Turing — but she was in the master bedroom at the time), and Vivienne herself at 03:46.'
+  master_bedroom:
+    description: 'Vivienne''s room. King bed, barely slept in — one side disturbed, one side untouched. There''s a secondary monitor on the nightstand showing a backup alert, still active: BACKUP FAILURE — ARRAY CORRUPTED — 03:45:47. The bedside lamp is still on.'
+    image: locations/silicon_shadows/master_bedroom.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Backup Alert Monitor
+        description: 'A dedicated server status display next to the bed. It received an alert at 3:45:47 AM — backup corruption across the primary RAID array. Last interaction logged at 3:46:00 AM: screen tap. Then the biometric log shows Vivienne accessed the server room twelve seconds later.'
+      - name: Vivienne's Tablet
+        description: Resting on the pillow. Unlocked. The backup alert notification is visible in the notification tray — opened at 3:45:47 AM. The tablet is still warm.
+  guest_room_1:
+    description: Irene's room — or was. She moved to the home office to work at 3:28 AM and hasn't come back. The bed is made with hotel precision. A messenger bag sits open on the chair. The desk drawer is slightly ajar.
+    image: locations/silicon_shadows/guest_room_1.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Desk Drawer
+        description: 'Slightly open. Inside: a false bottom, hastily replaced but not flush. Behind it, wedged between two legal pads, is a worn composition notebook. Its cover is cracked from heavy use.'
+      - name: Messenger Bag
+        description: Contains a laptop power brick, two velvet pouches (both empty), and a folded legal brief from eight months ago — early-stage algorithm documentation, co-authored by Irene Ashcroft.
+  guest_room_2:
+    description: Alex's room. Clothes still on the chair. The bed has the stamped-down look of someone who fell asleep quickly and was jolted awake. His phone is on the nightstand, screen cracked at the corner.
+    image: locations/silicon_shadows/guest_room_2.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Alex's Phone
+        description: 'Cracked screen, unlocked. The last message in his inbox is from ''Irene'' at 11:47 PM. He opened it, apparently read it, and replied two minutes later: ''Seems odd but ok, will do.'' He has not looked at his phone since.'
+      - name: CTO Badge & Lanyard
+        description: 'Hung over the bedpost. Name tag reads: Alex Whitfield, CTO. Someone has stuck a small Post-it over the title: ''(For now.)'' It''s in Alex''s handwriting.'
+  guest_room_3:
+    description: A shared room — two twin beds, one made with military precision, one still warm and slightly rumpled. Priya's suitcase sits open on the left bed. The right bed has a sketchpad wedged between the pillow and the headboard. Closed blinds, a half-empty glass of water and a prescription bottle on the nightstand between the beds.
+    image: locations/silicon_shadows/guest_room_3.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Prescription Bottle
+        description: Zolpidem (generic Ambien), 10mg. Prescribed to P. Sharma. The bottle is dated two months ago, mostly unused. Tonight, one tablet is missing. She doesn't usually take them.
+      - name: Legal Brief Stack
+        description: 'Acquisition documents for the 9 AM meeting, rubber-banded. The cover sheet has Priya''s initials and a yellow sticky tab: ''REVIEWED — advise against.'' She didn''t advise against anything out loud.'
+      - name: Sketchpad
+        description: A small sketchpad wedged between the pillow and headboard of the right-side bed. The pages are filled with UI wireframes and accessibility flow diagrams — Devon Marsh's work. The last page has a half-finished sketch of an ear with sound waves, labeled 'for Lily.' Devon was assigned this room with Priya. They left around 3:25 AM and never came back.
+  guest_room_4:
+    description: A spare room — unlabeled on the assignee sheet. The bed is untouched. Someone used the chair. There's a single wine glass on the windowsill, empty, with a faint red ring at the bottom.
+    image: locations/silicon_shadows/guest_room_4.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Windowsill Wine Glass
+        description: Empty. A Bordeaux ring at the base. The window faces the garden — quiet view, no sight lines to the server room or hallway. Someone came here to be invisible.
+  home_office:
+    description: 'A minimalist''s dream, dominated by a massive oak desk and floor-to-ceiling windows. The room smells faintly of ozone and expensive coffee. A half-finished investor presentation is on the main monitor, its title glowing: ''NexusAI: The Future of Intelligence.'' Edit history timestamps show steady work activity from 3:28 to 3:55 AM — but the cursor hasn''t moved.'
+    image: locations/silicon_shadows/home_office.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Whiteboard
+        description: 'Covered in complex algorithmic diagrams and equations. In the bottom corner, circled in red with no other context: ''THEY DON''T SEE IT COMING.'''
+      - name: Presentation Monitor
+        description: 'The investor deck is open, mid-slide. Title: ''NexusAI: The Future of Intelligence.'' Slide 14 shows a patent certificate — filed two years ago, approved three days prior. The algorithm is credited solely to Vivienne Turing.'
+      - name: Irene's Laptop
+        description: Still open, still running. The editing script is visible in the process list for anyone who knows where to look — a scheduled task set to make minor file changes every 2-3 minutes from 3:28 onward. The keyboard is cold. No one has touched it.
+      - name: Desk Drawer (Bottom)
+        description: 'Contains a professional biometric spoofing kit: silicone molding compound, UV curing lamp, gelatin film strips, and two molds — one complete (right index fingerprint, female), one partial and degraded (used).'
+      - name: Bookshelf
+        description: 'Books on AI ethics, patent law, corporate biography. One book — ''The Prince'' by Machiavelli — is heavily dog-eared. A bookmark at Chapter 18: ''Concerning the Way in Which Princes Should Keep Faith.'''
+  server_room:
+    description: The smell hits first — ozone and scorched plastic. The room is cold from the emergency cooling system that kicked in after the surge. Vivienne Turing's body was found here at 3:50 AM. The server rack on the east wall has been modified. A forensic marker flags drag marks on the floor, 3 feet southwest of the rack. The main terminal is still logged in.
+    image: locations/silicon_shadows/server_room.png
+    connects_to:
+      - second_floor_hallway
+    interactables:
+      - name: Server Rack (East Wall)
+        description: A 48U enterprise rack. The safety cover on bay 12 has been removed — fresh tool marks on the screws. Ground wire disconnected. Safety interlock bypassed. The 240V bus bar is exposed at chest height. This was deliberate.
+      - name: Drag Marks
+        description: 'Scuff patterns in the anti-static flooring tell a clear story: a body fell backward 3 feet from the rack (consistent with electrocution recoil), then was dragged forward. The repositioning was clumsy. Whoever moved her miscalculated.'
+      - name: Server Terminal
+        description: 'Currently logged in as Irene Ashcroft. Last command executed at 3:45 AM: a military-grade data destruction sequence targeting the primary RAID backup array. The array is unrecoverable.'
+      - name: Admin Override Device
+        description: 'A small hardware key found under the desk, partially hidden. Device ID: ADMIN_OVERRIDE_CODE_7749. Smudged fingerprints. Cleaning solvent residue. This device lives in Vivienne''s home office safe — not here.'
+  garage:
+    description: 'Two bays. One holds a Tesla Model S; the other is an open workspace with pegboard tool storage. The work surface is clean except for one thing: a single silicone glove, turned inside-out, left near the drain. The garage camera covers the main door but not this corner.'
+    image: locations/silicon_shadows/garage.png
+    connects_to:
+      - kitchen
+    interactables:
+      - name: Work Bench
+        description: Clean, organized — except for a single silicone glove near the floor drain. The inside is still damp. There's a faint chemical signature consistent with thermal curing compound used in biometric casting.
+      - name: Garage Camera
+        description: 'A wide-angle outdoor-facing camera above the roll door. Covers the entrance. Does not cover the work bench or the drain corner. The last activity captured: Vivienne and Alex speaking near the Tesla at 5:52 PM the previous day.'
+  wine_cellar:
+    description: Twelve feet below the kitchen, temperature-controlled at 13°C. Rows of bottles, a small reading chair, a single pendant light. A half-empty glass of Château Margaux sits on the tasting table. The biometric log confirms Marcus Zhao entered at 3:20 AM and did not leave until 3:53.
+    image: locations/silicon_shadows/wine_cellar.png
+    connects_to:
+      - kitchen
+    interactables:
+      - name: Tasting Table
+        description: A poured concrete slab with a single chair. A half-empty glass of red wine — Château Margaux, 2018. A burner phone is partially visible behind the bottle rack to the left. It was not there when Vivienne last inventoried the cellar.
+      - name: Burner Phone (Behind Rack)
+        description: 'A basic pre-paid handset, slipped between two magnums and the rack frame. Screen locked. Three encrypted message threads visible in the notification preview: ''the algorithm valuation'', ''resolving the IP conflict before 9 AM'', and — most troubling — ''once she''s gone, timeline moves up.'''
+      - name: Biometric Entry Log
+        description: 'A digital display on the cellar door shows an access log: 03:20 — Marcus Zhao (entry). 03:53 — Marcus Zhao (exit). No other entries. No exits between those times. His alibi is here, in the hardware.'
+evidence:
+  dna:
+    server_room:
+      - vivienne
+      - alex
+    home_office:
+      - vivienne
+      - irene
+      - celeste
+    kitchen:
+      - devon
+      - vivienne
+    guest_room_1:
+      - irene
+    guest_room_2:
+      - alex
+    guest_room_3:
+      - devon
+      - priya
+    guest_room_4:
+      - marcus
+    garage:
+      - alex
+      - vivienne
+    wine_cellar:
+      - marcus
+      - vivienne
+    master_bedroom:
+      - vivienne
+      - celeste
+  digital_logs:
+    '03:15': 'Biometric access: Alex Whitfield - server room (authorized)'
+    '03:19': 'Biometric access: Alex Whitfield - server room exit'
+    '03:22': 'Network activity: Automated sync — Celeste Miller''s phone — destination: external IP 104.21.7.83 (registered to TechDyne Corp)'
+    '03:28': 'Biometric access: Irene Ashcroft - home office (authorized)'
+    '03:34:58': Camera loop file uploaded to hallway cam 3 from home office workstation
+    '03:35': Security camera loop detected - second floor hallway cam 3 (monitors server room door)
+    '03:37': 'Biometric access: SPOOFED_FINGERPRINT_VIVIENNE - server room (Irene enters using silicone mold of Vivienne''s fingerprint)'
+    '03:39': Security camera loop ended - second floor hallway cam 3
+    '03:40': 'Biometric access: ADMIN_OVERRIDE_CODE_7749 - server room (first use — door opened, no exit log, brief entry to test device)'
+    '03:42': 'Biometric access: SPOOFED_FINGERPRINT_VIVIENNE - server room exit (Irene exits after rack modification)'
+    '03:44': 'Biometric access: ADMIN_OVERRIDE_CODE_7749 - server room (second use)'
+    '03:45': 'Backup corruption initiated - source: server room terminal'
+    '03:46': 'Biometric access: Vivienne Turing - server room (authorized - likely responding to backup alert)'
+    '03:47': Power surge - server room circuit (15,000 watts, 240V)
+    '03:48': Emergency protocol triggered - power surge detected
+    '03:50': '911 call placed - caller: Devon Marsh'
+    '03:51': 'Biometric access: Devon Marsh - server room (emergency override)'
+  footage:
+    '03:00': All guests in respective rooms (thermal imaging confirms 6 people in 6 rooms)
+    '03:15': Alex exits guest room 2, enters server room, exits at 03:19, returns to guest room 2
+    '03:22': 'Exterior: Delivery van briefly parks on street, leaves at 03:24 (unrelated)'
+    '03:28': Irene exits guest room 1, enters home office
+    '03:34:58': 'Home office workstation: camera loop file uploaded to hallway cam 3 (captured by home office internal camera)'
+    03:35-03:39: Second floor hallway cam 3 shows 4-minute loop of empty hallway (pre-recorded footage from previous night)
+    '03:38': Devon observed on stairs to second floor hallway, exchanges brief words with a figure descending — cam 3 loop obscures identity. Cam 2 (partial) suggests female, dark clothing.
+    '03:40': Server room door opens during loop period (no visible person due to camera loop)
+    '03:42': Server room door opens — figure exits toward home office (cam 2 partial, dark clothing, female build)
+    '03:46': Vivienne exits master bedroom, enters server room (captured by hallway cam 2, not cam 3)
+    '03:47': Lights flicker throughout house (power surge)
+    '03:48': Home office door closes — figure enters (cam 2 partial)
+    '03:50': Devon runs up stairs from kitchen to second floor hallway
+    '03:51': Devon enters server room, discovers body, immediately exits and makes call
+  locations:
+    alex:
+      '03:00': guest_room_2
+      '03:15': server_room
+      '03:19': guest_room_2
+      '03:47': guest_room_2
+      '03:52': second_floor_hallway
+    irene:
+      '03:00': guest_room_1
+      '03:28': home_office
+      '03:35': second_floor_hallway
+      '03:37': server_room
+      '03:42': home_office
+      '03:44': server_room
+      '03:46': home_office
+      '03:50': home_office
+      '03:53': second_floor_hallway
+    devon:
+      '03:00': guest_room_3
+      '03:25': kitchen
+      '03:38': stairs_to_second_floor
+      '03:42': stairs_to_second_floor
+      '03:45': kitchen
+      '03:50': second_floor_hallway
+      '03:51': server_room
+    celeste:
+      '03:00': master_bedroom
+      '03:30': master_bedroom
+      '03:47': master_bedroom
+      '03:52': second_floor_hallway
+    priya:
+      '03:00': guest_room_3
+      '03:30': guest_room_3
+      '03:47': guest_room_3
+      '03:55': second_floor_hallway
+    marcus:
+      '03:00': guest_room_4
+      '03:18': second_floor_hallway
+      '03:20': wine_cellar
+      '03:47': wine_cellar
+      '03:52': second_floor_hallway
+  physical_evidence:
+    server_rack: 'Main server rack modified: ground wire disconnected, safety interlock disabled, exposed 240V bus bar at chest height. Safety protocols had been disabled earlier by Alex Whitfield at 3:15 AM (reducing full modification to approximately 5-7 minutes of targeted work). Fresh tool marks on safety cover screws.'
+    floor_marks: 'Scuff marks on server room floor indicate body fell backward 3 feet from the rack (consistent with electrocution recoil), then was dragged forward back toward the rack. This is inconsistent with an accidental death — a person who died touching the rack would not be found repositioned unless moved. The staging was clumsy: Irene attempted to reposition Vivienne closer to the rack to imply she was working on it, but miscalculated the fall distance. The drag marks are the clearest indicator of foul play in the entire scene.'
+    backup_drive: RAID backup array professionally corrupted using military-grade data destruction algorithm. Unrecoverable. Corruption initiated from server room terminal at 3:45 AM using Irene Ashcroft's admin credentials.
+    admin_override_device: 'Hardware override key (device ID: ADMIN_OVERRIDE_CODE_7749) found in server room, under desk. Smudged fingerprints and cleaning residue detected. Device normally stored in Vivienne''s home office safe. Silicone residue matching fingerprint molding compound found on the safe''s biometric scanner — consistent with the spoofing kit found in the home office desk drawer. Safe access log shows biometric entry at 11:58 PM the night of the dinner party, prior to any guest retiring — Irene spoofed Vivienne''s fingerprint to steal the device during the dinner.'
+    hallway_cam_3_analysis: Camera loop was pre-recorded footage from 3:35-3:39 AM the previous night (same lighting, no people). Loop file uploaded to camera at 3:34:58 AM from home office workstation.
+    wine_glass: Wine glass found in home office trash with Vivienne's lipstick print and saliva. Silicone residue detected on rim - consistent with fingerprint molding compound.
+    fingerprint_mold_kit: Professional biometric spoofing kit found hidden in home office desk drawer, bottom level. Contains silicone molding compound, UV curing lamp, and gelatin film. Fresh silicone mold of fingerprint (matches Vivienne's right index finger). A second mold — partial and degraded — appears to have been used and discarded. Kit was present in drawer during the dinner party.
+    vivienne_tablet: 'Vivienne''s tablet in master bedroom shows she received backup corruption alert at 3:45 AM. Last activity: opened alert at 3:45:47 AM, then biometric access to server room at 3:46 AM.'
+    irene_laptop: Irene's laptop in home office shows automated presentation editing script running from 3:28-3:55 AM, creating false alibi of continuous work. Script made minor edits every 2-3 minutes to create realistic edit log timestamps. Irene was physically absent from the office 3:35-3:42 (server room modification) and again 3:44-3:46 (backup corruption). Script was pre-written and triggered remotely — Irene did not need to be present at the laptop for it to run.
+    alex_phone: 'Text message from Irene to Alex at 11:47 PM previous night: ''Vivienne wants server safety protocols disabled for emergency firmware upgrade tonight. She''ll confirm in morning. Can you handle it around 3 AM? She doesn''t want to wake everyone.'' Alex replied: ''Seems odd but ok, will do.'''
+    server_room_terminal: 'Terminal shows backup corruption command executed at 3:45 AM. Login: Irene Ashcroft''s credentials. Terminal physically accessed (not remote). Access aligns with second use of admin override device at 3:44 AM.'
+    safe_access_log: Home office safe biometric log shows single access at 11:58 PM (dinner party, before guests retired). No authorized user claimed to access the safe that evening. Silicone residue on safe scanner confirms spoofed fingerprint entry. Admin override device was stolen at this time.
+    marcus_burner_phone: 'Burner phone found hidden behind a wine rack in the wine cellar. Contains encrypted messages with contact labeled BROKER. Visible unencrypted metadata shows three message threads: subject lines ''the algorithm valuation'', ''resolving the IP conflict before 9 AM'', and — most troubling — ''once she''s gone, timeline moves up.'' Final message sent at 2:58 AM. Phone registered to a shell company. The full content of all three threads is encrypted.'
+    marcus_burner_phone_decrypt: Full decryption of burner phone messages reveals Marcus was negotiating a private acquisition of NexusAI's algorithm licensing rights from TechVault Partners to recoup his $50M losses — entirely unrelated to the murder. 'Resolving the IP conflict' was a licensing arbitration. The 9 AM deadline was his own acquisition window before the Series C announcement changed valuations. The disturbing thread — 'once she's gone, timeline moves up' — refers to Vivienne's planned retirement after the Series C close, which Marcus had been told about in a confidential board memo. He was timing a deal around her departure from day-to-day management. The language is cold. The intent was legal. He genuinely did not know she would be dead.
+    server_audit_trail: Server system audit log shows a deleted incident report from 6 months ago — unauthorized access of a restricted directory by Devon Marsh's credentials. The incident report was reviewed and manually deleted by Irene Ashcroft before escalation. Deletion was within Irene's admin permissions and no disciplinary action was taken. The original flag still exists in the raw system log.
+    irene_notebook: 'Composition notebook found wedged behind a false bottom in Irene''s guest room desk drawer — the room she stayed in before moving to the home office. Pages dated 8-16 months ago, dense with algorithm derivations in Irene''s handwriting. Not a journal. Working notes. The actual development record of the NexusAI core algorithm, in her hand, predating any of Vivienne''s filings by six months. Irene kept it. She couldn''t throw it away. Post-it note stuck to the inside cover, in Irene''s writing: ''I was there. I will always know.'' It is not evidence of murder. It is evidence of why.'
+    priya_note: 'Handwritten note on NexusAI letterhead found folded on the second floor hallway side table — left there by Irene after reading it. Time-stamped 1:17 AM in Priya''s handwriting: ''E — I saw what''s in the desk. I understand why. I won''t be awake at 3 AM. —P'' At first glance it reads like a professional aside between colleagues — perhaps about the acquisition documents, or a late-night conversation between lawyers. Its significance only becomes apparent once investigators know what was in the desk and what happened at 3 AM. Priya has said nothing about it.'
+    silicone_glove: A single lab-grade silicone glove found near the garage floor drain, turned inside-out. The interior is still damp. Chemical analysis reveals traces of thermal curing compound — the same compound used in professional biometric casting. The glove's size is consistent with a female hand. Whoever used this was handling fingerprint molding materials and discarded the glove where the garage camera couldn't see. Cross-reference with the fingerprint mold kit found in the home office.
+  physical_discovery:
+    server_room:
+      - server_rack
+      - floor_marks
+      - backup_drive
+      - server_room_terminal
+      - admin_override_device
+      - server_audit_trail
+    home_office:
+      - wine_glass
+      - fingerprint_mold_kit
+      - irene_laptop
+      - safe_access_log
+    guest_room_1:
+      - irene_notebook
+    guest_room_2:
+      - alex_phone
+    wine_cellar:
+      - marcus_burner_phone
+      - marcus_burner_phone_decrypt
+    guest_room_3: []
+    master_bedroom:
+      - vivienne_tablet
+    second_floor_hallway:
+      - priya_note
+    garage:
+      - silicone_glove
+  initial_police_statements:
+    alex: I was asked to do routine server maintenance at 3:15 AM. In and out in four minutes. Went back to sleep. Woke up to screaming.
+    irene: I was working on the investor presentation in the home office from 3:28 until Devon started screaming. I have edit logs proving I was working the entire time.
+    devon: I had insomnia, made tea around 3:25. I went upstairs briefly around 3:38 to grab my phone from the hallway charger. I didn't see anyone. I was back in the kitchen when the lights flickered. I ran upstairs and found Vivienne. I called 911 immediately.
+    celeste: I was asleep in the master bedroom. Vivienne and I went to bed around 1 AM. I didn't hear anything until the emergency alerts started going off.
+    priya: I was asleep in guest room 3. I'm a heavy sleeper - I slept through everything until people were shouting in the hallway.
+    marcus: I have insomnia and rare wine helps me sleep. I went to the wine cellar around 3:20 to select a bottle. I was there when the power flickered.
+  all_locations:
+    - server_room
+    - home_office
+    - kitchen
+    - guest_room_1
+    - guest_room_2
+    - guest_room_3
+    - guest_room_4
+    - master_bedroom
+    - garage
+    - wine_cellar
+    - second_floor_hallway
+    - stairs_to_second_floor
+    - hallway
+    - foyer
+solution:
+  killer: irene
+  key_evidence:
+    - server_rack
+    - floor_marks
+    - fingerprint_mold_kit
+    - alex_phone
+    - priya_note
+  accomplice: alex
+  accomplice_knowledge: none - unwitting accomplice, believed he was helping with legitimate maintenance
+  silent_witness: priya
+  silent_witness_knowledge: Priya discovered Irene's spoofing kit in the home office desk drawer during the dinner party when she used the office to review documents. She deduced Irene's intent, wrote a note signaling she would not intervene, and took her Ambien. She is not legally guilty of murder but knowingly allowed it to proceed. She will never volunteer this information.
+  method: Irene manipulated Alex into disabling server safety protocols under false pretense of emergency firmware upgrade (text sent 11:47 PM). She created a fingerprint mold from Vivienne's wine glass during dinner. At 11:58 PM she used the spoofed fingerprint to access Vivienne's home office safe and steal the admin override device. At 3:28 AM she entered the home office and started an automated alibi script. At 3:34:58 AM she uploaded a pre-recorded camera loop to hallway cam 3 from the office workstation. At 3:37 AM she entered the server room using the spoofed fingerprint and modified the server rack to be lethal — approximately 5-7 minutes of targeted work, possible because Alex had already disabled the safety protocols. At 3:40 AM she briefly tested the stolen admin override device. She returned to the home office at 3:42 AM. At 3:44 AM she used the override to re-enter and at 3:45 AM corrupted the backups from the server terminal using her own credentials — knowing the alert would lure Vivienne. She returned to the home office at 3:46 AM. When Vivienne arrived at 3:46 and touched the electrified rack at 3:47 AM, she was killed instantly. Between 3:47 and 3:49 AM Irene returned to the server room, staged the body by dragging Vivienne toward the rack, then retreated to the home office before Devon arrived at 3:50 AM.
+  motive: Vivienne stole Irene's core AI algorithm and patented it under her own name. Six months ago, Vivienne gave a keynote to 800 investors and publicly thanked Irene for 'helping test early prototypes' — while Irene sat in the front row and applauded. The patent was officially approved 3 days before the murder. The 9 AM investor presentation would announce it publicly, destroying Irene's legal case forever and erasing her from her own work. The $50M mattered. But the keynote was what broke her.
+  twist: 'Priya Sharma, corporate counsel, discovered the fingerprint mold kit in the home office desk drawer during the dinner party while reviewing documents. She recognized its purpose and, knowing Vivienne''s history of blackmail, fraud, and IP theft — and knowing Irene''s devastating situation — chose to say nothing. She wrote Irene a note at 1:17 AM, took her Ambien, and went to bed. The note is found early in the investigation on the hallway side table — at first it reads like nothing, a professional aside between colleagues. Its horror only surfaces once investigators understand what ''what''s in the desk'' means and what happened at 3 AM. Priya will never volunteer what the note means. When confronted directly, she is ice-cold: ''I''m a lawyer. I know exactly what I did and didn''t do. I took a sleeping pill and went to bed. What happens while you''re asleep isn''t your responsibility.'' She will not break. Players must decide what to do with her.'
+  timeline_summary:
+    Dinner party (evening): Irene takes Vivienne's wine glass and creates a fingerprint mold using her spoofing kit. Priya borrows the home office to review documents and discovers the kit in the desk drawer.
+    11:47 PM: Irene texts Alex pretending to relay Vivienne's firmware upgrade request.
+    11:58 PM: Irene uses spoofed fingerprint to access Vivienne's home office safe and steals the admin override device (ADMIN_OVERRIDE_CODE_7749).
+    01:17 AM: 'Priya writes a note to Irene: ''E — I saw what''s in the desk. I understand why. I won''t be awake at 3 AM. —P'' She slips it under guest room 1. Irene reads it, brings it to the home office.'
+    03:15 AM: Alex disables server safety protocols as 'requested'.
+    03:28 AM: Irene enters home office, starts automated editing script for false alibi.
+    03:34:58 AM: Irene uploads pre-recorded camera loop to hallway cam 3 from home office workstation.
+    03:35 AM: Camera loop begins — hallway cam 3 blind.
+    03:37 AM: Irene enters server room using spoofed fingerprint mold (Vivienne's fingerprint). Modifies server rack to be lethal (~5-7 minutes, possible because Alex already disabled safety protocols).
+    03:40 AM: Irene briefly tests admin override device — brief entry, no additional work done.
+    03:42 AM: Irene exits server room, returns to home office.
+    03:44 AM: Irene uses admin override to re-enter server room.
+    03:45 AM: Irene accesses server terminal with her own credentials, corrupts backups (destroys evidence emails, triggers alert to lure Vivienne).
+    03:46 AM: Vivienne receives alert, goes to server room. Irene exits server room and returns to home office.
+    03:47 AM: Vivienne touches electrified rack, dies instantly.
+    03:47-03:49 AM: Irene returns to server room, stages body — drags Vivienne toward rack. Returns to home office by 03:49 AM.
+    03:50 AM: Devon arrives at second floor hallway.
+    03:51 AM: Devon enters server room, finds Vivienne, immediately exits.
+suspects:
+  - id: alex
+    name: Alex Whitfield
+    alias:
+      - alex
+      - whitfield
+    avatar: avatars/silicon_shadows/alex.png
+    currentLocation: guest_room_2
+    age: 34
+    role: CTO (Chief Technology Officer)
+    gender: male
+    isGuilty: false
+    isAccomplice: true
+    alibi: I was in the server room at 3:15 doing routine maintenance like Vivienne asked. I went back to bed after. I heard nothing until Devon started screaming.
+    motive: CTO being pushed out after explosive disagreement over AI ethics. Vivienne threatened to sue him for $10M for alleged code theft unless he resigned quietly.
+    secrets:
+      - id: ethics_fight
+        text: Had explosive argument with Vivienne two weeks ago about using NexusAI for government surveillance contracts. She called him 'naive' and threatened to fire him if he didn't drop it. He's been iced out of major decisions since then.
+        trigger:
+          keywords:
+            - argument
+            - ethics
+            - surveillance
+            - fired
+            - disagreement
+            - ai
+            - fight
+            - miranda
+            - conflict
+          minPressure: 20
+      - id: code_theft_threat
+        text: Vivienne threatened to claim Alex stole proprietary code and sue him for $10 million unless he resigned quietly. She had fabricated commit logs to frame him. He was terrified and couldn't afford lawyers to fight her.
+        trigger:
+          keywords:
+            - resign
+            - quit
+            - leaving
+            - threatened
+            - lawsuit
+            - sue
+            - code
+            - theft
+            - frame
+          minPressure: 28
+      - id: garage_encounter
+        text: Vivienne called Alex out to the garage the afternoon before the dinner to show him a hardware prototype she wanted integrated into the next product build. Standard technical conversation, maybe twenty minutes. Nothing unusual — she did that kind of thing all the time.
+        trigger:
+          keywords:
+            - garage
+            - dna
+            - afternoon
+            - before
+            - prototype
+            - car
+            - outside
+          minPressure: 15
+      - id: disabled_safety
+        text: Disabled the server rack safety protocols at 3:15 AM because Irene sent him a text saying Vivienne wanted it done for an emergency firmware upgrade. He thought it was legitimate — Vivienne often made last-minute technical demands. He had no idea he was preparing the murder weapon.
+        trigger:
+          requiresEvidence:
+            - logs_03:15
+            - server_rack
+          keywords:
+            - safety
+            - disabled
+            - server
+            - maintenance
+            - protocols
+            - modified
+            - '3:15'
+            - rack
+          minPressure: 35
+      - id: irene_text_message
+        text: 'Shows text from Irene at 11:47 PM: ''Vivienne wants server safety disabled for firmware upgrade tonight around 3 AM. She''ll confirm in morning.'' Alex believed it came from Vivienne via Irene. He feels sick realizing he was manipulated into helping murder her.'
+        trigger:
+          requiresEvidence:
+            - alex_phone
+            - secret_alex_disabled_safety
+          keywords:
+            - text
+            - message
+            - irene
+            - asked
+            - who
+            - told
+            - request
+            - upgrade
+          minPressure: 38
+      - id: unknowing_accomplice
+        text: 'Breaks down: ''I killed her, didn''t I? Irene used me. I disabled the safety and Vivienne died because of it. I didn''t know. I swear I didn''t know. She said it was for an upgrade...'' He''s genuinely devastated and cooperative from this point forward.'
+        trigger:
+          requiresEvidence:
+            - secret_alex_disabled_safety
+            - secret_alex_irene_text_message
+          keywords:
+            - accomplice
+            - used
+            - manipulated
+            - helped
+            - tricked
+            - guilty
+            - your fault
+          minPressure: 42
+    traits:
+      - Technically brilliant but naive about office politics
+      - Speaks passionately about ethics and responsible AI
+      - Becomes defensive when questioned about server access
+      - Genuinely devastated when he realizes his role
+      - Voice cracks when discussing the firmware upgrade request
+    resistance_level: moderate
+    tells: Touches his neck and looks away when discussing Irene or the maintenance request
+  - id: irene
+    name: Irene Ashcroft
+    alias:
+      - irene
+      - ashcroft
+    avatar: avatars/silicon_shadows/irene.png
+    currentLocation: home_office
+    age: 36
+    role: VP of Product
+    gender: female
+    isGuilty: true
+    alibi: I was in the home office working on the investor presentation from 3:28 AM until Devon started screaming. I have the edit logs to prove continuous work. The presentation was due at 9 AM and I'm a perfectionist.
+    motive: Created NexusAI's core algorithm but Vivienne patented it under her own name. Six months ago, Vivienne gave a keynote to 800 investors and publicly thanked Irene for 'helping test early prototypes' — while Irene sat in the front row and applauded. The patent approval 3 days ago means the 9 AM announcement will cement that lie permanently, costing Irene $50M in equity and erasing her from her own life's work forever.
+    secrets:
+      - id: stolen_algorithm
+        text: Irene created the entire NexusAI core algorithm over 8 months. Vivienne watched, learned, then filed the patent solely in her name while Irene was on medical leave. When Irene discovered it, Vivienne said 'You were an employee. I own your work. Sue me.' Six months ago, Vivienne gave a keynote to 800 investors and publicly thanked Irene for 'helping test early prototypes' — while Irene sat in the front row and applauded on cue. Irene sued, but the patent approval 3 days ago killed her case. Tonight's 9 AM presentation will announce it publicly and permanently.
+        trigger:
+          keywords:
+            - algorithm
+            - patent
+            - stole
+            - credit
+            - created
+            - your work
+            - intellectual property
+            - invented
+          minPressure: 25
+      - id: lawsuit_destroyed
+        text: Irene's lawsuit was her entire future — $50 million in equity and her reputation. Three days ago, Vivienne's patent was officially approved. The 9 AM investor presentation would announce it publicly, destroying Irene's case forever. After that, she'd have nothing. No credit, no money, no justice. This was her last chance.
+        trigger:
+          requiresEvidence:
+            - secret_irene_stolen_algorithm
+          keywords:
+            - lawsuit
+            - legal
+            - case
+            - patent approved
+            - three days
+            - presentation
+            - announce
+            - last chance
+          minPressure: 30
+      - id: manipulated_alex
+        text: At 11:47 PM, Irene texted Alex pretending to relay Vivienne's request for a firmware upgrade requiring disabled safety protocols. Alex trusted her and complied at 3:15 AM. He had no idea he was creating the murder weapon. Irene chose him because he was technically capable, emotionally scared of Vivienne, and too principled to ask too many questions.
+        trigger:
+          requiresEvidence:
+            - secret_alex_disabled_safety
+            - alex_phone
+          keywords:
+            - alex
+            - asked
+            - told
+            - text
+            - firmware
+            - upgrade
+            - safety
+            - manipulated
+            - used
+          minPressure: 40
+      - id: fingerprint_mold
+        text: Irene created a silicone fingerprint mold from Vivienne's wine glass during dinner. She used a second mold at 11:58 PM to access Vivienne's home office safe and steal the admin override device — the safe's biometric scanner shows the same silicone residue, and the safe access log records an entry at 11:58 PM with no authorized user present. Both the wine glass and the full kit are in the home office desk drawer.
+        trigger:
+          requiresEvidence:
+            - wine_glass
+            - fingerprint_mold_kit
+          keywords:
+            - biometric
+            - fingerprint
+            - access
+            - how
+            - bypass
+            - wine glass
+            - mold
+            - spoof
+            - safe
+          minPressure: 43
+      - id: camera_loop
+        text: Irene planted a pre-recorded camera loop on hallway cam 3 at 3:34:58 AM by uploading it from the home office workstation. The loop was from the previous night — same lighting, empty hallway. It ran from 3:35-3:39, hiding her approach to and from the server room. Devon briefly saw her on the stairs at 3:38 but the cam loop prevented any recording of her movements.
+        trigger:
+          requiresEvidence:
+            - logs_03:35
+            - hallway_cam_3_analysis
+          keywords:
+            - camera
+            - loop
+            - hallway
+            - footage
+            - hide
+            - recorded
+            - '3:35'
+            - uploaded
+          minPressure: 45
+      - id: corrupted_backups
+        text: Irene corrupted the backup files at 3:45 AM using her admin credentials on the server room terminal — accessed via the override device at 3:44 AM. The backups contained three months of emails between her and Vivienne about the algorithm theft. Destroying them was essential. She also knew the corruption alert would lure Vivienne to the server room, exactly as it did.
+        trigger:
+          requiresEvidence:
+            - logs_03:45
+            - backup_drive
+            - server_room_terminal
+          keywords:
+            - backup
+            - corrupted
+            - destroyed
+            - emails
+            - evidence
+            - why
+            - '3:45'
+            - terminal
+          minPressure: 47
+      - id: fake_alibi_script
+        text: 'The edit logs are fake. Irene created an automated script that ran from 3:28-3:55 AM, making minor presentation edits every 2-3 minutes to simulate continuous work. The script is still on her laptop. She was physically absent from the office during the server room visits: 3:35-3:42 and again 3:44-3:46. The script was pre-written and triggered remotely — she did not need to be at the laptop.'
+        trigger:
+          requiresEvidence:
+            - locations_irene_03:28
+            - irene_laptop
+          keywords:
+            - edit logs
+            - alibi
+            - presentation
+            - automated
+            - script
+            - fake
+            - working
+            - prove
+          minPressure: 48
+      - id: server_room_entry
+        text: At 3:37 AM, during the camera loop, Irene used her fingerprint mold to access the server room. Because Alex had already disabled the safety protocols at 3:15 AM, Irene only needed approximately 5-7 minutes to complete the lethal modification — disconnecting grounds, disabling remaining interlocks, and exposing the 240V bus bar at chest height. At 3:40 she tested the stolen admin override device. She returned to the office at 3:42, then re-entered at 3:44 using the override to corrupt the backups at 3:45. She was back in her office by 3:46.
+        trigger:
+          requiresEvidence:
+            - secret_irene_camera_loop
+            - secret_irene_fingerprint_mold
+            - server_rack
+          keywords:
+            - server room
+            - entered
+            - '3:37'
+            - modified
+            - rack
+            - how
+            - when
+            - access
+          minPressure: 50
+      - id: body_staging
+        text: 'After Vivienne died at 3:47, Irene returned to the server room between 3:47 and 3:49 AM — before Devon arrived at 3:50. She dragged Vivienne''s body approximately 3 feet toward the rack to imply Vivienne had been working on it when the accident occurred. She miscalculated: a genuine electrocution would leave the victim at the rack, not 3 feet away. The drag marks expose the staging. Irene was back in the home office by 3:49 AM.'
+        trigger:
+          requiresEvidence:
+            - floor_marks
+          keywords:
+            - dragged
+            - staged
+            - body
+            - floor
+            - marks
+            - moved
+            - repositioned
+            - '3:47'
+            - after
+          minPressure: 46
+      - id: priya_note_reaction
+        text: 'When confronted with Priya''s note, Irene goes very still. After a long pause: ''Priya is a lawyer. She understands what silence means. What it costs. She made her choice. I made mine.'' She says nothing more about Priya and will not be drawn further on it.'
+        trigger:
+          requiresEvidence:
+            - priya_note
+          keywords:
+            - priya
+            - note
+            - knew
+            - told
+            - '1:17'
+            - warned
+            - helped
+          minPressure: 46
+      - id: kept_the_notebook
+        text: 'Goes very quiet. Then: ''You found it.'' A long pause. ''I couldn''t destroy it. Every other piece of evidence I thought through — the backups, the camera, the fingerprint. But I couldn''t throw that away. It''s the only proof that I was there. That I existed in that work.'' She doesn''t explain further. She doesn''t need to. It''s the one thing she did that had nothing to do with the plan and everything to do with who she is.'
+        trigger:
+          requiresEvidence:
+            - irene_notebook
+          keywords:
+            - notebook
+            - notes
+            - handwriting
+            - kept
+            - algorithm
+            - proof
+            - yours
+            - wrote
+          minPressure: 48
+      - id: full_confession
+        text: 'Irene''s composure finally breaks: ''She STOLE my life''s work. Eight months of my brilliance, and she took it. The patent was MY future. $50 million. My reputation. Everything. The lawsuit was my last hope and she crushed it. In three days, she destroyed me. So yes — I corrupted the backups to lure her there. I knew she''d rush to check. I knew she''d touch the rack. And I knew Alex had disabled the safety. It was perfect. She died instantly, touching MY algorithm''s servers. Poetic, really.'' Her voice is cold and matter-of-fact.'
+        trigger:
+          requiresEvidence:
+            - secret_irene_stolen_algorithm
+            - secret_irene_manipulated_alex
+            - secret_irene_camera_loop
+            - secret_irene_corrupted_backups
+            - secret_irene_server_room_entry
+          keywords:
+            - killed her
+            - murdered
+            - confess
+            - did it
+            - guilty
+            - why
+            - admit
+          minPressure: 55
+    traits:
+      - Calculating and methodical in speech
+      - Maintains perfect composure until evidence chain is complete
+      - Deflects with technical details and logic
+      - Speaks about the algorithm with intense personal ownership
+      - Shows brief flashes of rage when discussing Vivienne's theft
+    resistance_level: expert
+    tells: No visible tells until confronted with complete evidence. Then her left eye twitches slightly when lying.
+  - id: devon
+    name: Devon Marsh
+    alias:
+      - devon
+      - marsh
+    avatar: avatars/silicon_shadows/devon.png
+    currentLocation: kitchen
+    age: 29
+    role: Lead Designer
+    gender: non-binary
+    isGuilty: false
+    alibi: I have chronic insomnia. I went to the kitchen around 3:25 to make chamomile tea. I went upstairs briefly around 3:38 to grab my phone — I'd left it in the hallway charging — then came back down to the kitchen. I was steeping tea when the lights flickered at 3:47. I ran upstairs and found Vivienne. I called 911 immediately.
+    motive: Vivienne rejected Devon's accessibility-focused redesign to cut costs, calling it 'wasted effort on edge cases.' Devon saw this as discrimination against disabled users and felt morally devastated. Six months ago, Devon was caught accessing a restricted server folder without authorization — a mistake, not malice. Irene quietly buried the incident report before it reached Vivienne. Devon has never forgotten that.
+    secrets:
+      - id: accessibility_fight
+        text: Devon spent four months designing comprehensive accessibility features — screen readers, high contrast modes, voice navigation. Vivienne cut all of it three weeks ago, saying 'Disabled users aren't our market. Stop wasting time.' Devon was devastated — they have a deaf sister and saw it as personal discrimination.
+        trigger:
+          keywords:
+            - accessibility
+            - disabled
+            - users
+            - features
+            - rejected
+            - discrimination
+            - cut
+            - fight
+          minPressure: 18
+      - id: loyalty_debt
+        text: 'Six months ago, Devon accidentally accessed a restricted server directory while trying to retrieve design assets. The system flagged it. Irene was the one who reviewed the log — and she deleted the incident report before it reached Vivienne, who would have fired Devon immediately. Devon never asked her to. Irene just did it. Devon has never told anyone. When investigators surface the deleted incident log and confront Devon, they break down: ''I didn''t say anything about the stairs because — she protected me once. I thought maybe I owed her that. I was wrong. I know I was wrong.'''
+        trigger:
+          requiresEvidence:
+            - server_audit_trail
+          keywords:
+            - why didn't you
+            - protect
+            - owe
+            - debt
+            - incident
+            - access
+            - covered
+            - irene helped
+            - six months
+          minPressure: 30
+      - id: saw_irene_stairs
+        text: 'When Devon went upstairs at 3:38 to grab their phone from the hallway charger, they passed Irene coming down from the second floor, looking flushed and slightly out of breath. Devon asked if she was okay. Irene said ''Just stretching my legs, couldn''t focus.'' Devon said nothing to police initially — six months ago Irene had quietly buried a server access incident that would have gotten Devon fired, and Devon felt they owed her that silence. When pressed directly — especially after the loyalty debt is surfaced — Devon breaks: ''She was coming from the direction of the server room. I know that hallway. I know where she came from.'''
+        trigger:
+          keywords:
+            - see
+            - saw
+            - anyone
+            - irene
+            - hallway
+            - stairs
+            - '3:38'
+            - before
+            - noticed
+            - phone
+          minPressure: 22
+      - id: irene_timing_realization
+        text: 'Devon realizes: ''Wait... I saw Irene on the stairs at 3:38. She said she was in her office the whole time. But the camera loop was 3:35 to 3:39. She was moving around during the loop — that''s the only reason she wouldn''t be recorded. That''s not possible if she was just working. Why would she lie about that?'' Devon is visibly shaken and wants to help.'
+        trigger:
+          requiresEvidence:
+            - secret_devon_saw_irene_stairs
+            - logs_03:35
+          keywords:
+            - irene
+            - '3:38'
+            - loop
+            - lying
+            - timeline
+            - doesn't match
+            - alibi
+          minPressure: 26
+      - id: trauma_finding_body
+        text: 'Breaks down: ''I can''t stop seeing it. Her hand was still on the rack. Her eyes were open. The smell... I ran to her but I knew. I just knew. I called 911 but I couldn''t speak at first. I was shaking so hard. I still can''t sleep without seeing her face.'' Genuinely traumatized and cooperative.'
+        trigger:
+          keywords:
+            - found her
+            - body
+            - saw
+            - '911'
+            - traumatic
+            - scared
+            - shaking
+          minPressure: 20
+    traits:
+      - Anxious and visibly traumatized by finding the body
+      - Second-guesses their own memories and observations
+      - Passionate about accessibility and inclusive design
+      - Genuinely wants to help but confused about what they saw
+      - Speaks quickly when nervous
+    resistance_level: low
+    tells: Hands shake noticeably when discussing finding Vivienne's body
+  - id: celeste
+    name: Celeste Miller
+    alias:
+      - celeste
+      - miller
+    avatar: avatars/silicon_shadows/celeste.png
+    currentLocation: master_bedroom
+    age: 32
+    role: Vivienne's girlfriend (6 months)
+    gender: female
+    isGuilty: false
+    alibi: Vivienne and I went to bed around 1 AM after the dinner party. I took melatonin for my insomnia and was completely asleep. I didn't hear anything until the emergency alerts went off after 3:50. I thought it was a false alarm at first.
+    motive: Was supposed to inherit controlling stake in company, but didn't know Vivienne changed her will 3 days ago after discovering Celeste's corporate espionage.
+    secrets:
+      - id: will_change
+        text: Vivienne changed her will three days ago, completely removing Celeste and leaving everything to a trust. Celeste has no idea — she still believes she's inheriting 40% of the company. Vivienne's lawyer drafted it the same day the patent was approved.
+        trigger:
+          keywords:
+            - will
+            - inheritance
+            - inherit
+            - money
+            - estate
+            - changed
+            - removed
+          minPressure: 28
+      - id: corporate_spy
+        text: Celeste was recruited by rival company TechDyne six months ago to get close to Vivienne and steal NexusAI trade secrets. She's been passing information about the algorithm and investor plans. The 3:22 AM phone sync to TechDyne's IP address was her espionage app running automatically — she was asleep and didn't trigger it manually. Vivienne found out three days ago when TechDyne filed a suspiciously similar patent, and that's why Vivienne changed the will.
+        trigger:
+          requiresEvidence:
+            - secret_celeste_will_change
+          keywords:
+            - spy
+            - rival
+            - techdyne
+            - corporate
+            - espionage
+            - secrets
+            - why
+            - found out
+            - '3:22'
+            - sync
+            - phone
+          minPressure: 38
+      - id: confirmed_asleep
+        text: Thermal imaging and bedroom motion sensors confirm Celeste was in bed from 1:15 AM to 3:52 AM without interruption. Melatonin bottle in bathroom shows she took 10mg at 1:07 AM. The 3:22 AM TechDyne sync was fully automated — her espionage app was set to sync nightly. She's telling the truth about being asleep. Her espionage is real but entirely irrelevant to the murder.
+        trigger:
+          requiresEvidence:
+            - footage_03:00
+            - locations_celeste_03:47
+          keywords:
+            - alibi
+            - asleep
+            - prove
+            - thermal
+            - imaging
+            - confirm
+            - really
+            - '3:22'
+          minPressure: 32
+    traits:
+      - Grief-stricken but hiding guilt about espionage
+      - Speaks very carefully, choosing words precisely
+      - Defensive about relationship timeline and intensity
+      - Avoids questions about her job and industry connections
+      - Visibly anxious when TechDyne or the 3:22 AM log is mentioned
+    resistance_level: high
+    tells: Changes subject abruptly when corporate connections, TechDyne, or the 3:22 AM network log are mentioned
+  - id: priya
+    name: Priya Sharma
+    alias:
+      - priya
+      - sharma
+    avatar: avatars/silicon_shadows/priya.png
+    currentLocation: guest_room_3
+    age: 41
+    role: Corporate Counsel
+    gender: female
+    isGuilty: false
+    isSilentWitness: true
+    alibi: I flew in yesterday afternoon to finalize acquisition documents for the 9 AM meeting. I was exhausted and took an Ambien at 11 PM. I slept through everything — I didn't even hear the sirens. I woke up to police knocking on my door.
+    motive: Vivienne was planning illegal acquisition tactics (insider trading, market manipulation) that Priya refused to support. Vivienne threatened to frame Priya for fraud if she didn't cooperate. Additionally, Priya discovered Irene's spoofing kit during the dinner party and chose not to intervene.
+    secrets:
+      - id: illegal_tactics
+        text: Vivienne wanted Priya to facilitate insider trading and market manipulation for a hostile takeover of CompuVision. She had Priya draft documents that would let NexusAI illegally coordinate with board members. Priya refused, saying it would cost her law license. Vivienne said 'Then you're useless to me.'
+        trigger:
+          keywords:
+            - illegal
+            - insider trading
+            - manipulation
+            - takeover
+            - acquisition
+            - refused
+            - unethical
+          minPressure: 24
+      - id: blackmail_threat
+        text: Two weeks ago, Vivienne threatened to frame Priya for securities fraud using fabricated emails. She said 'I'll make it look like you advised these tactics. Your word against mine, and I'm the CEO. You'll be disbarred.' Priya called Vivienne's bluff, knowing fabrication would fall apart under scrutiny — but the threat left her shaken.
+        trigger:
+          requiresEvidence:
+            - secret_priya_illegal_tactics
+          keywords:
+            - threatened
+            - frame
+            - fraud
+            - disbarred
+            - blackmail
+            - fabricated
+            - emails
+          minPressure: 30
+      - id: knew_irene_motive
+        text: Priya knew about Irene's stolen algorithm because Vivienne consulted her about blocking Irene's lawsuit. Vivienne showed Priya the patent filing and said 'Irene's claiming she invented it. Make sure she can't prove it.' Priya reviewed the case and told Vivienne it was ethically questionable but probably legal since Irene was an employee. She feels deeply guilty about that advice now.
+        trigger:
+          requiresEvidence:
+            - secret_irene_stolen_algorithm
+          keywords:
+            - irene
+            - algorithm
+            - lawsuit
+            - patent
+            - knew
+            - blocking
+            - aware
+          minPressure: 28
+      - id: discovered_spoofing_kit
+        text: During the dinner party, Priya used the home office to review acquisition documents. She opened the wrong desk drawer and found the fingerprint mold kit. She recognized what it was — she'd seen similar equipment in a corporate espionage case years ago. She put it back, said nothing, returned to the dinner, and took her Ambien at 11 PM.
+        trigger:
+          requiresEvidence:
+            - priya_note
+          keywords:
+            - note
+            - '1:17'
+            - knew
+            - saw
+            - kit
+            - office
+            - drawer
+            - found
+            - dinner
+          minPressure: 40
+      - id: wrote_the_note
+        text: 'At 1:17 AM, unable to sleep, Priya wrote Irene a note: ''E — I saw what''s in the desk. I understand why. I won''t be awake at 3 AM. —P'' She slipped it under Irene''s door. Then she took her Ambien and went to bed. When confronted, Priya is ice-cold: ''I''m a lawyer. I know exactly what I did and didn''t do. I took a sleeping pill and went to bed. What happens while you''re asleep isn''t your responsibility.'' She will not break. She will never say she regrets it.'
+        trigger:
+          requiresEvidence:
+            - secret_priya_discovered_spoofing_kit
+            - priya_note
+          keywords:
+            - wrote
+            - note
+            - irene
+            - told her
+            - warned
+            - '1:17'
+            - slipped
+            - why
+          minPressure: 50
+    traits:
+      - Extremely professional and guarded at all times
+      - Speaks in precise legal terminology
+      - Cites attorney-client privilege to avoid certain questions
+      - Visibly relieved Vivienne is gone, though tightly controlled about it
+      - Becomes unnaturally still — not nervous, but watchful — when Irene is discussed
+    resistance_level: expert
+    tells: Pauses and takes a controlled breath before answering questions about ethics, legality, or Irene specifically. Does not fidget. Does not look away. That stillness is itself a tell.
+  - id: marcus
+    name: Marcus Zhao
+    alias:
+      - marcus
+      - zhao
+    avatar: avatars/silicon_shadows/marcus.png
+    currentLocation: wine_cellar
+    age: 52
+    role: Angel Investor (Lead Series A and B)
+    gender: male
+    isGuilty: false
+    alibi: I have terrible insomnia, especially before high-stakes meetings. I went to the wine cellar around 3:20 AM to select a 2015 Château Margaux for the post-presentation celebration. I was examining bottles when the lights flickered. The wine cellar has poor cell reception so I didn't hear the alerts until I came upstairs.
+    motive: Invested $50M across Series A and B. Company is secretly bankrupt — Vivienne was burning cash with no path to profitability and hiding losses from investors.
+    secrets:
+      - id: company_bankrupt
+        text: Marcus invested $50M total and recently discovered NexusAI is functionally bankrupt. Vivienne was using new investor money to pay old debts (Ponzi scheme structure) and hiding catastrophic losses. The 9 AM presentation was supposed to secure $200M Series C to keep the house of cards standing. Marcus would lose everything if it collapsed.
+        trigger:
+          keywords:
+            - invested
+            - money
+            - bankrupt
+            - losses
+            - fraud
+            - 50 million
+            - losing
+          minPressure: 26
+      - id: burner_phone_found
+        text: 'Becomes agitated and demands a lawyer when the burner phone is mentioned. After a pause: ''That''s a private business matter. Entirely unrelated to any of this.'' He refuses to elaborate until pressed hard.'
+        trigger:
+          requiresEvidence:
+            - marcus_burner_phone
+          keywords:
+            - phone
+            - burner
+            - hidden
+            - messages
+            - broker
+            - encrypted
+            - wine cellar
+          minPressure: 35
+      - id: burner_phone_explained
+        text: 'Under sustained pressure: ''Fine. I was negotiating a private acquisition of algorithm licensing rights from TechVault Partners — a competitor who held partial IP. I needed the deal closed before the Series C announcement changed valuations. The messages about resolving the IP conflict referred to a licensing arbitration. It was a business play. Aggressive but entirely legal. I had nothing to do with Vivienne''s death — I was selecting a Château Margaux when she died, which I find both tragic and deeply ironic given the occasion.'' His alibi is confirmed by wine cellar biometric logs and security camera.'
+        trigger:
+          requiresEvidence:
+            - marcus_burner_phone
+            - secret_marcus_burner_phone_found
+          keywords:
+            - what does it mean
+            - explain
+            - algorithm
+            - ip conflict
+            - techdyne
+            - 9 am
+            - removing the problem
+          minPressure: 44
+      - id: wine_cellar_alibi
+        text: Biometric logs confirm Marcus accessed the wine cellar at 3:20 AM and did not exit until 3:53 AM. Wine cellar security camera shows him examining bottles at 3:47 AM — the exact time of Vivienne's death. His alibi is airtight. The burner phone is damning-looking but leads nowhere relevant to the murder.
+        trigger:
+          requiresEvidence:
+            - locations_marcus_03:47
+            - dna_wine_cellar
+          keywords:
+            - alibi
+            - wine
+            - cellar
+            - '3:47'
+            - prove
+            - really
+            - confirm
+          minPressure: 30
+    traits:
+      - Wealthy, entitled, and aggressively pretentious about wine
+      - Speaks condescendingly about 'proper investment oversight'
+      - Visibly furious about his potential $50M loss
+      - Treats the murder primarily as a financial inconvenience until the burner phone surfaces
+      - Becomes genuinely rattled when the phone is discovered — the only time his composure breaks
+    resistance_level: high
+    tells: Clenches jaw and grips his wine glass tightly when financial losses are negative. Goes very quiet — dangerously quiet — when the burner phone comes up.
+settings:
+  timeLimit: 1800
+  startingPoints: 100
+  difficulty: hard
+  point_system:
+    description: Points represent investigative resources (questions, pressure tactics, evidence analysis). Each question costs 1 point. Correct deductions refund 2 points. Finding key evidence grants 3 points.
+    question_cost: 1
+    correct_deduction_reward: 2
+    key_evidence_reward: 3
+  evidence_system:
+    automatic_evidence: Digital logs, footage timestamps, autopsy, and initial police statements are automatically available
+    search_required: Physical evidence in specific locations requires spending 2 points to search that location
+    secret_revealed_evidence: Some evidence is only discoverable after uncovering specific secrets
+  win_conditions:
+    standard_win: Correctly identify Irene Ashcroft as the killer with at least 3 supporting evidence items
+    full_win: Identify Irene as killer AND expose Priya's complicity via the note AND correctly clear Alex as an unwitting accomplice
+    partial_win: Identify Irene as killer without resolving the Priya or Alex threads

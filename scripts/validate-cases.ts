@@ -8,31 +8,31 @@ const __dirname = path.dirname(__filename);
 
 // --- Manual Validation Helpers ---
 
-function assertType(value, type, path) {
+function assertType(value: any, type: string, path: string) {
     if (typeof value !== type) {
         throw new Error(`Expected ${path} to be type '${type}', got '${typeof value}'`);
     }
 }
 
-function assertArray(value, path) {
+function assertArray(value: any, path: string) {
     if (!Array.isArray(value)) {
         throw new Error(`Expected ${path} to be an array`);
     }
 }
 
-function assertObject(value, path) {
+function assertObject(value: any, path: string) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
         throw new Error(`Expected ${path} to be an object`);
     }
 }
 
-function assertEnum(value, allowed, path) {
+function assertEnum(value: any, allowed: any[], path: string) {
     if (!allowed.includes(value)) {
         throw new Error(`Expected ${path} to be one of [${allowed.join(', ')}], got '${value}'`);
     }
 }
 
-function assertRegex(value, regex, path) {
+function assertRegex(value: any, regex: RegExp, path: string) {
     if (typeof value !== 'string' || !regex.test(value)) {
         throw new Error(`Invalid format for ${path}: '${value}'`);
     }
@@ -40,9 +40,9 @@ function assertRegex(value, regex, path) {
 
 // --- Validation Logic ---
 
-function validateCase(caseData, folderName) {
-    const errors = [];
-    const addError = (msg) => errors.push(msg);
+function validateCase(caseData: any, folderName: string) {
+    const errors: string[] = [];
+    const addError = (msg: string) => errors.push(msg);
 
     try {
         // 1. Structural Validation
@@ -65,13 +65,28 @@ function validateCase(caseData, folderName) {
         assertObject(caseData.map, 'case.map');
         const mapKeys = Object.keys(caseData.map);
         for (const room of mapKeys) {
-            assertArray(caseData.map[room], `map.${room}`);
-            caseData.map[room].forEach(c => assertType(c, 'string', `map.${room} connection`));
+            const entry = caseData.map[room];
+            // Support both string[] (legacy) and RoomInfo { description, connects_to, interactables? }
+            if (Array.isArray(entry)) {
+                entry.forEach((c: any) => assertType(c, 'string', `map.${room} connection`));
+            } else {
+                assertObject(entry, `map.${room}`);
+                assertType(entry.description, 'string', `map.${room}.description`);
+                assertArray(entry.connects_to, `map.${room}.connects_to`);
+                entry.connects_to.forEach((c: any) => assertType(c, 'string', `map.${room}.connects_to entry`));
+                if (entry.interactables !== undefined) {
+                    assertArray(entry.interactables, `map.${room}.interactables`);
+                    entry.interactables.forEach((obj: any, i: number) => {
+                        assertType(obj.name, 'string', `map.${room}.interactables[${i}].name`);
+                        assertType(obj.description, 'string', `map.${room}.interactables[${i}].description`);
+                    });
+                }
+            }
         }
 
         // Suspects
         assertArray(caseData.suspects, 'case.suspects');
-        caseData.suspects.forEach((s, i) => {
+        caseData.suspects.forEach((s: any, i: number) => {
             const p = `suspects[${i}]`;
             assertType(s.id, 'string', `${p}.id`);
             assertType(s.name, 'string', `${p}.name`);
@@ -82,7 +97,7 @@ function validateCase(caseData, folderName) {
             assertType(s.motive, 'string', `${p}.motive`);
             assertArray(s.secrets, `${p}.secrets`);
 
-            s.secrets.forEach((sec, k) => {
+            s.secrets.forEach((sec: any, k: number) => {
                 assertType(sec.id, 'string', `${p}.secrets[${k}].id`);
                 assertObject(sec.trigger, `${p}.secrets[${k}].trigger`);
                 assertArray(sec.trigger.keywords, `${p}.secrets[${k}].trigger.keywords`);
@@ -99,17 +114,23 @@ function validateCase(caseData, folderName) {
 
 
         // 2. Referential Integrity
-        const suspectIds = caseData.suspects.map(s => s.id);
+        const suspectIds = caseData.suspects.map((s: any) => s.id);
         const itemIds = Object.keys(caseData.evidence.physical_evidence);
 
         // Map Integrity
         if (!mapKeys.includes(caseData.murderLocation)) {
             addError(`murderLocation '${caseData.murderLocation}' is not in the map.`);
         }
-        for (const [room, conns] of Object.entries(caseData.map)) {
-            conns.forEach(conn => {
+        const getConns = (room: string): string[] => {
+            const entry = caseData.map[room];
+            if (Array.isArray(entry)) return entry;
+            return entry?.connects_to ?? [];
+        };
+        for (const room of mapKeys) {
+            const conns = getConns(room);
+            conns.forEach((conn: string) => {
                 if (!mapKeys.includes(conn)) addError(`Room '${room}' connects to '${conn}' (missing).`);
-                else if (!caseData.map[conn].includes(room)) addError(`Map link mismatch: '${room}'->'${conn}' exists, but '${conn}'->'${room}' missing.`);
+                else if (!getConns(conn).includes(room)) addError(`Map link mismatch: '${room}'->'${conn}' exists, but '${conn}'->'${room}' missing.`);
             });
         }
         // Map Reachability
@@ -117,8 +138,8 @@ function validateCase(caseData, folderName) {
             const visited = new Set([mapKeys[0]]);
             const queue = [mapKeys[0]];
             while (queue.length) {
-                const curr = queue.shift();
-                caseData.map[curr].forEach(n => {
+                const curr = queue.shift()!;
+                getConns(curr).forEach((n: string) => {
                     if (!visited.has(n)) {
                         visited.add(n);
                         queue.push(n);
@@ -132,19 +153,20 @@ function validateCase(caseData, folderName) {
         }
 
         // Suspects Integrity
-        if (!suspectIds.includes(caseData.solution)) addError(`Solution '${caseData.solution}' is not a valid suspect.`);
-        const guilty = caseData.suspects.find(s => s.id === caseData.solution);
-        if (guilty && !guilty.isGuilty) addError(`Solution suspect '${caseData.solution}' isGuilty is false.`);
+        const solutionId = typeof caseData.solution === 'string' ? caseData.solution : caseData.solution.killer;
+        if (!suspectIds.includes(solutionId)) addError(`Solution '${solutionId}' is not a valid suspect.`);
+        const guilty = caseData.suspects.find((s: any) => s.id === solutionId);
+        if (guilty && !guilty.isGuilty) addError(`Solution suspect '${solutionId}' isGuilty is false.`);
 
         const seenSuspects = new Set();
-        caseData.suspects.forEach(s => {
+        caseData.suspects.forEach((s: any) => {
             if (seenSuspects.has(s.id)) addError(`Duplicate suspect ID: ${s.id}`);
             seenSuspects.add(s.id);
             if (!mapKeys.includes(s.currentLocation)) addError(`Suspect '${s.id}' at invalid location '${s.currentLocation}'.`);
 
-            s.secrets.forEach(sec => {
+            s.secrets.forEach((sec: any) => {
                 const triggers = sec.trigger.requiresEvidence || [];
-                triggers.forEach(trig => validateTrigger(trig, caseData, suspectIds, mapKeys, itemIds, addError));
+                triggers.forEach((trig: string) => validateTrigger(trig, caseData, suspectIds, mapKeys, itemIds, addError));
             });
         });
 
@@ -152,27 +174,27 @@ function validateCase(caseData, folderName) {
         Object.entries(caseData.evidence.dna).forEach(([room, list]) => {
             if (!mapKeys.includes(room)) addError(`DNA in invalid room '${room}'.`);
         });
-        Object.entries(caseData.evidence.locations).forEach(([sid, locs]) => {
+        Object.entries(caseData.evidence.locations as Record<string, Record<string, string>>).forEach(([sid, locs]) => {
             if (!suspectIds.includes(sid)) addError(`Location evidence for unknown suspect '${sid}'.`);
-            Object.values(locs).forEach(room => {
+            Object.values(locs).forEach((room: string) => {
                 if (!mapKeys.includes(room) && room !== 'unknown') addError(`Suspect '${sid}' invalid location evidence '${room}'.`);
             });
         });
-        Object.entries(caseData.evidence.physical_discovery).forEach(([room, list]) => {
+        Object.entries(caseData.evidence.physical_discovery as Record<string, string[]>).forEach(([room, list]) => {
             if (!mapKeys.includes(room)) addError(`Physical discovery in invalid room '${room}'.`);
-            list.forEach(item => {
+            list.forEach((item: string) => {
                 if (!itemIds.includes(item)) addError(`Unknown item '${item}' discovered in '${room}'.`);
             });
         });
 
-    } catch (e) {
+    } catch (e: any) {
         addError(`Structure Error: ${e.message}`);
     }
 
     return errors;
 }
 
-function validateTrigger(trig, caseData, suspectIds, mapKeys, itemIds, addError) {
+function validateTrigger(trig: string, caseData: any, suspectIds: string[], mapKeys: string[], itemIds: string[], addError: (msg: string) => void) {
     if (trig.startsWith('logs_')) {
         const t = trig.replace('logs_', '');
         if (!caseData.evidence.digital_logs[t]) addError(`Missing log for trigger '${trig}'`);
@@ -202,12 +224,14 @@ function validateTrigger(trig, caseData, suspectIds, mapKeys, itemIds, addError)
         for (const s of suspectIds) {
             if (trig.startsWith(`secret_${s}_`)) {
                 const id = trig.replace(`secret_${s}_`, '');
-                const susp = caseData.suspects.find(x => x.id === s);
-                if (susp && susp.secrets.find(x => x.id === id)) found = true;
+                const susp = caseData.suspects.find((x: any) => x.id === s);
+                if (susp && susp.secrets.find((x: any) => x.id === id)) found = true;
                 break;
             }
         }
         if (!found) addError(`Missing secret for trigger '${trig}'`);
+    } else if (itemIds.includes(trig)) {
+        // Bare physical item ID (no prefix) — valid shorthand for physical_<id>
     } else {
         addError(`Unknown trigger format: '${trig}'`);
     }
@@ -242,7 +266,7 @@ async function main() {
             } else {
                 console.log(`✅ ${folder} OK`);
             }
-        } catch (e) {
+        } catch (e: any) {
             console.error(`❌ Failed to parse/read ${folder}: ${e.message}`);
             failures = true;
         }

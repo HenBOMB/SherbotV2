@@ -120,6 +120,13 @@ export async function setChannelVisibility(
 }
 
 /**
+ * Normalize a location name to a consistent ID (lowercase, underscores instead of spaces)
+ */
+export function normalizeLocationId(name: string): string {
+    return name.trim().toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
+}
+
+/**
  * Get location ID from channel topic
  */
 export function getLocationFromChannel(channel: TextChannel): string | null {
@@ -128,7 +135,7 @@ export function getLocationFromChannel(channel: TextChannel): string | null {
     // Extract from "Location: [Name] | ..."
     const match = channel.topic.match(/Location:\s+([^|]+)/i);
     if (match) {
-        return match[1].trim().toLowerCase().replace(/\s+/g, '_');
+        return normalizeLocationId(match[1]);
     }
     return null;
 }

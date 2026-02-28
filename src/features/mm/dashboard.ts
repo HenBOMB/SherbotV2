@@ -1,5 +1,4 @@
 import express from 'express';
-import { createServer } from 'http';
 import { Server as SocketServer } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -7,6 +6,7 @@ import { logger } from '../../utils/logger.js';
 import { getTipsStatus, setTipIndex, triggerTipNow, toggleTips, updateServerConfig, registerServer, setServerLanguage, removeServer, cleanupServers } from '../dailytips.js';
 import { Client } from 'discord.js';
 import { sequelize, UserProfile, TokenUsageLog } from '../../database.js';
+import { apiServer } from '../../api.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -56,26 +56,16 @@ export interface DashboardEvent {
  */
 export default class DashboardServer {
     private app: express.Application;
-    private server: ReturnType<typeof createServer>;
     private io: SocketServer;
-    private port: number;
     private events: DashboardEvent[] = [];
     private currentState: DashboardGameState | null = null;
     private client: Client;
 
-    constructor(client: Client, port: number = 3001) {
+    constructor(client: Client) {
         this.client = client;
-        this.port = port;
-        this.app = express();
-        this.server = createServer(this.app);
-        this.io = new SocketServer(this.server, {
-            cors: {
-                origin: '*',
-                methods: ['GET', 'POST']
-            }
-        });
+        this.app = apiServer.app;
+        this.io = apiServer.io;
 
-        this.app.use(express.json());
         this.setupRoutes();
         this.setupSocketHandlers();
     }
@@ -297,23 +287,7 @@ export default class DashboardServer {
     }
 
     /**
-     * Start the dashboard server
-     */
-    start(): void {
-        this.server.listen(this.port, () => {
-            logger.info(`📊 Dashboard running at http://localhost:${this.port}`);
-        });
-    }
-
-    /**
-     * Stop the server
-     */
-    stop(): void {
-        this.server.close();
-    }
-
-    /**
-     * Update and broadcast game state
+     * Clear state when game ends
      */
     updateState(state: DashboardGameState): void {
         this.currentState = state;
@@ -379,11 +353,6 @@ export default class DashboardServer {
 
         // Enhanced evidence mapping
         const allEvidence: EvidenceItem[] = [
-            ...Array.from(state.discoveredLocations || []).map(l => ({
-                id: `location_${l}`,
-                name: (l as string).replace(/_/g, ' '),
-                type: 'location' as const
-            })),
             ...Array.from(evidence).map(e => {
                 let type: EvidenceItem['type'] = 'unknown';
                 let name = e;

@@ -2,7 +2,9 @@ import {
     Client,
     Message,
     TextChannel,
-    GuildMember
+    GuildMember,
+    EmbedBuilder,
+    Colors
 } from 'discord.js';
 import Suspect from './suspect.js';
 import Case from './case.js';
@@ -21,6 +23,11 @@ export interface InterrogationContext {
     getOrCreateStats: (userId: string, username: string) => PlayerStats;
     getLocationFromChannel: (channel: TextChannel) => string | null;
     isParticipant: (userId: string) => boolean;
+    checkInterrogationLimit: (member: GuildMember) => Promise<{ canProceed: boolean; count: number }>;
+    getPendingPasscode: (channelId: string) => string | null;
+    setPendingPasscode: (channelId: string, itemId: string | null) => void;
+    unlockItem: (itemId: string) => void;
+    saveState: () => Promise<void>;
 }
 
 export default class InterrogationManager {
@@ -42,15 +49,24 @@ export default class InterrogationManager {
 
         this.messageHandler = async (message: Message) => {
             try {
-                // Ignore bots
+                // Ignore bots and secret commands
                 if (message.author.bot) return;
+                if (message.content.trim().toLowerCase().startsWith('$sb')) return;
 
-                // SECURITY: Only participants can trigger interrogation responses
-                if (!this.context.isParticipant(message.author.id)) return;
-
-                // Check if active game
                 const activeGame = this.context.getActiveGame();
-                if (!activeGame?.isActive()) return;
+
+                // EARLY LOG: See every message the bot sees
+                logger.debug(`[INTERROGATION] Message from ${message.author.tag} in channel ${message.channelId}: "${message.content}"`);
+
+                if (!activeGame) {
+                    logger.debug(`[INTERROGATION] Ignored: No active game found.`);
+                    return;
+                }
+
+                if (!activeGame.isActive()) {
+                    logger.debug(`[INTERROGATION] Ignored: Game is not active.`);
+                    return;
+                }
 
                 const content = message.content.trim();
                 if (!content) return;
@@ -58,23 +74,92 @@ export default class InterrogationManager {
                 // MAX LENGTH CAP: Prevent abuse and token waste
                 if (content.length > 400) {
                     await message.reply({
-                        content: `⚠️ **Message too long!** (${message.content.length} > 400 characters)\n*Please keep your interrogation concise to avoid overwhelming the suspect.*`
+                        content: `⚠️ **Message too long!** (${content.length} > 400 characters)\n*Please keep your interrogation concise to avoid overwhelming the suspect.*`
                     });
                     return;
                 }
 
                 // Detect Location using the new robust method
                 const channel = message.channel instanceof TextChannel ? message.channel : null;
-                if (!channel) return;
+                if (!channel) {
+                    logger.debug(`[INTERROGATION] Ignored: Not a text channel.`);
+                    return;
+                }
 
                 const currentLocation = this.context.getLocationFromChannel(channel);
-                if (!currentLocation) return;
+                if (!currentLocation) {
+                    logger.debug(`[INTERROGATION] Ignored: Could not determine location for channel ${channel.name} (${channel.id}).`);
+                    return;
+                }
+
+                // SECURITY: Only participants can trigger interrogation responses
+                if (!this.context.isParticipant(message.author.id)) {
+                    logger.debug(`[INTERROGATION] Ignored: ${message.author.tag} (${message.author.id}) is not a participant.`);
+                    return;
+                }
+
+                // --- PASSCODE CHECK ---
+                const pendingItemId = this.context.getPendingPasscode(message.channelId);
+                if (pendingItemId) {
+                    const evidence = activeGame.getPhysicalEvidence(pendingItemId);
+                    if (evidence && typeof evidence !== 'string' && evidence.required) {
+                        const input = content.replace(/\s/g, ''); // Strip spaces
+                        if (input === evidence.required) {
+                            // SUCCESS
+                            this.context.unlockItem(pendingItemId);
+                            this.context.setPendingPasscode(message.channelId, null);
+
+                            const unlockedDesc = evidence.unlocked_description || evidence.description;
+                            await message.reply({
+                                embeds: [
+                                    new EmbedBuilder()
+                                        .setColor(Colors.Green)
+                                        .setTitle('🔓 ACCESS GRANTED')
+                                        .setDescription(`\`\`\`ansi\n\u001b[1;32m[ SYSTEM UNLOCKED: ${pendingItemId.toUpperCase()} ]\u001b[0m\n\`\`\`\n${unlockedDesc}`)
+                                        .setFooter({ text: 'The device is now permanently unlocked for all investigators.' })
+                                ]
+                            });
+
+                            this.context.getDashboard().addEvent('tool_use', `Unlocked item: ${pendingItemId}`);
+                            await this.context.saveState();
+                            return;
+                        } else {
+                            // FAILURE
+                            // To avoid spam, let's only reply if it looks like a 4-digit code or they are trying
+                            if (/^\d{4}$/.test(input) || input.length < 10) {
+                                await message.reply({
+                                    content: '❌ **ACCESS DENIED** — Incorrect passcode. Please try again.'
+                                });
+                            }
+                            return;
+                        }
+                    } else {
+                        // Cleanup if item is weird
+                        this.context.setPendingPasscode(message.channelId, null);
+                    }
+                }
 
                 // Check if there is an active buffer for this channel
                 const existingBuffer = this.interrogationBuffers.get(message.channelId);
 
                 // Check if this message mentions a suspect
                 const mentionedSuspect = this.findMentionedSuspect(content);
+
+                // LIMIT CHECK: Limit to 100 interrogations per day for non-admins/non-owners
+                if (mentionedSuspect || existingBuffer) {
+                    if (message.member) {
+                        const { canProceed } = await this.context.checkInterrogationLimit(message.member);
+                        if (!canProceed) {
+                            // Add a small check so we don't spam the warning if they send multiple messages
+                            if (!existingBuffer) {
+                                await message.reply({
+                                    content: `⚠️ **Daily Interrogation Limit Reached!**\nYou've reached your daily limit of 100 interrogations. Ask an admin to reset your limit.`
+                                });
+                            }
+                            return;
+                        }
+                    }
+                }
 
                 // ENFORCE PRESENCE:
                 if (mentionedSuspect) {
@@ -104,12 +189,15 @@ export default class InterrogationManager {
                         clearTimeout(existingBuffer.timer);
                         existingBuffer.timer = setTimeout(async () => {
                             await this.processBuffer(message.channelId);
-                        }, 2000);
+                        }, 1000);
                         return;
                     }
                 }
 
-                if (!mentionedSuspect) return;
+                if (!mentionedSuspect) {
+                    logger.debug(`Interrogation ignored: no suspect mentioned in "${content}"`);
+                    return;
+                }
 
                 logger.debug(`Starting interrogation buffer for ${mentionedSuspect.data.name} with ${message.author.tag}`);
 
@@ -130,7 +218,7 @@ export default class InterrogationManager {
                     channel: message.channel as TextChannel,
                     timer: setTimeout(async () => {
                         await this.processBuffer(message.channelId);
-                    }, 2000)
+                    }, 1000)
                 };
 
                 this.interrogationBuffers.set(message.channelId, buffer);
@@ -180,9 +268,11 @@ export default class InterrogationManager {
 
             const namesToCheck = [suspect.data.name, ...suspect.data.alias];
             for (const name of namesToCheck) {
+                if (!name) continue;
                 const regex = new RegExp(`\\b${escapeName(name)}\\b`, 'i');
                 const match = regex.exec(content);
                 if (match) {
+                    logger.debug(`Found suspect match: ${suspect.data.name} for keyword "${name}"`);
                     if (!earliestMatch || match.index < earliestMatch.position) {
                         earliestMatch = { suspect, position: match.index };
                     }
@@ -211,13 +301,30 @@ export default class InterrogationManager {
             const activeGame = this.context.getActiveGame();
             if (!activeGame) return;
 
+            const currentLocation = this.context.getLocationFromChannel(channel);
+            if (!currentLocation) {
+                logger.warn(`[INTERROGATION] Could not determine location for channel ${channel.name} (${channel.id}) during buffer processing.`);
+                return;
+            }
+            const roomInfo = activeGame.getRoomInfo(currentLocation);
+            const roomDescription = roomInfo?.description || '';
+            const roomInteractables = roomInfo?.interactables || [];
+
             const response = await suspect.respond(
                 member,
                 combinedContent,
                 channel,
                 activeGame.config.id,
-                discoveredEvidence
+                discoveredEvidence,
+                roomDescription,
+                roomInteractables,
+                activeGame.logger
             );
+
+            // Log the incoming interrogation messages
+            messages.forEach(msg => {
+                activeGame.logger?.logMessage(member.user.tag, msg);
+            });
 
             if (response) {
                 dashboard.addEvent('interrogation',
@@ -269,6 +376,7 @@ export default class InterrogationManager {
                 }
 
                 this.context.broadcastDashboardState();
+                await this.context.saveState();
             }
         } catch (error) {
             logger.error(`Error processing buffer for ${suspect.data.name}:`, error);

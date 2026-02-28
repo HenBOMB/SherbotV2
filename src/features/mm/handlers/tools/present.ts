@@ -3,6 +3,7 @@ import {
     TextChannel
 } from 'discord.js';
 import GameManager from '../../game.js';
+import { logger } from '../../../../utils/logger.js';
 
 /**
  * Handle /mm present command - Phoenix Wright style evidence presentation
@@ -11,6 +12,18 @@ export async function handlePresent(
     manager: GameManager,
     interaction: ChatInputCommandInteraction
 ): Promise<void> {
+    const member = interaction.member as any;
+    if (member) {
+        const { canProceed } = await manager.checkInterrogationLimit(member);
+        if (!canProceed) {
+            await interaction.reply({
+                content: `⚠️ **Daily Interrogation Limit Reached!**\nYou've reached your daily limit of 100 interrogations. Ask an admin to reset your limit.`,
+                ephemeral: true
+            });
+            return;
+        }
+    }
+
     if (!manager.isParticipant(interaction.user.id)) {
         await interaction.reply({
             content: 'You must join the investigation with `/mm join` before you can present evidence.',
@@ -54,15 +67,20 @@ export async function handlePresent(
     let evidenceId: string | null = null;
     let fallbackEvidenceId: string | null = null;
 
-    for (const item of discovered) {
-        const rawName = item.includes('_') ? item.substring(item.indexOf('_') + 1) : item;
-        const normalizedItem = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (normalizedItem === q) {
-            evidenceId = item;
-            break;
-        }
-        if (normalizedItem.includes(q) || q.includes(normalizedItem)) {
-            fallbackEvidenceId = item;
+    // First try exact match (useful for autocomplete values)
+    if (discovered.has(evidenceQuery)) {
+        evidenceId = evidenceQuery;
+    } else {
+        for (const item of discovered) {
+            const rawName = item.includes('_') ? item.substring(item.indexOf('_') + 1) : item;
+            const normalizedItem = rawName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (normalizedItem === q) {
+                evidenceId = item;
+                break;
+            }
+            if (normalizedItem.includes(q) || q.includes(normalizedItem)) {
+                fallbackEvidenceId = item;
+            }
         }
     }
 
@@ -78,6 +96,9 @@ export async function handlePresent(
 
     // ENFORCE PRESENCE: Suspect must be in the same room
     const channel = interaction.channel;
+    let roomDescription = '';
+    let roomInteractables: { name: string; description: string }[] = [];
+
     if (channel instanceof TextChannel) {
         const currentLocation = manager.getLocationFromChannel(channel);
         if (!currentLocation || suspect.data.currentLocation !== currentLocation) {
@@ -86,6 +107,12 @@ export async function handlePresent(
                 ephemeral: true
             });
             return;
+        }
+
+        const roomInfo = activeGame.getRoomInfo(currentLocation);
+        if (roomInfo) {
+            roomDescription = roomInfo.description;
+            roomInteractables = roomInfo.interactables || [];
         }
     }
 
@@ -103,7 +130,10 @@ export async function handlePresent(
         evidenceId,
         channel as any,
         activeGame.config.id,
-        discovered
+        discovered,
+        roomDescription,
+        roomInteractables,
+        activeGame.logger
     );
 
     if (result) {
@@ -129,9 +159,17 @@ export async function handlePresent(
         manager.broadcastDashboardState();
         await manager.saveState();
 
+        // Create a user-friendly display name for the evidence
+        const displayName = evidenceId
+            .replace(/^(physical|secret|dna|footage|logs|locations)_/i, '')
+            .replace(/_/g, ' ');
+
         // The suspect will have responded via webhook, so we just acknowledge
+        const impactText = result.wasRelevant ? ` (**Impact: -${result.composureLost}% Composure**)` : '';
+        logger.info(impactText);
+
         await interaction.editReply({
-            content: `📎 You present **${evidenceId.replace(/_/g, ' ')}** to **${suspect.data.name}**...`
+            content: `📎 You present **${displayName}** to **${suspect.data.name}**`
         });
     } else {
         await interaction.editReply({

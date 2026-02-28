@@ -6,9 +6,10 @@ import { tokenTracker } from '../../utils/token-tracker.js';
 import { logger } from '../../utils/logger.js';
 import { InterrogationCache, InterrogationLog } from '../../database.js';
 import { cosineSimilarity } from '../../utils/math.js';
+import path from 'path';
+import { CaseLogger } from './case-logger.js';
 
 const GEMINI_MODEL = 'gemini-2.5-flash';
-const LOCAL_MODEL = 'goekdenizguelmez/JOSIEFIED-Qwen3:0.6b';
 
 /**
  * Split a message into natural chunks for Discord
@@ -110,6 +111,8 @@ export default class Suspect {
     private _busy: boolean = false;
     private _focused: string = '-1';
     private _webhook: Webhook | null = null;
+    /** Track evidence IDs already presented to prevent composure hit stacking */
+    private _presentedEvidence: Set<string> = new Set();
 
     /** Evidence IDs that have been discovered by players */
     private _knownEvidence: Set<string> = new Set();
@@ -142,11 +145,18 @@ export default class Suspect {
      * Get current state for persistence
      */
     getState(): SuspectState {
+        const memoryRecord: Record<string, string[]> = {};
+        for (const [channelId, messages] of this._memory.entries()) {
+            memoryRecord[channelId] = messages;
+        }
+
         return {
             id: this.data.id,
             composure: this._state.composure,
             defensiveness: this._state.defensiveness,
-            revealedSecrets: Array.from(this._revealedSecrets)
+            revealedSecrets: Array.from(this._revealedSecrets),
+            memory: memoryRecord,
+            presentedEvidence: Array.from(this._presentedEvidence)
         };
     }
 
@@ -157,6 +167,16 @@ export default class Suspect {
         this._state.composure = state.composure;
         this._state.defensiveness = state.defensiveness;
         this._revealedSecrets = new Set(state.revealedSecrets);
+
+        if (state.memory) {
+            for (const [channelId, messages] of Object.entries(state.memory)) {
+                this._memory.set(channelId, messages);
+            }
+        }
+
+        if (state.presentedEvidence) {
+            this._presentedEvidence = new Set(state.presentedEvidence);
+        }
     }
 
     /**
@@ -177,9 +197,22 @@ export default class Suspect {
             let hook = hooks.find(h => h.name === this.data.name);
 
             if (!hook) {
+                // Resolve avatar path — local paths need the public/ prefix
+                let avatarPath: string | undefined;
+                if (this.data.avatar) {
+                    if (this.data.avatar.startsWith('http')) {
+                        avatarPath = this.data.avatar;
+                    } else {
+                        const fullPath = path.isAbsolute(this.data.avatar)
+                            ? this.data.avatar
+                            : path.join(process.cwd(), 'public', this.data.avatar);
+                        avatarPath = fullPath;
+                    }
+                }
+
                 hook = await channel.createWebhook({
                     name: this.data.name,
-                    avatar: this.data.avatar,
+                    avatar: avatarPath,
                     reason: `Murder Mystery suspect: ${this.data.name}`
                 });
             }
@@ -190,6 +223,16 @@ export default class Suspect {
             logger.error(`Failed to create webhook for ${this.data.name}:`, error);
             return null;
         }
+    }
+
+    /**
+     * Get the avatar URL for webhook sending (only if it's a remote URL)
+     */
+    private getWebhookAvatar(): string | undefined {
+        if (this.data.avatar && this.data.avatar.startsWith('http')) {
+            return this.data.avatar;
+        }
+        return undefined; // Let the webhook use its pre-configured local avatar
     }
 
     /**
@@ -218,7 +261,7 @@ export default class Suspect {
             .toLowerCase()
             .replace(/[^\w\s]/g, ' ')
             .split(/\s+/)
-            .filter(w => w.length > 2);
+            .filter(w => w.length > 1); // Allow 2-char words like "ai"
     }
 
     /**
@@ -229,13 +272,58 @@ export default class Suspect {
             return true; // No evidence required
         }
         // Need at least one of the required evidence items
-        return secret.trigger.requiresEvidence.some(e =>
-            this._knownEvidence.has(e.toLowerCase())
-        );
+        return secret.trigger.requiresEvidence.some(req => {
+            for (const known of this._knownEvidence) {
+                if (this.isEvidenceMatch(req, known)) return true;
+            }
+            return false;
+        });
+    }
+
+    /**
+     * Helper to match evidence IDs against requirements, handling prefixes.
+     */
+    private isEvidenceMatch(requiredId: string, providedId: string): boolean {
+        const r = requiredId.toLowerCase();
+        const p = providedId.toLowerCase();
+        if (r === p) return true;
+
+        const prefixes = ['physical', 'secret', 'dna', 'footage', 'logs', 'locations'];
+        for (const pref of prefixes) {
+            if (`${pref}_${r}` === p) return true;
+            if (r === `${pref}_${p}`) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Clean an evidence ID for user-facing display or mention detection.
+     */
+    private cleanEvidenceId(id: string): string {
+        return id.replace(/^(physical|secret|dna|footage|logs|locations)_/i, '')
+            .replace(/_/g, ' ')
+            .toLowerCase()
+            .trim();
+    }
+
+    /**
+     * Get resistance multiplier based on suspect's resistance_level.
+     * Higher resistance = less composure lost per hit.
+     */
+    private getResistanceMultiplier(): number {
+        switch (this.data.resistance_level) {
+            case 'expert': return 0.35;
+            case 'high': return 0.5;
+            case 'moderate': return 0.75;
+            case 'low': return 1.0;
+            default: return 0.75;
+        }
     }
 
     /**
      * Calculate keyword match score for a secret
+     * Uses exact word matching — no substring tricks.
+     * Multi-word keywords (e.g. "your work") match if ALL words appear in the message.
      */
     private calculateKeywordMatch(secret: SecretData, messageKeywords: string[]): string[] {
         if (!secret.trigger.keywords || secret.trigger.keywords.length === 0) {
@@ -244,69 +332,133 @@ export default class Suspect {
 
         const matches: string[] = [];
         for (const keyword of secret.trigger.keywords) {
-            const kw = keyword.toLowerCase();
-            if (messageKeywords.some(mk => mk.includes(kw) || kw.includes(mk))) {
-                matches.push(keyword);
+            const kwParts = keyword.toLowerCase().split(/\s+/);
+
+            if (kwParts.length > 1) {
+                // Multi-word keyword: ALL words must appear in the message
+                if (kwParts.every(part => messageKeywords.includes(part))) {
+                    matches.push(keyword);
+                }
+            } else {
+                // Single-word keyword: exact match only
+                if (messageKeywords.includes(kwParts[0])) {
+                    matches.push(keyword);
+                }
             }
         }
         return matches;
     }
 
     /**
-     * Evaluate an interrogation message history for secret triggers
-     * Matches keywords across the current message + recent history
+     * Evaluate an interrogation message for secret triggers.
+     * 
+     * KEY DESIGN DECISIONS (anti-cheese):
+     *  - Only the CURRENT message drives composure loss (history no longer re-triggers).
+     *  - Only the BEST-matching secret costs composure (no stacking across secrets).
+     *  - Diminishing returns: first keyword = 5, second = 4, third = 3, etc.
+     *  - Resistance multiplier scales loss by suspect difficulty.
+     *  - Composure recovers slightly on "miss" messages (suspect catches their breath).
+     *  - History keywords are still checked for pressure-warning context in the prompt.
      */
-    private evaluateInterrogation(messageHistory: string[]): InterrogationResult {
-        // Combine history for keyword extraction
-        const combinedText = messageHistory.join(' ');
-        const messageKeywords = this.extractKeywords(combinedText);
+    private evaluateInterrogation(
+        currentMessage: string,
+        recentHistory: string[] = [],
+        knownEvidence: Set<string> = new Set()
+    ): InterrogationResult {
+        // Keywords from the CURRENT message only (for composure damage)
+        const currentKeywords = this.extractKeywords(currentMessage);
 
-        let bestMatch: { secret: SecretData; keywords: string[] } | null = null;
-        let composureLost = 0;
+        // Keywords from recent history (for pressure-warning context, NOT composure)
+        const historyText = recentHistory.join(' ');
+        const historyKeywords = this.extractKeywords(historyText);
 
-        // Check each unrevealed secret
+        // Union for "what topics are being discussed" (used for pressure warning in prompt)
+        const allTopicKeywords = [...new Set([...currentKeywords, ...historyKeywords])];
+
+        // Match against CURRENT message only for scoring
+        let evidenceHit = false;
+        const currentLower = currentMessage.toLowerCase();
+        for (const ev of knownEvidence) {
+            const cleanEv = this.cleanEvidenceId(ev);
+            if (cleanEv.length > 4 && currentLower.includes(cleanEv)) {
+                evidenceHit = true;
+                break;
+            }
+        }
+
+        let bestMatch: { secret: SecretData; keywords: string[]; currentHits: number } | null = null;
+
+        // Check each unrevealed secret for keyword matches
         for (const secret of this.data.secrets) {
             if (this._revealedSecrets.has(secret.id)) continue;
-
-            // Check evidence requirements
             if (!this.hasRequiredEvidence(secret)) continue;
 
-            // Check keyword matches
-            const matchedKeywords = this.calculateKeywordMatch(secret, messageKeywords);
+            // Match against CURRENT message only for scoring
+            const currentMatches = this.calculateKeywordMatch(secret, currentKeywords);
+            // Also check history for topic awareness (not scored)
+            const historyMatches = this.calculateKeywordMatch(secret, allTopicKeywords);
 
-            if (matchedKeywords.length > 0) {
-                // Each matched keyword reduces composure
-                // We dampen repeated matches slightly if we wanted, but for now linear accumulation
-                composureLost += matchedKeywords.length * 8;
-
-                // Track best match (most keywords)
-                if (!bestMatch || matchedKeywords.length > bestMatch.keywords.length) {
-                    bestMatch = { secret, keywords: matchedKeywords };
+            // Use current hits for composure, but track full topic hits for best-match ranking
+            if (currentMatches.length > 0 || historyMatches.length > 0) {
+                const totalRelevance = currentMatches.length + (historyMatches.length * 0.3);
+                if (!bestMatch || totalRelevance > (bestMatch.currentHits + bestMatch.keywords.length * 0.3)) {
+                    bestMatch = {
+                        secret,
+                        keywords: [...new Set([...currentMatches, ...historyMatches])], // all matched for prompt context
+                        currentHits: currentMatches.length  // only current message hits count for composure
+                    };
                 }
             }
         }
 
-        // Apply composure loss
-        this._state.composure = Math.max(0, this._state.composure - composureLost);
+        // Calculate composure loss from the BEST match only (no stacking)
+        let composureLost = 0;
+        if (bestMatch && bestMatch.currentHits > 0) {
+            // Diminishing returns: 8 + 7 + 6 + 5...
+            for (let i = 0; i < bestMatch.currentHits; i++) {
+                composureLost += Math.max(2, 8 - i);
+            }
 
-        // Increase defensiveness when pressured
-        if (composureLost > 0) {
-            this._state.defensiveness = Math.min(100, this._state.defensiveness + composureLost / 2);
+            // Apply resistance multiplier
+            const resistanceMul = this.getResistanceMultiplier();
+            composureLost = Math.round(composureLost * resistanceMul);
+
+            // Evidence Bonus Hit: If they mention a discovered clue, it rattles them regardless of keywords
+            if (evidenceHit) {
+                const bonus = Math.round(20 * resistanceMul);
+                composureLost += bonus;
+                logger.info(`🔍 Evidence mention detected in chat! Bonus ${bonus}% composure loss.`);
+            }
+        } else if (evidenceHit) {
+            // Even if no secret keywords matched, mentioning a clue rattles them
+            const resistanceMul = this.getResistanceMultiplier();
+            composureLost = Math.round(15 * resistanceMul);
+            logger.info(`🔍 Evidence mention (no keyword) detected. ${composureLost}% composure loss.`);
         }
 
+        // Apply composure change
         if (composureLost > 0) {
-            logger.info(`${this.data.name} composure decreased by ${composureLost}. Current: ${this._state.composure}%`);
+            this._state.composure = Math.max(0, this._state.composure - composureLost);
+            this._state.defensiveness = Math.min(100, this._state.defensiveness + Math.floor(composureLost / 2));
+            logger.info(`${this.data.name} composure decreased by ${composureLost} (resistance: ${this.data.resistance_level}). Current: ${this._state.composure}%`);
+        } else {
+            // No hit — suspect recovers slightly (catches breath)
+            const recovery = 1;
+            const prevComposure = this._state.composure;
+            this._state.composure = Math.min(100, this._state.composure + recovery);
+            if (this._state.composure !== prevComposure) {
+                logger.debug(`${this.data.name} composure recovered by ${recovery}. Current: ${this._state.composure}%`);
+            }
         }
 
         // Determine if a secret should be revealed
         let triggeredSecret: SecretData | null = null;
-        if (bestMatch) {
+        if (bestMatch && bestMatch.currentHits >= 2) {
             const secret = bestMatch.secret;
             const minPressure = secret.trigger.minPressure ?? 30;
-
-            // Reveal if: composure is low enough AND keywords were matched
             const composureLoss = 100 - this._state.composure;
-            if (composureLoss >= minPressure && bestMatch.keywords.length >= 2) {
+
+            if (composureLoss >= minPressure) {
                 triggeredSecret = secret;
                 this._revealedSecrets.add(secret.id);
                 logger.info(`TRIGGERED SECRET for ${this.data.name}: ${secret.id}`);
@@ -422,10 +574,54 @@ export default class Suspect {
         const composure = this._state.composure;
 
         if (composure > 70) return 0; // Confident, no extra delay
-        if (composure > 50) return 500; // Slightly hesitant
-        if (composure > 30) return 1000; // Nervous pause
-        if (composure > 10) return 2000; // Long, anxious pause
-        return 3000; // Breaking down, very long pause
+        if (composure > 50) return 200; // Slightly hesitant
+        if (composure > 30) return 400; // Nervous pause
+        if (composure > 10) return 800; // Long, anxious pause
+        return 1200; // Breaking down, very long pause
+    }
+
+    /**
+     * Parse AI response to extract actual message, roleplay, and format location tags.
+     */
+    private parseAIResponse(text: string): { message: string, roleplay: string | null, revealedLocations: string[] } {
+        // Match roleplay actions: *action*
+        const rpMatch = /\*(.+?)\*/.exec(text);
+        const roleplay = rpMatch ? rpMatch[1] : null;
+
+        // If message is wrapped in quotes, strip them
+        let actualMessage = text.trim();
+        const quoteMatch = /^"(.+)"$/.exec(actualMessage);
+        if (quoteMatch) {
+            actualMessage = quoteMatch[1];
+        }
+
+        // Parse and format Location Tags: [[LOC:HH:MM]] -> (HH:MM)
+        const locRegex = /\[\[LOC:(\d{1,2}:\d{2})\]\]/g;
+        const revealedLocations: string[] = [];
+        let m;
+        while ((m = locRegex.exec(actualMessage)) !== null) {
+            revealedLocations.push(m[1]);
+        }
+        actualMessage = actualMessage.replace(locRegex, ' ($1)');
+
+        // Convert parenthetical actions to Discord italics: (action) -> *action*
+        actualMessage = actualMessage.replace(/\(([^)]+)\)/g, '*$1*');
+
+        // Clean up unclosed asterisks (common if AI is cut off)
+        const asteriskCount = (actualMessage.match(/\*/g) || []).length;
+        if (asteriskCount % 2 !== 0) {
+            actualMessage += '*';
+        }
+
+        // Apply behavioral tells based on stress level
+        actualMessage = this.applyBehavioralTells(actualMessage);
+
+        return { message: actualMessage, roleplay, revealedLocations };
+
+        // Apply behavioral tells based on stress level
+        actualMessage = this.applyBehavioralTells(actualMessage);
+
+        return { message: actualMessage, roleplay, revealedLocations };
     }
 
     /**
@@ -445,14 +641,6 @@ export default class Suspect {
             // Wait in chunks, refreshing typing status every ~8 seconds
             const waitTime = Math.min(remaining, 8000);
             await new Promise(resolve => setTimeout(resolve, waitTime));
-
-            if (Date.now() - startTime < ms) {
-                try {
-                    await channel.sendTyping();
-                } catch (e) {
-                    // Ignore errors (e.g. missing permissions or rate limits)
-                }
-            }
         }
     }
 
@@ -465,7 +653,10 @@ export default class Suspect {
         evidenceId: string,
         channel: TextChannel,
         caseId: string,
-        discoveredEvidence: Set<string> = new Set()
+        discoveredEvidence: Set<string> = new Set(),
+        roomDescription?: string,
+        roomInteractables?: { name: string; description: string }[],
+        caseLogger?: CaseLogger | null
     ): Promise<{ wasRelevant: boolean; revealedSecret: SecretData | null; composureLost: number } | null> {
         if (this._busy) return null;
         this._busy = true;
@@ -491,7 +682,7 @@ export default class Suspect {
                 if (this._revealedSecrets.has(secret.id)) continue;
 
                 const required = secret.trigger.requiresEvidence || [];
-                if (required.some(e => e.toLowerCase() === evidenceId.toLowerCase())) {
+                if (required.some(e => this.isEvidenceMatch(e, evidenceId))) {
                     wasRelevant = true;
                     targetSecret = secret;
                     break;
@@ -499,17 +690,27 @@ export default class Suspect {
             }
 
             // Apply pressure based on relevance
+            const alreadyPresented = this._presentedEvidence.has(evidenceId.toLowerCase());
+
             if (wasRelevant) {
                 // MASSIVE pressure - 40% composure hit
-                composureLost = 40;
-                this._state.composure = Math.max(0, this._state.composure - composureLost);
-                this._state.defensiveness = Math.min(100, this._state.defensiveness + 20);
+                composureLost = alreadyPresented ? 0 : 40;
 
-                logger.info(`💥 EVIDENCE HIT! ${this.data.name} loses ${composureLost}% composure from "${evidenceId}"`);
+                if (!alreadyPresented) {
+                    this._state.composure = Math.max(0, this._state.composure - composureLost);
+                    this._state.defensiveness = Math.min(100, this._state.defensiveness + 20);
+                    this._presentedEvidence.add(evidenceId.toLowerCase());
+                    logger.info(`💥 EVIDENCE HIT! ${this.data.name} loses ${composureLost}% composure from "${evidenceId}"`);
+                } else {
+                    logger.info(`🔄 Repeated evidence presentation: "${evidenceId}". Skipping composure drop.`);
+                }
             } else {
                 // Minor pressure - 5% hit for wasting their time
-                composureLost = 5;
-                this._state.composure = Math.max(0, this._state.composure - composureLost);
+                composureLost = alreadyPresented ? 0 : 5;
+                if (!alreadyPresented) {
+                    this._state.composure = Math.max(0, this._state.composure - composureLost);
+                    this._presentedEvidence.add(evidenceId.toLowerCase());
+                }
             }
 
             // Check if we should reveal a secret
@@ -522,6 +723,11 @@ export default class Suspect {
                     revealedSecret = targetSecret;
                     this._revealedSecrets.add(targetSecret.id);
                     logger.info(`🔓 SECRET REVEALED via evidence: ${targetSecret.id}`);
+                    caseLogger?.logTrigger(this.data.name, targetSecret.id, {
+                        method: 'EVIDENCE',
+                        evidenceId,
+                        text: targetSecret.text
+                    });
                 }
             }
 
@@ -532,11 +738,12 @@ export default class Suspect {
             const stressDelay = this.getStressTypingDelay();
             if (stressDelay > 0) {
                 await new Promise(resolve => setTimeout(resolve, stressDelay));
-                await channel.sendTyping();
             }
 
             // Build prompt for reaction
-            let reactionPrompt = `${asker.displayName} has just presented you with evidence: "${evidenceId.replace(/_/g, ' ')}".`;
+            const evidenceName = this.cleanEvidenceId(evidenceId);
+
+            let reactionPrompt = `${asker.displayName} has just presented you with evidence: "${evidenceName}".`;
 
             if (wasRelevant) {
                 reactionPrompt += ` This evidence is DIRECTLY related to something you're hiding. You are SHOCKED and struggling to maintain composure.`;
@@ -547,13 +754,30 @@ export default class Suspect {
                 reactionPrompt += ` This evidence doesn't particularly concern you. You can dismiss it calmly.`;
             }
 
+            // --- EVIDENCE DESCRIPTION INJECTION ---
+            // Let the AI know what the item actually is so it doesn't hallucinate a denial of its existence
+            if (evidenceId) {
+                const evidenceDesc = this.getPhysicalEvidenceDesc(evidenceId, roomInteractables);
+                if (evidenceDesc) {
+                    reactionPrompt += `\n\nFor context, here is the description of the evidence being shown to you: "${evidenceDesc}"`;
+                }
+            }
+
             const systemPrompt = buildSystemPrompt(
                 {
                     name: this.data.name,
+                    age: this.data.age,
+                    role: this.data.role,
+                    gender: this.data.gender,
                     traits: this.data.traits,
                     alibi: this.data.alibi,
                     motive: this.data.motive,
                     secrets: this.data.secrets,
+                    tells: this.data.tells,
+                    resistance_level: this.data.resistance_level,
+                    revealedSecretIds: Array.from(this._revealedSecrets),
+                    roomDescription,
+                    roomInteractables
                 },
                 this.getMemory(channel.id),
                 this._state,
@@ -561,19 +785,24 @@ export default class Suspect {
             );
 
             const startTime = Date.now();
-            const response = await aiService.chatCompletion([
+            const aiPromise = aiService.chatCompletion([
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: reactionPrompt }
             ], {
-                max_tokens: 150,
+                max_tokens: 512,
                 temperature: 0.9,
-                model: LOCAL_MODEL, // Use fast local model for reactions
+                model: GEMINI_MODEL,
                 guildId: channel.guildId
             });
 
+            // Keep typing indicator alive while waiting for AI
+            const response = await aiPromise;
+
+            if (!response) throw new Error('No response from AI');
+
             // Track token consumption
             if (response.usage) {
-                tokenTracker.track(this.data.id, LOCAL_MODEL, response.usage, caseId, channel.guildId);
+                tokenTracker.track(this.data.id, GEMINI_MODEL, response.usage, caseId, channel.guildId);
             }
 
             // Calculate AI latency
@@ -581,24 +810,53 @@ export default class Suspect {
 
             let text = response.content || '*stares silently*';
 
-            // Apply behavioral tells
-            text = this.applyBehavioralTells(text);
+            // Parse response formatting (strip roleplay, format tags, apply tells)
+            const parsed = this.parseAIResponse(text);
+            text = parsed.message;
+
+            // Log AI response
+            caseLogger?.logAIResponse(this.data.name, text);
+
+            // Split message into natural chunks and send with typing delays
+            const chunks = splitIntoChunks(text);
+            const sentMessages: any[] = [];
 
             // Calculate typing delay
-            const msPerChar = 50;
-            const typeTime = (text.length * msPerChar) + (Math.random() * 300);
-            const delay = Math.max(0, typeTime - duration);
+            // We want to "discount" the time we already waited for the AI to generate the response
+            let latencyBalance = duration;
+            const msPerChar = 15; // Speed of typing simulation
 
-            if (delay > 0) {
-                await this.smartDelay(channel, delay);
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+
+                // Calculate how long this chunk *should* take to type
+                const typeTime = (chunk.length * msPerChar) + (Math.random() * 50);
+
+                // Calculate required delay after accounting for "banked" latency
+                const delay = Math.max(0, typeTime - latencyBalance);
+
+                // Update our balance
+                latencyBalance = Math.max(0, latencyBalance - typeTime);
+
+                if (delay > 0) {
+                    await this.smartDelay(channel, delay);
+                }
+
+                const sent = await hook.send({
+                    content: chunk,
+                    username: this.data.name,
+                    avatarURL: this.getWebhookAvatar(),
+                    wait: true
+                } as any);
+                sentMessages.push(sent);
             }
 
-            // Send via webhook
-            await hook.send({
-                content: text,
-                username: this.data.name,
-                avatarURL: this.data.avatar,
-            });
+            // Log AI response
+            caseLogger?.logAIResponse(this.data.name, text);
+
+            // Add to memory so they remember this interaction in follow-up chat
+            this.addMemory(channel.id, `${asker.displayName}: [Shows ${evidenceName}]`);
+            this.addMemory(channel.id, `${this.data.name}: ${text}`);
 
             this._busy = false;
 
@@ -633,7 +891,10 @@ export default class Suspect {
         message: string,
         channel: TextChannel,
         caseId: string,
-        discoveredEvidence: Set<string> = new Set()
+        discoveredEvidence: Set<string> = new Set(),
+        roomDescription?: string,
+        roomInteractables?: { name: string; description: string }[],
+        caseLogger?: CaseLogger | null
     ): Promise<SuspectResponse | null> {
         if (this._busy) return null;
         this._busy = true;
@@ -651,14 +912,12 @@ export default class Suspect {
             }
 
             // Get recent history for context-aware pressure
-            // We want the current message + last 2 messages from players
+            // We want the current message + last 10 messages from players
             const memory = this.getMemory(channel.id);
             const playerHistory = memory
                 .filter(m => !m.startsWith(this.data.name + ':')) // Filter out suspect's own lines
-                .slice(0, 2) // Take last 2
+                .slice(0, 10) // Take last 10
                 .map(m => m.replace(/^[^:]+:\s*/, '')); // Strip "Name: " prefix to get raw content
-
-            const contextMessages = [...playerHistory, message];
 
             // Record this interrogator for team bonus tracking
             this.recordInterrogator(channel.id, asker.id);
@@ -666,8 +925,9 @@ export default class Suspect {
             // Calculate team multiplier (Good Cop / Bad Cop)
             const teamMultiplier = this.getTeamMultiplier(channel.id, asker.id);
 
-            // Evaluate the interrogation for secret triggers
-            const evaluation = this.evaluateInterrogation(contextMessages);
+            // Evaluate the interrogation — only current message drives composure loss,
+            // history is used for topic context / pressure warnings only
+            const evaluation = this.evaluateInterrogation(message, playerHistory, this._knownEvidence);
 
             // Apply team multiplier to composure loss
             const teamworkBonusActive = teamMultiplier > 1 && evaluation.composureLost > 0;
@@ -747,17 +1007,13 @@ export default class Suspect {
                     const sentMessages: any[] = [];
 
                     let latencyBalance = 0; // Cache is instant, so we simulate full typing time
-                    const msPerChar = 50;
+                    const msPerChar = 15;
 
                     for (let i = 0; i < chunks.length; i++) {
                         const chunk = chunks[i];
-                        const typeTime = (chunk.length * msPerChar) + (Math.random() * 300);
+                        const typeTime = (chunk.length * msPerChar) + (Math.random() * 50);
                         const delay = Math.max(0, typeTime - latencyBalance);
                         latencyBalance = Math.max(0, latencyBalance - typeTime);
-
-                        if (i > 0) {
-                            await channel.sendTyping();
-                        }
 
                         if (delay > 0) {
                             await this.smartDelay(channel, delay);
@@ -766,7 +1022,7 @@ export default class Suspect {
                         const sent = await hook.send({
                             content: chunk,
                             username: this.data.name,
-                            avatarURL: this.data.avatar,
+                            avatarURL: this.getWebhookAvatar(),
                             wait: true
                         } as any);
                         sentMessages.push(sent);
@@ -774,6 +1030,21 @@ export default class Suspect {
 
                     this._focused = asker.id;
                     this._busy = false; // RELEASE LOCK
+
+                    // Log cached interaction
+                    try {
+                        await InterrogationLog.create({
+                            caseId: caseId,
+                            suspectId: this.data.id,
+                            userId: asker.id,
+                            question: message,
+                            response: cachedData.message,
+                            composureLost: evaluation.composureLost,
+                            secretRevealed: evaluation.triggeredSecret ? evaluation.triggeredSecret.id : null
+                        });
+                    } catch (e) {
+                        logger.error('Failed to log cached interrogation to DB:', e);
+                    }
 
                     return {
                         ...cachedData,
@@ -795,47 +1066,58 @@ export default class Suspect {
             let systemPrompt = buildSystemPrompt(
                 {
                     name: this.data.name,
+                    age: this.data.age,
+                    role: this.data.role,
+                    gender: this.data.gender,
                     traits: this.data.traits,
                     alibi: this.data.alibi,
                     motive: this.data.motive,
                     secrets: this.data.secrets,
+                    tells: this.data.tells,
+                    resistance_level: this.data.resistance_level,
+                    revealedSecretIds: Array.from(this._revealedSecrets),
+                    roomDescription,
+                    roomInteractables
                 },
                 memory,
                 this._state,
                 evaluation.matchedKeywords
             );
 
-            // Add LOCATION instruction
-            systemPrompt += `\nIf you answer truthfully about where you were at a specific time, you MUST append the tag [[LOC:HH:MM]] to the end of that specific sentence. Example: "I was in the kitchen.[[LOC:03:30]]"`;
-
-            // If a secret was triggered, add the reveal hint
+            // If a secret was triggered, add the character-aware reveal hint
             if (evaluation.triggeredSecret) {
-                console.log(`!!! SECRET TRIGGERED: ${evaluation.triggeredSecret.id} !!!`);
-                systemPrompt += buildPressureHint(evaluation.triggeredSecret.text);
+                logger.info(`!!! SECRET TRIGGERED: ${evaluation.triggeredSecret.id} !!!`);
+                systemPrompt += buildPressureHint(
+                    evaluation.triggeredSecret.text,
+                    this.data.name,
+                    this.data.tells
+                );
             }
 
             // Show typing
+            // Just send once to not overstep
             await channel.sendTyping();
 
             // Add stress-based delay (nervous suspects pause longer)
             const stressDelay = this.getStressTypingDelay();
             if (stressDelay > 0) {
                 await new Promise(resolve => setTimeout(resolve, stressDelay));
-                await channel.sendTyping();
             }
 
             const startTime = Date.now();
-            // Call OpenAI API
-            const response = await aiService.chatCompletion([
+            // Call AI API
+            const aiPromise = aiService.chatCompletion([
                 { role: 'system', content: systemPrompt },
                 { role: 'user', content: message }
             ], {
-                // max_tokens: 200,
-                // temperature: 0.8,
-                // model: 'deepseek-r1:1.5b'
                 model: GEMINI_MODEL,
                 guildId: channel.guildId
             });
+
+            // Keep typing indicator alive
+            const response = await aiPromise;
+
+            if (!response) throw new Error('AI Service Timeout or Failure');
 
             // Track token consumption
             if (response.usage) {
@@ -847,37 +1129,11 @@ export default class Suspect {
             const text = response.content || '';
             logger.debug(`AI Response for ${this.data.name} (${duration}ms): "${text}"`);
 
-            // Parse response
-            const rpMatch = /\*(.+?)\*/.exec(text);
-            const roleplay = rpMatch ? rpMatch[1] : null;
-
-            // Extract the actual message
-            // We strip out roleplay (*action*) to get the spoken text
-            let actualMessage = text
-                .replace(/\/\w+/g, '')
-                .replace(/\*(.+?)\*/g, '')
-                .trim();
-
-            // If the message is wrapped in quotes, strip them
-            const quoteMatch = /^"(.+)"$/.exec(actualMessage);
-            if (quoteMatch) {
-                actualMessage = quoteMatch[1];
-            }
-
-            // Convert parenthetical actions to Discord italics: (action) -> *action*
-            actualMessage = actualMessage.replace(/\(([^)]+)\)/g, '*$1*');
-
-            // Parse and remove Location Tags: [[LOC:HH:MM]]
-            const locRegex = /\[\[LOC:(\d{1,2}:\d{2})\]\]/g;
-            const revealedLocations: string[] = [];
-            let locMatch;
-            while ((locMatch = locRegex.exec(actualMessage)) !== null) {
-                revealedLocations.push(locMatch[1]);
-            }
-            actualMessage = actualMessage.replace(locRegex, '');
-
-            // Apply behavioral tells based on stress level
-            actualMessage = this.applyBehavioralTells(actualMessage);
+            // Parse response formatting (strip roleplay, format tags, apply tells)
+            const parsed = this.parseAIResponse(text);
+            const actualMessage = parsed.message;
+            const roleplay = parsed.roleplay;
+            const revealedLocations = parsed.revealedLocations;
 
             // Convert to unique evidence IDs
             const revealedEvidence = revealedLocations.map(time => `locations_${this.data.id}_${time}`);
@@ -894,14 +1150,14 @@ export default class Suspect {
             // So if the AI took 3s, and the first chunk takes 1s to type, we send it immediately (0s wait)
             // If the AI took 3s, and the first chunk takes 5s to type, we wait 2s
             let latencyBalance = duration;
-            const msPerChar = 50; // Speed of typing simulation
+            const msPerChar = 15; // Speed of typing simulation
 
             for (let i = 0; i < chunks.length; i++) {
                 const chunk = chunks[i];
 
                 // Calculate how long this chunk *should* take to type
                 // Add some randomness for organic feel
-                const typeTime = (chunk.length * msPerChar) + (Math.random() * 300);
+                const typeTime = (chunk.length * msPerChar) + (Math.random() * 50);
 
                 // Calculate required delay after accounting for "banked" latency
                 const delay = Math.max(0, typeTime - latencyBalance);
@@ -910,11 +1166,7 @@ export default class Suspect {
                 latencyBalance = Math.max(0, latencyBalance - typeTime);
 
                 // Show typing before message
-                // For the first chunk (i=0), we already sent a typing indicator before the AI call.
-                // However, if the calculated delay is significant, smartDelay will refresh it.
-                if (i > 0) {
-                    await channel.sendTyping();
-                }
+                // Iif the calculated delay is significant, smartDelay will refresh it.
 
                 if (delay > 0) {
                     await this.smartDelay(channel, delay);
@@ -923,11 +1175,14 @@ export default class Suspect {
                 const sent = await hook.send({
                     content: chunk,
                     username: this.data.name,
-                    avatarURL: this.data.avatar,
+                    avatarURL: this.getWebhookAvatar(),
                     wait: true
                 } as any);
                 sentMessages.push(sent);
             }
+
+            // Log AI response to case file
+            caseLogger?.logAIResponse(this.data.name, actualMessage);
 
             // Update focus
             this._focused = asker.id;
@@ -959,6 +1214,15 @@ export default class Suspect {
                 }
             }
             // --- SAVE TO CACHE END ---
+
+            // Log secret trigger if any
+            if (evaluation.triggeredSecret) {
+                caseLogger?.logTrigger(this.data.name, evaluation.triggeredSecret.id, {
+                    method: 'INTERROGATION',
+                    message,
+                    text: evaluation.triggeredSecret.text
+                });
+            }
 
             // Log interaction
             try {
@@ -1028,11 +1292,43 @@ export default class Suspect {
     }
 
     /**
-     * Restore state from database
+     * Get full conversational history across all channels
      */
-    restoreState(state: { composure: number; defensiveness: number; revealedSecrets: string[] }): void {
-        this._state.composure = state.composure;
-        this._state.defensiveness = state.defensiveness;
-        this._revealedSecrets = new Set(state.revealedSecrets);
+    public getFullHistory(): Map<string, string[]> {
+        return new Map(this._memory);
     }
+
+    /**
+     * Fully reset the suspect's state (clear memory, reset composure, forget evidence)
+     */
+    public fullReset(): void {
+        this._memory.clear();
+        this._state = { composure: 100, defensiveness: 20 };
+        this._revealedSecrets.clear();
+        this._presentedEvidence.clear();
+        logger.info(`🔄 Full state reset for suspect: ${this.data.id}`);
+    }
+
+    /**
+     * Clear all conversational memory for this suspect
+     */
+    public clearMemory(): void {
+        this._memory.clear();
+    }
+
+    /**
+     * Helper to get evidence description for prompt injection
+     */
+    private getPhysicalEvidenceDesc(evidenceId: string, interactables: { name: string; description: string }[] = []): string | null {
+        // 1. Check if it matches an interactable in the current room
+        const cleanId = this.cleanEvidenceId(evidenceId).replace(/\s+/g, '');
+        for (const item of interactables) {
+            const cleanName = item.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (cleanName.includes(cleanId) || cleanId.includes(cleanName)) {
+                return item.description;
+            }
+        }
+        return null;
+    }
+
 }

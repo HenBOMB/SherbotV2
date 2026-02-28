@@ -1,0 +1,48 @@
+id: halon_rules_check
+tool: examine
+condition:
+queryContains: halon_system
+label: OBSERVATION
+emoji: ⚠️
+text: Read the system rules carefully. The gas CANNOT deploy unless the door is physically locked. Elias was inside. Who locked him in?
+spoiler: false
+id: clara_purse_find
+tool: search
+condition:
+location: ballroom
+label: DEDUCTION
+emoji: 💡
+text: Clara left her purse in the ballroom. There is a text message on her phone sent at 10:40 PM that changes the entire timeline.
+spoiler: true
+id: chemistry_deduction
+tool: examine
+condition:
+queryContains: tapestry_tube
+label: INDUCTION
+emoji: 🧪
+text: The residue is a mix of smoke pellet and "Cryo-Melt Gel". Check the Restoration Studio inventory. Who checked out a gel that takes exactly 100 minutes to dissolve?
+spoiler: true
+id: julian_audio_stall
+tool: logs
+condition:
+queryContains: av_audio_recording
+label: ABDUCTION
+emoji: 🎤
+text: Julian pauses for 15 seconds at 10:44 PM during his speech. He wasn't losing his place; he was stalling, waiting for a very specific alarm to go off.
+spoiler: true
+id: marcus_red_herring
+tool: examine
+condition:
+queryContains: marcus
+label: OBSERVATION
+emoji: 🔎
+text: Marcus paid Anya to turn off the cameras at 10:35. But look at the lockpicks and the scratch marks on the Director's door. Was he trying to kill Elias, or rob Julian?
+spoiler: true
+id: the_fatal_knock
+tool: examine
+condition:
+queryContains: defensive_wounds
+label: DEDUCTION
+emoji: 🚪
+text: Elias bruised his hands beating on the door. Clara spun the lock at 10:42. She thought she was securing an empty room, but she sealed his tomb.
+spoiler: true

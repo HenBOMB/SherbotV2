@@ -37,14 +37,14 @@ export async function handleEvidence(
 
     const embed = new EmbedBuilder()
         .setColor(Colors.Blue)
-        .setTitle('📂 Collected Evidence')
-        .setDescription('All clues and biological data discovered during the investigation.')
+        .setTitle('📂 The Case File')
+        .setDescription('All clues and findings gathered during the investigation.')
         .setTimestamp();
 
     const sections: Record<string, string[]> = {
         '🧬 DNA Samples': [],
         '📹 Security Footage': [],
-        '🖥️ Digital Logs': [],
+        '📜 Private Letters': [],
         '📦 Physical Evidence': [],
         '🤫 Discovered Secrets': [],
         '📍 Suspect Movements': [],
@@ -63,7 +63,7 @@ export async function handleEvidence(
         } else if (evId.startsWith('logs_')) {
             const time = evId.replace('logs_', '');
             const log = activeGame.getLogs(time);
-            sections['🖥️ Digital Logs'].push(`**${time}**: ${log}`);
+            sections['📜 Private Letters'].push(`**${time}**: ${log}`);
         } else if (evId.startsWith('physical_')) {
             const itemId = evId.replace('physical_', '');
             const desc = activeGame.getPhysicalEvidence(itemId);
@@ -94,13 +94,6 @@ export async function handleEvidence(
             }
         }
     }
-
-    // Locations are slightly different, they are in a separate set in activeGame.state
-    const discoveredLocations = activeGame.state?.discoveredLocations || new Set<string>();
-    for (const loc of discoveredLocations) {
-        sections['🗺️ Discovered Locations'].push(loc.replace(/_/g, ' ').toUpperCase());
-    }
-
 
     for (const [title, items] of Object.entries(sections)) {
         if (items.length > 0) {

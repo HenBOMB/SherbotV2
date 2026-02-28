@@ -1,0 +1,604 @@
+import { useState } from "react";
+
+const SUSPECTS = [
+{
+id: "elena",
+name: "Irene Ashcroft",
+role: "VP of Product",
+age: 36,
+guilty: true,
+accomplice: false,
+silentWitness: false,
+avatar: "https://i.ibb.co/qFjYZpNk/tech-04.webp",
+alibi: "Working on investor presentation in home office from 3:28 AM — has edit logs to prove it.",
+motive: "Vivienne patented Irene's core AI algorithm under her own name. Patent approved 3 days ago. The 9 AM
+announcement would destroy Irene's $50M lawsuit forever.",
+location: "home_office",
+resistance: "expert",
+verdict: "GUILTY — PRIMARY KILLER",
+verdictColor: "#ff2d2d",
+flags: [
+"Automated alibi script on laptop fakes continuous edits 3:28–3:55 AM",
+"DNA in server room despite claiming she never entered",
+"Planted camera loop from home office workstation at 3:34:58 AM",
+"Used fingerprint mold to access server room at 3:37 AM",
+"Used ADMIN_OVERRIDE_CODE_7749 at 3:40 and 3:44 AM",
+"Corrupted backups at 3:45 AM using own credentials",
+"Staged body — drag marks contradict accidental death",
+"Absent from office 3:35–3:42 and 3:44–3:46 (matches server room entries)",
+"Texted Basil at 11:47 PM to manipulate him into disabling safety protocols",
+],
+},
+{
+id: "alex",
+name: "Basil Whitfield",
+role: "CTO",
+age: 34,
+guilty: false,
+accomplice: true,
+silentWitness: false,
+avatar: "https://i.ibb.co/234ZGJHp/male-tech-02.webp",
+alibi: "Server room 3:15–3:19 for 'routine maintenance.' Back in guest room by 3:19. Logs confirm.",
+motive: "Vivienne threatened $10M lawsuit for alleged code theft; pressured to resign quietly.",
+location: "guest_room_2",
+resistance: "moderate",
+verdict: "UNWITTING ACCOMPLICE — NOT GUILTY",
+verdictColor: "#f5a623",
+flags: [
+"Disabled server safety protocols at 3:15 AM — believed it was legit firmware upgrade request",
+"Manipulated via Irene's fake text (11:47 PM) posing as Vivienne's request",
+"Had no knowledge his prep work would become the murder weapon",
+"Cooperates fully once deception is revealed — genuinely devastated",
+"DNA in server room, garage consistent with legitimate access",
+],
+},
+{
+id: "priya",
+name: "Constance Lovelace",
+role: "Corporate Counsel",
+age: 41,
+guilty: false,
+accomplice: false,
+silentWitness: true,
+avatar: "https://i.ibb.co/8wTLqMJ/female-tech-03.webp",
+alibi: "Took Ambien at 11 PM. Slept through everything. Woke to police knock.",
+motive: "Vivienne threatened to frame her for securities fraud if she didn't facilitate illegal acquisition tactics.",
+location: "guest_room_3",
+resistance: "expert",
+verdict: "SILENT WITNESS — MORALLY COMPLICIT",
+verdictColor: "#c084fc",
+flags: [
+"Discovered fingerprint mold kit in home office desk during dinner party",
+"Wrote Irene a note at 1:17 AM: 'I saw what's in the desk. I understand why. I won't be awake at 3 AM.'",
+"Took Ambien and went to bed — chose not to intervene",
+"Not legally guilty of murder but knowingly allowed it to proceed",
+"Will never voluntarily disclose. Alibi (Ambien + thermal imaging) is solid.",
+"Note found in guest room 3 on NexusAI letterhead",
+],
+},
+{
+id: "devon",
+name: "Sage Marsh",
+role: "Lead Designer",
+age: 29,
+guilty: false,
+accomplice: false,
+silentWitness: false,
+avatar: "https://i.ibb.co/Lzw5VG68/female-tech-01.webp",
+alibi: "Insomnia. Kitchen 3:25 AM making tea. Briefly upstairs 3:38 for phone charger. Kitchen when lights flickered
+3:47. First to call 911.",
+motive: "Vivienne scrapped accessibility redesign, calling disabled users 'not our market.'",
+location: "kitchen",
+resistance: "low",
+verdict: "INNOCENT — KEY WITNESS",
+verdictColor: "#22c55e",
+flags: [
+"Saw Irene descending stairs at 3:38 AM — flushed and out of breath",
+"Irene claimed to be in home office the entire time (lie)",
+"Sage's observation directly contradicts Irene's alibi",
+"Cam 3 loop at 3:35–3:39 prevented recording of this encounter",
+"First on scene — called 911 at 3:50 AM — genuinely traumatized",
+],
+},
+{
+id: "yuki",
+name: "Celeste Babbage",
+role: "Vivienne's Girlfriend (6mo)",
+age: 32,
+guilty: false,
+accomplice: false,
+silentWitness: false,
+avatar: "https://i.ibb.co/1Yr0kPNg/female-tech-02.webp",
+alibi: "Took 10mg melatonin at 1:07 AM. In bed 1:15–3:52 AM confirmed by thermal imaging and motion sensors.",
+motive: "Expected to inherit 40% controlling stake — but Vivienne changed will 3 days ago after discovering Celeste's
+corporate espionage.",
+location: "master_bedroom",
+resistance: "high",
+verdict: "INNOCENT — RED HERRING (Corporate Spy)",
+verdictColor: "#22c55e",
+flags: [
+"Corporate spy recruited by TechDyne 6 months ago",
+"3:22 AM phone sync to TechDyne IP was automated — she was asleep",
+"Vivienne changed will 3 days ago after discovering espionage",
+"Celeste doesn't know she was removed from will",
+"Alibi airtight — thermal imaging confirms no movement until 3:52 AM",
+"Espionage is real but IRRELEVANT to the murder",
+],
+},
+{
+id: "marcus",
+name: "Sterling Zhao",
+role: "Angel Investor (Series A & B)",
+age: 52,
+guilty: false,
+accomplice: false,
+silentWitness: false,
+avatar: "https://i.ibb.co/dsJMGnY1/male-tech-01.webp",
+alibi: "Wine cellar 3:20–3:53 AM. Biometric logs and security camera confirm presence at 3:47 AM exactly.",
+motive: "Invested $50M; discovered NexusAI is functionally bankrupt (Ponzi-structure cash burn).",
+location: "wine_cellar",
+resistance: "high",
+verdict: "INNOCENT — RED HERRING (Burner Phone)",
+verdictColor: "#22c55e",
+flags: [
+"Burner phone hidden in wine cellar — encrypted messages with 'BROKER'",
+"Messages about 'resolving IP conflict before 9 AM' look suspicious",
+"DECRYPTED: Negotiating licensing rights acquisition from TechVault Partners — entirely legal",
+"'Resolving IP conflict' = licensing arbitration. '9 AM' = his acquisition window",
+"Alibi confirmed. Irrelevant to murder.",
+],
+},
+];
+
+const TIMELINE = [
+{ time: "11:47 PM", event: "Irene texts Basil faking Vivienne's firmware upgrade request", suspect: "elena", critical:
+true },
+{ time: "~Dinner", event: "Irene takes Vivienne's wine glass, creates silicone fingerprint mold", suspect: "elena",
+critical: true },
+{ time: "~Dinner", event: "Constance discovers mold kit in home office drawer while reviewing docs", suspect: "priya",
+critical: false },
+{ time: "1:07 AM", event: "Celeste takes 10mg melatonin — confirmed asleep by 1:15 AM", suspect: "yuki", critical: false
+},
+{ time: "1:17 AM", event: "Constance writes Irene the note: 'I won't be awake at 3 AM.' Takes Ambien.", suspect:
+"priya", critical: true },
+{ time: "2:58 AM", event: "Sterling sends final encrypted message to BROKER (unrelated to murder)", suspect: "marcus",
+critical: false },
+{ time: "3:00 AM", event: "Thermal imaging: all 6 guests confirmed in their rooms", suspect: null, critical: false },
+{ time: "3:15 AM", event: "Basil disables server safety protocols — believes it's legitimate", suspect: "alex",
+critical: true },
+{ time: "3:19 AM", event: "Basil exits server room, returns to guest room 2", suspect: "alex", critical: false },
+{ time: "3:20 AM", event: "Sterling enters wine cellar (biometric confirmed)", suspect: "marcus", critical: false },
+{ time: "3:22 AM", event: "Celeste's phone auto-syncs to TechDyne IP — she's asleep, automated", suspect: "yuki",
+critical: false },
+{ time: "3:25 AM", event: "Sage goes to kitchen for chamomile tea (insomnia)", suspect: "devon", critical: false },
+{ time: "3:28 AM", event: "Irene enters home office, starts AUTOMATED alibi script", suspect: "elena", critical: true },
+{ time: "3:34:58 AM", event: "Camera loop uploaded to hallway cam 3 from home office workstation", suspect: "elena",
+critical: true },
+{ time: "3:35 AM", event: "Camera loop begins — 4 min of empty hallway footage from previous night", suspect: "elena",
+critical: true },
+{ time: "3:37 AM", event: "Irene enters server room via spoofed fingerprint, modifies server rack (lethal)", suspect:
+"elena", critical: true },
+{ time: "3:38 AM", event: "Sage spots Irene on stairs — flushed, out of breath. Irene claims 'just stretching.'",
+suspect: "devon", critical: true },
+{ time: "3:39 AM", event: "Camera loop ends", suspect: null, critical: false },
+{ time: "3:40 AM", event: "ADMIN_OVERRIDE_CODE_7749 used (1st time) — Irene tests stolen device, brief entry", suspect:
+"elena", critical: true },
+{ time: "3:42 AM", event: "Irene returns to home office", suspect: "elena", critical: false },
+{ time: "3:44 AM", event: "ADMIN_OVERRIDE_CODE_7749 used (2nd time) — Irene re-enters server room", suspect: "elena",
+critical: true },
+{ time: "3:45 AM", event: "Irene corrupts backup files from server terminal using own credentials (lures Vivienne)",
+suspect: "elena", critical: true },
+{ time: "3:45:47 AM", event: "Vivienne's tablet receives backup alert. She opens it immediately.", suspect: null,
+critical: false },
+{ time: "3:46 AM", event: "Vivienne exits master bedroom, enters server room. Irene returns to home office.", suspect:
+"elena", critical: true },
+{ time: "3:47 AM", event: "💀 Vivienne touches electrified rack — instant death (power surge: 15,000W / 240V)", suspect:
+null, critical: true },
+{ time: "3:47 AM+", event: "Irene stages body — drags Vivienne toward rack (clumsy, drag marks expose it)", suspect:
+"elena", critical: true },
+{ time: "3:50 AM", event: "Sage sees lights flicker, runs upstairs, finds Vivienne. Calls 911.", suspect: "devon",
+critical: false },
+{ time: "3:51 AM", event: "Sage enters server room via emergency override, immediately exits", suspect: "devon",
+critical: false },
+];
+
+const ISSUES = [
+{
+type: "CONSISTENCY",
+severity: "minor",
+title: "Suspect Name Aliasing",
+desc: "The data uses internal IDs (elena, alex, devon, etc.) that don't match suspect names (Irene, Basil, Sage). This
+is intentional for game mechanics but could confuse players if surfaced accidentally.",
+},
+{
+type: "LOGIC",
+severity: "minor",
+title: "Irene's Server Room Modification Time",
+desc: "Physical evidence says rack modification required '15-20 minutes.' Irene's window was 3:37–3:40 AM (only ~3
+minutes for first entry). Solution text says 'compressed by Basil's earlier prep' — this rationale should be made more
+explicit in-game since players will catch the math.",
+},
+{
+type: "EVIDENCE",
+severity: "info",
+title: "Celeste/TechDyne Red Herring is Well-Constructed",
+desc: "The 3:22 AM auto-sync is genuinely suspicious and the will change adds motive. Players will spend real time here.
+Good design.",
+},
+{
+type: "EVIDENCE",
+severity: "info",
+title: "Sterling's Burner Phone is Excellent Misdirection",
+desc: "Encrypted messages about 'resolving the IP conflict before 9 AM' are perfectly calibrated to look damning. The
+decryption payoff is satisfying.",
+},
+{
+type: "LOGIC",
+severity: "info",
+title: "Constance's Legal Position is Airtight",
+desc: "Her 'I took a sleeping pill and went to bed' defense is legally sound. She never explicitly encouraged the
+murder. The note says 'I understand why' and 'I won't be awake' — not 'go ahead.' This moral ambiguity is the best twist
+in the case.",
+},
+{
+type: "LOGIC",
+severity: "minor",
+title: "Body Staging Logic Gap",
+desc: "Irene staged the body AFTER Vivienne died at 3:47, then returned to home office. But Sage went upstairs at 3:50
+and entered the server room at 3:51. When exactly did Irene stage and retreat? The timeline is tight (~3 minutes).
+Consider adding a beat here.",
+},
+{
+type: "CONSISTENCY",
+severity: "info",
+title: "Priya Note Character Name Confusion",
+desc: "The priya_note evidence text alternates between calling the character 'Constance' and 'Priya' (the alias). The
+note is signed '—P' which maps to Priya/Constance. Clear internally but verify player-facing text is consistent.",
+},
+{
+type: "EVIDENCE",
+severity: "minor",
+title: "Admin Override Device Origin",
+desc: "The override device was stored in Vivienne's home office safe. Irene accessed the safe using a spoofed
+fingerprint mold BEFORE the murder window. The timeline doesn't specify when this happened — players searching carefully
+may ask when Irene accessed the safe. Add a log entry or narrative beat.",
+},
+{
+type: "LOGIC",
+severity: "info",
+title: "Win Conditions Are Well-Tiered",
+desc: "Partial/Standard/Full win conditions give players meaningful replay value. Full win requires solving all three
+threads (Irene, Constance, Basil). This is excellent game design.",
+},
+];
+
+const SUSPECT_COLOR = {
+elena: "#ff2d2d",
+alex: "#f5a623",
+priya: "#c084fc",
+devon: "#38bdf8",
+yuki: "#f472b6",
+marcus: "#a3e635",
+};
+
+export default function App() {
+const [tab, setTab] = useState("overview");
+const [expandedSuspect, setExpandedSuspect] = useState(null);
+const [expandedIssue, setExpandedIssue] = useState(null);
+
+const tabs = [
+{ id: "overview", label: "Overview" },
+{ id: "suspects", label: "Suspects" },
+{ id: "timeline", label: "Timeline" },
+{ id: "issues", label: "Audit Flags" },
+{ id: "solution", label: "Solution" },
+];
+
+const criticalCount = TIMELINE.filter((t) => t.critical).length;
+const issuesByType = {
+minor: ISSUES.filter((i) => i.severity === "minor").length,
+info: ISSUES.filter((i) => i.severity === "info").length,
+};
+
+return (
+<div style={{ minHeight: "100vh" , background: "#0a0a0f" , color: "#e8e4dc" , fontFamily: "'Courier New', monospace" ,
+  position: "relative" , overflow: "hidden" , }}>
+  {/* Scanline overlay */}
+  <div style={{ position: "fixed" , inset: 0, pointerEvents: "none" , zIndex: 0,
+    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)"
+    , }} />
+
+  {/* Header */}
+  <div style={{ borderBottom: "1px solid #ff2d2d44" , padding: "24px 32px" , display: "flex" , alignItems: "center" ,
+    justifyContent: "space-between" , background: "linear-gradient(90deg, #0a0a0f 0%, #1a0808 100%)" ,
+    position: "relative" , zIndex: 1, }}>
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.3em" , marginBottom: 4 }}>CASE FILE AUDIT SYSTEM
+        v2.1</div>
+      <div style={{ fontSize: 28, fontWeight: "bold" , letterSpacing: "0.05em" , color: "#fff" }}>
+        SILICON SHADOWS
+      </div>
+      <div style={{ fontSize: 12, color: "#888" , marginTop: 2 }}>
+        VICTIM: Vivienne Turing · TOD: 03:47 · CAUSE: Electrocution (staged)
+      </div>
+    </div>
+    <div style={{ textAlign: "right" }}>
+      <div style={{ fontSize: 10, color: "#888" , marginBottom: 4 }}>DIFFICULTY</div>
+      <div style={{ background: "#ff2d2d22" , border: "1px solid #ff2d2d" , color: "#ff2d2d" , padding: "4px 12px" ,
+        fontSize: 13, letterSpacing: "0.1em" , }}>MEDIUM-HARD</div>
+    </div>
+  </div>
+
+  {/* Tabs */}
+  <div style={{ display: "flex" , borderBottom: "1px solid #222" , position: "relative" , zIndex: 1,
+    background: "#0d0d14" , }}>
+    {tabs.map((t) => (
+    <button key={t.id} onClick={()=> setTab(t.id)} style={{
+      padding: "12px 24px", fontSize: 12, letterSpacing: "0.15em",
+      background: "none", border: "none", cursor: "pointer",
+      color: tab === t.id ? "#ff2d2d" : "#555",
+      borderBottom: tab === t.id ? "2px solid #ff2d2d" : "2px solid transparent",
+      transition: "all 0.2s",
+      fontFamily: "'Courier New', monospace",
+      }}>{t.label.toUpperCase()}</button>
+    ))}
+  </div>
+
+  {/* Content */}
+  <div style={{ padding: "32px" , maxWidth: 1100, margin: "0 auto" , position: "relative" , zIndex: 1 }}>
+
+    {/* OVERVIEW */}
+    {tab === "overview" && (
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 24 }}>CASE AUDIT SUMMARY
+      </div>
+
+      {/* Stats */}
+      <div style={{ display: "grid" , gridTemplateColumns: "repeat(4, 1fr)" , gap: 16, marginBottom: 32 }}>
+        {[
+        { label: "SUSPECTS", value: 6, sub: "1 guilty · 1 accomplice · 1 witness" },
+        { label: "TIMELINE EVENTS", value: TIMELINE.length, sub: `${criticalCount} critical nodes` },
+        { label: "AUDIT FLAGS", value: ISSUES.length, sub: `${issuesByType.minor} minor · ${issuesByType.info}
+        informational` },
+        { label: "WIN CONDITIONS", value: 3, sub: "Partial / Standard / Full" },
+        ].map((s) => (
+        <div key={s.label} style={{ background: "#111118" , border: "1px solid #222" , padding: "20px" ,
+          borderTop: "2px solid #ff2d2d" , }}>
+          <div style={{ fontSize: 10, color: "#666" , letterSpacing: "0.2em" , marginBottom: 8 }}>{s.label}</div>
+          <div style={{ fontSize: 36, fontWeight: "bold" , color: "#fff" , lineHeight: 1 }}>{s.value}</div>
+          <div style={{ fontSize: 11, color: "#555" , marginTop: 6 }}>{s.sub}</div>
+        </div>
+        ))}
+      </div>
+
+      {/* Case Synopsis */}
+      <div style={{ background: "#111118" , border: "1px solid #222" , padding: 24, marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 16 }}>CASE SYNOPSIS</div>
+        <p style={{ fontSize: 13, lineHeight: 1.8, color: "#aaa" , margin: 0 }}>
+          Vivienne Turing (38), CEO of NexusAI, was found electrocuted in her smart home server room at 3:47 AM.
+          The killer is <span style={{ color: "#ff2d2d" }}>Irene Ashcroft (VP of Product)</span>, who executed a
+          meticulously planned murder after Vivienne patented Irene's own AI algorithm, destroying Irene's $50M lawsuit.
+          Irene manipulated CTO Basil Whitfield into unwittingly disabling server safety protocols, created a silicone
+          fingerprint mold from Vivienne's wine glass to bypass biometrics, planted a camera loop, modified the server
+          rack to be lethal, corrupted backups to lure Vivienne, and staged the body. Corporate Counsel{" "}
+          <span style={{ color: "#c084fc" }}>Constance Lovelace</span> discovered Irene's spoofing kit before the murder
+          and chose silence — a moral but not legal complicity. Two deliberate red herrings (Celeste's corporate
+          espionage
+          + Sterling's burner phone) are woven throughout.
+        </p>
+      </div>
+
+      {/* Verdict grid */}
+      <div style={{ fontSize: 10, color: "#888" , letterSpacing: "0.2em" , marginBottom: 16 }}>SUSPECT VERDICTS AT A
+        GLANCE</div>
+      <div style={{ display: "grid" , gridTemplateColumns: "repeat(2, 1fr)" , gap: 12 }}>
+        {SUSPECTS.map((s) => (
+        <div key={s.id} style={{ display: "flex" , alignItems: "center" , gap: 14, background: "#111118" ,
+          border: "1px solid #1e1e2a" , padding: "14px 16px" , borderLeft: `3px solid ${s.verdictColor}`, }}>
+          <img src={s.avatar} alt={s.name} style={{ width: 40, height: 40, borderRadius: "50%" , objectFit: "cover" ,
+            opacity: 0.85 }} />
+          <div>
+            <div style={{ fontSize: 13, color: "#ddd" , fontWeight: "bold" }}>{s.name}</div>
+            <div style={{ fontSize: 10, color: s.verdictColor, letterSpacing: "0.1em" , marginTop: 2 }}>{s.verdict}
+            </div>
+          </div>
+        </div>
+        ))}
+      </div>
+    </div>
+    )}
+
+    {/* SUSPECTS */}
+    {tab === "suspects" && (
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 24 }}>SUSPECT DOSSIERS</div>
+      {SUSPECTS.map((s) => (
+      <div key={s.id} style={{ background: "#111118" , border: "1px solid #1e1e2a" , borderLeft: `3px solid
+        ${s.verdictColor}`, marginBottom: 16, overflow: "hidden" , }}>
+        <div onClick={()=> setExpandedSuspect(expandedSuspect === s.id ? null : s.id)}
+          style={{
+          display: "flex", alignItems: "center", gap: 16,
+          padding: "16px 20px", cursor: "pointer",
+          background: expandedSuspect === s.id ? "#1a1a24" : "transparent",
+          }}
+          >
+          <img src={s.avatar} alt={s.name} style={{ width: 48, height: 48, borderRadius: "50%" , objectFit: "cover"
+            }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex" , alignItems: "center" , gap: 12 }}>
+              <span style={{ fontSize: 16, color: "#fff" , fontWeight: "bold" }}>{s.name}</span>
+              <span style={{ fontSize: 10, color: "#666" }}>{s.role} · Age {s.age}</span>
+            </div>
+            <div style={{ fontSize: 11, color: s.verdictColor, letterSpacing: "0.1em" , marginTop: 4 }}>{s.verdict}
+            </div>
+          </div>
+          <div style={{ fontSize: 18, color: "#444" }}>{expandedSuspect === s.id ? "▲" : "▼"}</div>
+        </div>
+
+        {expandedSuspect === s.id && (
+        <div style={{ padding: "0 20px 20px" , borderTop: "1px solid #1e1e2a" }}>
+          <div style={{ display: "grid" , gridTemplateColumns: "1fr 1fr" , gap: 16, marginTop: 16 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#666" , letterSpacing: "0.15em" , marginBottom: 8 }}>ALIBI</div>
+              <p style={{ fontSize: 12, color: "#aaa" , lineHeight: 1.7, margin: 0 }}>{s.alibi}</p>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#666" , letterSpacing: "0.15em" , marginBottom: 8 }}>MOTIVE</div>
+              <p style={{ fontSize: 12, color: "#aaa" , lineHeight: 1.7, margin: 0 }}>{s.motive}</p>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 20 }}>
+            <div style={{ fontSize: 10, color: "#666" , letterSpacing: "0.15em" , marginBottom: 10 }}>
+              EVIDENCE FLAGS ({s.flags.length})
+            </div>
+            {s.flags.map((f, i) => (
+            <div key={i} style={{ display: "flex" , gap: 10, marginBottom: 8, padding: "8px 12px" ,
+              background: "#0d0d14" , borderLeft: `2px solid ${s.verdictColor}44`, }}>
+              <span style={{ color: s.verdictColor, fontSize: 11, marginTop: 1 }}>▸</span>
+              <span style={{ fontSize: 12, color: "#bbb" , lineHeight: 1.5 }}>{f}</span>
+            </div>
+            ))}
+          </div>
+        </div>
+        )}
+      </div>
+      ))}
+    </div>
+    )}
+
+    {/* TIMELINE */}
+    {tab === "timeline" && (
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 24 }}>RECONSTRUCTED TIMELINE
+      </div>
+      <div style={{ position: "relative" }}>
+        <div style={{ position: "absolute" , left: 72, top: 0, bottom: 0, width: 1, background: "#1e1e2a" , }} />
+        {TIMELINE.map((t, i) => (
+        <div key={i} style={{ display: "flex" , gap: 20, marginBottom: 12, alignItems: "flex-start" , }}>
+          <div style={{ width: 70, textAlign: "right" , fontSize: 10, color: t.critical ? "#ff2d2d" : "#555" ,
+            paddingTop: 2, flexShrink: 0, letterSpacing: "0.05em" , }}>{t.time}</div>
+
+          <div style={{ width: 8, height: 8, borderRadius: "50%" , flexShrink: 0, background: t.critical ? "#ff2d2d"
+            : "#2a2a3a" , border: `1px solid ${t.critical ? "#ff2d2d" : "#333" }`, marginTop: 4, }} />
+
+          <div style={{ flex: 1, background: t.critical ? "#1a0a0a" : "#111118" , border: `1px solid ${t.critical
+            ? "#ff2d2d22" : "#1e1e2a" }`, padding: "8px 14px" , borderLeft: t.suspect ? `3px solid
+            ${SUSPECT_COLOR[t.suspect] || "#444" }44` : "3px solid transparent" , }}>
+            <span style={{ fontSize: 12, color: t.critical ? "#e8e4dc" : "#888" , lineHeight: 1.5 }}>{t.event}</span>
+            {t.suspect && (
+            <span style={{ marginLeft: 10, fontSize: 9, color: SUSPECT_COLOR[t.suspect], letterSpacing: "0.1em" ,
+              opacity: 0.8, }}>
+              [{t.suspect.toUpperCase()}]
+            </span>
+            )}
+          </div>
+        </div>
+        ))}
+      </div>
+    </div>
+    )}
+
+    {/* ISSUES */}
+    {tab === "issues" && (
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 8 }}>AUDIT FLAGS</div>
+      <p style={{ fontSize: 12, color: "#666" , marginBottom: 24, lineHeight: 1.7 }}>
+        Issues found during case review. Minor flags are areas to tighten; informational flags are observations about
+        design choices.
+      </p>
+      {ISSUES.map((issue, i) => {
+      const colors = { minor: "#f5a623", info: "#38bdf8", critical: "#ff2d2d" };
+      const c = colors[issue.severity];
+      return (
+      <div key={i} style={{ background: "#111118" , border: "1px solid #1e1e2a" , borderLeft: `3px solid ${c}`,
+        marginBottom: 12, overflow: "hidden" , }}>
+        <div onClick={()=> setExpandedIssue(expandedIssue === i ? null : i)}
+          style={{
+          display: "flex", alignItems: "center", gap: 14,
+          padding: "14px 18px", cursor: "pointer",
+          }}
+          >
+          <span style={{ fontSize: 9, color: c, letterSpacing: "0.15em" , background: `${c}22`, padding: "3px 8px" ,
+            flexShrink: 0, }}>{issue.severity.toUpperCase()}</span>
+          <span style={{ fontSize: 9, color: "#555" , letterSpacing: "0.12em" , flexShrink: 0, }}>{issue.type}</span>
+          <span style={{ fontSize: 13, color: "#ddd" , flex: 1 }}>{issue.title}</span>
+          <span style={{ fontSize: 16, color: "#333" }}>{expandedIssue === i ? "▲" : "▼"}</span>
+        </div>
+        {expandedIssue === i && (
+        <div style={{ padding: "0 18px 16px" , borderTop: "1px solid #1a1a1a" }}>
+          <p style={{ fontSize: 12, color: "#aaa" , lineHeight: 1.8, margin: "12px 0 0" }}>{issue.desc}</p>
+        </div>
+        )}
+      </div>
+      );
+      })}
+    </div>
+    )}
+
+    {/* SOLUTION */}
+    {tab === "solution" && (
+    <div>
+      <div style={{ fontSize: 11, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 24 }}>⚠ SOLUTION — SPOILERS
+      </div>
+
+      <div style={{ background: "#1a0808" , border: "1px solid #ff2d2d44" , padding: 24, marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "#ff2d2d" , letterSpacing: "0.2em" , marginBottom: 12 }}>PRIMARY KILLER</div>
+        <div style={{ fontSize: 22, color: "#fff" , fontWeight: "bold" , marginBottom: 8 }}>Irene Ashcroft (VP of
+          Product)</div>
+        <p style={{ fontSize: 13, color: "#aaa" , lineHeight: 1.8, margin: 0 }}>
+          Irene created NexusAI's core AI algorithm over 8 months. Vivienne patented it solely under her name while
+          Irene was on medical leave. Patent officially approved 3 days before the murder. The 9 AM investor
+          presentation would announce it publicly, permanently destroying Irene's $50M lawsuit. This was Irene's last
+          chance.
+        </p>
+      </div>
+
+      <div style={{ background: "#120d1a" , border: "1px solid #c084fc44" , padding: 24, marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "#c084fc" , letterSpacing: "0.2em" , marginBottom: 12 }}>SILENT WITNESS</div>
+        <div style={{ fontSize: 18, color: "#fff" , fontWeight: "bold" , marginBottom: 8 }}>Constance Lovelace
+          (Corporate Counsel)</div>
+        <p style={{ fontSize: 13, color: "#aaa" , lineHeight: 1.8, margin: 0 }}>
+          Discovered Irene's fingerprint mold kit in the home office during dinner. Recognized its purpose. At 1:17 AM
+          wrote Irene: <em style={{ color: "#c084fc" }}>"E — I saw what's in the desk. I understand why. I won't be
+            awake at 3 AM. —P"</em> Took Ambien and went to bed. Not legally guilty of murder. Will never break. Her
+          response when confronted: <em>"I'm a lawyer. I know exactly what I did and didn't do. I took a sleeping pill
+            and went to bed. What happens while you're asleep isn't your responsibility."</em>
+        </p>
+      </div>
+
+      <div style={{ background: "#0d1208" , border: "1px solid #f5a62344" , padding: 24, marginBottom: 24 }}>
+        <div style={{ fontSize: 10, color: "#f5a623" , letterSpacing: "0.2em" , marginBottom: 12 }}>UNWITTING ACCOMPLICE
+        </div>
+        <div style={{ fontSize: 18, color: "#fff" , fontWeight: "bold" , marginBottom: 8 }}>Basil Whitfield (CTO)</div>
+        <p style={{ fontSize: 13, color: "#aaa" , lineHeight: 1.8, margin: 0 }}>
+          Manipulated by Irene's fake text into disabling server safety protocols at 3:15 AM. Believed it was a
+          legitimate firmware upgrade request from Vivienne. Had no knowledge he was preparing the murder weapon.
+          Genuinely devastated upon realization. Cooperates fully. Not criminally liable.
+        </p>
+      </div>
+
+      <div style={{ background: "#111118" , border: "1px solid #222" , padding: 24 }}>
+        <div style={{ fontSize: 10, color: "#888" , letterSpacing: "0.2em" , marginBottom: 16 }}>WIN CONDITIONS</div>
+        {[
+        { label: "PARTIAL WIN", desc: "Identify Irene as the killer (no resolution of Constance or Basil threads)",
+        color: "#f5a623" },
+        { label: "STANDARD WIN", desc: "Identify Irene as killer with at least 3 supporting evidence items", color:
+        "#38bdf8" },
+        { label: "FULL WIN", desc: "Identify Irene as killer + expose Constance's complicity via the note + correctly
+        clear Basil as unwitting accomplice", color: "#22c55e" },
+        ].map((w) => (
+        <div key={w.label} style={{ display: "flex" , gap: 16, marginBottom: 12, padding: "12px 16px" ,
+          background: "#0d0d14" , borderLeft: `3px solid ${w.color}`, }}>
+          <span style={{ fontSize: 10, color: w.color, letterSpacing: "0.15em" , flexShrink: 0, paddingTop: 1
+            }}>{w.label}</span>
+          <span style={{ fontSize: 12, color: "#aaa" }}>{w.desc}</span>
+        </div>
+        ))}
+      </div>
+    </div>
+    )}
+  </div>
+</div>
+);
+}

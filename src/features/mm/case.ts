@@ -1,14 +1,43 @@
 import fs from 'fs';
 import path from 'path';
+import yaml from 'js-yaml';
+import HintEngine from './hints.js';
+import { normalizeLocationId } from './discord-utils.js';
+import { parseTimeToMinutes } from './utils.js';
+import { CaseLogger } from './case-logger.js';
 
 /**
  * Victim information
  */
 export interface Victim {
     name: string;
+    age?: number;
     cause: string;
+    time_of_death?: string;
     description?: string;
     avatar?: string;
+    autopsy_findings?: {
+        cause: string;
+        contact_point: string;
+        time_of_death: string;
+        instant_death: string;
+        defensive_wounds: string;
+        toxicology: string;
+        other_findings: string;
+    };
+}
+
+/**
+ * A physical item that can be found in a room
+ */
+export interface PhysicalItem {
+    description: string;
+    /** A passcode required to "unlock" the full description */
+    required?: string;
+    /** Description shown after the item is unlocked */
+    unlocked_description?: string;
+    /** Evidence IDs that must be discovered before this item can be examined */
+    requires_discovery?: string[];
 }
 
 /**
@@ -24,11 +53,13 @@ export interface Evidence {
     /** Phone locations by suspect and time: { "suspect_a": { "21:30": "garden" } } */
     locations: Record<string, Record<string, string>>;
     /** IDs and descriptions of physical items: { "safe": "A high-tech biometric safe." } */
-    physical_evidence?: Record<string, string>;
+    physical_evidence?: Record<string, string | PhysicalItem>;
     /** Physical items discovered at locations: { "master_bedroom": ["safe"] } */
     physical_discovery?: Record<string, string[]>;
     /** All valid locations in the case (optional, used for validation/autocomplete without hinting) */
     all_locations?: string[];
+    /** Initial police statements by suspect */
+    initial_police_statements?: Record<string, string>;
 }
 
 /**
@@ -56,12 +87,18 @@ export interface SuspectData {
     alias: string[];
     avatar: string;
     currentLocation: string;
+    age?: number;
+    role?: string;
     gender?: string;
     isGuilty: boolean;
+    isAccomplice?: boolean;
+    isSilentWitness?: boolean;
     alibi: string;
     motive: string;
     secrets: SecretData[];
     traits: string[];
+    resistance_level?: string;
+    tells?: string;
 }
 
 /**
@@ -72,16 +109,45 @@ export type DifficultyLevel = 'watson' | 'sherlock' | 'irene' | 'easy' | 'medium
 /**
  * Case configuration loaded from JSON
  */
+/**
+ * A single interactable object within a room
+ */
+export interface RoomInteractable {
+    name: string;
+    description: string;
+    evidence_id?: string;
+    requires_analysis?: boolean;
+    required?: string;
+    unlocked_description?: string;
+    /** Keyed dialogue responses for NPC interactables. Use 'default' for the initial greeting, and 'on_ask_about_<topic>' for topic-specific responses. */
+    dialogue?: Record<string, string>;
+}
+
+/**
+ * Rich room definition with flavor text and interactables
+ */
+export interface RoomInfo {
+    description: string;
+    connects_to: string[];
+    interactables?: RoomInteractable[];
+}
+
 export interface CaseConfig {
     id: string;
     name: string;
     description: string;
+    context?: {
+        setup: string;
+        house_layout: string;
+        biometric_secured_rooms?: string[];
+        timeline_note?: string;
+    };
     victim: Victim;
     murderTime: string;
     murderLocation: string;
     evidence: Evidence;
     solution: SolutionData; // suspect id or full solution object
-    map?: Record<string, string[]>; // adjacency list: "kitchen": ["hallway", "dining"]
+    map?: Record<string, string[] | RoomInfo>; // adjacency list OR rich room objects
     suspects: SuspectData[];
     settings: {
         timeLimit: number; // minutes
@@ -104,8 +170,11 @@ export interface SolutionData {
     killer: string;
     accomplice?: string;
     accomplice_knowledge?: string;
+    silent_witness?: string;
+    silent_witness_knowledge?: string;
     method: string;
     motive: string;
+    twist?: string;
     timeline_summary?: Record<string, string>;
     key_evidence: string[];
 }
@@ -116,7 +185,6 @@ export interface SolutionData {
 export interface PlayerStats {
     userId: string;
     username: string;
-    roomsDiscovered: number;
     evidenceFound: number; // DNA, Footage, conversational location reveals
     secretsRevealed: number; // Suspect secrets
     messagesSent: number;
@@ -132,6 +200,8 @@ export interface SuspectState {
     revealedSecrets: string[];
     composure: number;
     defensiveness: number;
+    memory?: Record<string, string[]>;
+    presentedEvidence?: string[];
 }
 
 /**
@@ -139,6 +209,7 @@ export interface SuspectState {
  */
 export interface GameState {
     caseId: string;
+    hostId: string;
     difficulty: DifficultyLevel;
     startedAt: Date;
     endsAt: Date;
@@ -148,8 +219,8 @@ export interface GameState {
     suspectState: Record<string, SuspectState>; // State per suspect
     usedTools: { tool: string; cost: number; result: string }[];
     phase: 'investigating' | 'accused' | 'ended';
-    discoveredLocations: Set<string>;
     discoveredEvidence: Set<string>;
+    unlockedItems: Set<string>;
     accusations: Record<string, string>; // userId -> suspectId
     accusation?: {
         accusedId: string; // The suspect who met the threshold
@@ -164,28 +235,37 @@ export interface GameState {
 export default class Case {
     config: CaseConfig;
     state: GameState | null = null;
+    hints: HintEngine;
+    logger: CaseLogger | null = null;
 
-    constructor(config: CaseConfig) {
+    constructor(config: CaseConfig, caseDir?: string) {
         this.config = config;
+        this.hints = new HintEngine(caseDir || '');
     }
 
     /**
      * Load a case from a directory
      */
     static load(caseDir: string): Case {
-        const configPath = path.join(caseDir, 'case.json');
+        let configPath = path.join(caseDir, 'case.yaml');
         if (!fs.existsSync(configPath)) {
-            throw new Error(`Case config not found: ${configPath}`);
+            configPath = path.join(caseDir, 'case.json');
+        }
+        if (!fs.existsSync(configPath)) {
+            throw new Error(`Case config not found in: ${caseDir}`);
         }
 
-        const config: CaseConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-        return new Case(config);
+        const fileContent = fs.readFileSync(configPath, 'utf8');
+        const config: CaseConfig = configPath.endsWith('.yaml')
+            ? yaml.load(fileContent) as CaseConfig
+            : JSON.parse(fileContent);
+        return new Case(config, caseDir);
     }
 
     /**
      * Start a new game with this case
      */
-    start(participants: string[], difficulty: DifficultyLevel = 'sherlock'): GameState {
+    start(hostId: string, participants: string[], difficulty: DifficultyLevel = 'sherlock', guildId: string = 'unknown'): GameState {
         const now = new Date();
 
         // Difficulty multipliers
@@ -197,6 +277,7 @@ export default class Case {
 
         this.state = {
             caseId: this.config.id,
+            hostId,
             difficulty,
             startedAt: now,
             endsAt,
@@ -206,28 +287,18 @@ export default class Case {
             suspectState: {},
             usedTools: [],
             phase: 'investigating',
-            discoveredLocations: new Set(),
             discoveredEvidence: new Set(),
+            unlockedItems: new Set(),
             accusations: {},
         };
 
-        // Initial discovery: Public Rooms or Entry points
-        // If no map is defined, discover all (legacy support)
-        if (!this.config.map) {
-            const all = this.getValidLocations();
-            all.forEach(l => this.state?.discoveredLocations.add(l));
-        } else {
-            // Always reveal the murder location if no explicit entry
-            const entry = Object.keys(this.config.map)[0]; // First key as entry
-            if (entry) this.state.discoveredLocations.add(entry.toLowerCase());
-            // if (this.config.murderLocation) this.state.discoveredLocations.add(this.config.murderLocation.toLowerCase());
-
-            // In Watson mode, reveal all immediately
-            if (difficulty === 'watson') {
-                const all = this.getValidLocations();
-                all.forEach(l => this.state?.discoveredLocations.add(l));
-            }
-        }
+        this.logger = new CaseLogger(this.config.id, guildId);
+        this.logger.logStatus('Game started', {
+            hostId,
+            participants: Array.from(participants),
+            difficulty,
+            endsAt: this.state.endsAt
+        });
 
         return this.state;
     }
@@ -263,41 +334,94 @@ export default class Case {
      * Get DNA evidence at a location
      */
     getDNA(location: string): string[] | null {
-        const loc = location.toLowerCase().replace(/\s+/g, '_');
+        const loc = normalizeLocationId(location);
         return this.config.evidence.dna[loc] || null;
     }
 
     /**
      * Get camera footage at a time
      */
-    getFootage(time: string): string | null {
+    public getFootage(time: string): string | null {
         const t = this._normalizeTime(time);
-        return this.config.evidence.footage?.[t] || null;
+        const footageData = this.config.evidence.footage || {};
+
+        // 1. Direct match
+        if (footageData[t]) return footageData[t];
+
+        // 2. Range match (e.g. "03:35-03:39")
+        const targetMinutes = parseTimeToMinutes(t);
+        for (const [key, value] of Object.entries(footageData)) {
+            if (key.includes('-')) {
+                const [startStr, endStr] = key.split('-');
+                const start = parseTimeToMinutes(startStr.trim());
+                const end = parseTimeToMinutes(endStr.trim());
+                if (targetMinutes >= start && targetMinutes <= end) {
+                    return value;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
      * Get digital logs at a time
      */
-    getLogs(time: string): string | null {
+    public getLogs(time: string): string | null {
         const t = this._normalizeTime(time);
-        return this.config.evidence.digital_logs?.[t] || null;
+        const logsData = this.config.evidence.digital_logs || {};
+
+        // 1. Direct match
+        if (logsData[t]) return logsData[t];
+
+        // 2. Range match
+        const targetMinutes = parseTimeToMinutes(t);
+        for (const [key, value] of Object.entries(logsData)) {
+            if (key.includes('-')) {
+                const [startStr, endStr] = key.split('-');
+                const start = parseTimeToMinutes(startStr.trim());
+                const end = parseTimeToMinutes(endStr.trim());
+                if (targetMinutes >= start && targetMinutes <= end) {
+                    return value;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
      * Get suspect location at a time
      */
-    getLocation(suspectId: string, time: string): string | null {
+    public getLocation(suspectId: string, time: string): string | null {
         const id = suspectId.toLowerCase();
         const t = this._normalizeTime(time);
         const suspectLocs = this.config.evidence.locations[id];
         if (!suspectLocs) return null;
-        return suspectLocs[t] || null;
+
+        // 1. Direct match
+        if (suspectLocs[t]) return suspectLocs[t];
+
+        // 2. Range match
+        const targetMinutes = parseTimeToMinutes(t);
+        for (const [key, value] of Object.entries(suspectLocs)) {
+            if (key.includes('-')) {
+                const [startStr, endStr] = key.split('-');
+                const start = parseTimeToMinutes(startStr.trim());
+                const end = parseTimeToMinutes(endStr.trim());
+                if (targetMinutes >= start && targetMinutes <= end) {
+                    return value;
+                }
+            }
+        }
+
+        return null;
     }
 
     /**
      * Get description for a specific physical item
      */
-    getPhysicalEvidence(evidenceId: string): string | null {
+    getPhysicalEvidence(evidenceId: string): string | PhysicalItem | null {
         return this.config.evidence.physical_evidence?.[evidenceId] || null;
     }
 
@@ -305,7 +429,7 @@ export default class Case {
      * Get IDs of physical items at a location
      */
     getPhysicalDiscovery(location: string): string[] {
-        const loc = location.toLowerCase().replace(/\s+/g, '_');
+        const loc = normalizeLocationId(location);
         return this.config.evidence.physical_discovery?.[loc] || [];
     }
 
@@ -313,17 +437,17 @@ export default class Case {
      * Check if a location is valid for investigation
      */
     isValidLocation(location: string): boolean {
-        const loc = location.toLowerCase().replace(/\s+/g, '_');
+        const loc = normalizeLocationId(location);
 
         // Use the explicit locations list if provided
         if (this.config.evidence.all_locations) {
-            return this.config.evidence.all_locations.some(l => l.toLowerCase().replace(/\s+/g, '_') === loc);
+            return this.config.evidence.all_locations.some(l => normalizeLocationId(l) === loc);
         }
 
         // Fallback to checking existing evidence
         const inDna = this.config.evidence.dna ? (loc in this.config.evidence.dna) : false;
         const inSuspectLocs = this.config.evidence.locations ? Object.values(this.config.evidence.locations).some(locs =>
-            Object.values(locs).some(l => l.toLowerCase().replace(/\s+/g, '_') === loc)
+            Object.values(locs).some(l => normalizeLocationId(l) === loc)
         ) : false;
         return inDna || inSuspectLocs;
     }
@@ -331,14 +455,21 @@ export default class Case {
     /**
      * Check if a time is valid for investigation
      */
-    isValidTime(time: string): boolean {
+    public isValidTime(time: string): boolean {
         const t = this._normalizeTime(time);
-        const inFootage = this.config.evidence.footage ? (t in this.config.evidence.footage) : false;
-        const inLogs = this.config.evidence.digital_logs ? (t in this.config.evidence.digital_logs) : false;
+
+        // Check footage (including ranges)
+        if (this.getFootage(t)) return true;
+
+        // Check logs (including ranges)
+        if (this.getLogs(t)) return true;
+
+        // Check suspect locations (exact match for now as they are usually point-in-time)
         const inSuspectLocs = this.config.evidence.locations ? Object.values(this.config.evidence.locations).some(locs =>
             t in locs
         ) : false;
-        return inFootage || inLogs || inSuspectLocs;
+
+        return inSuspectLocs;
     }
 
     /**
@@ -382,10 +513,54 @@ export default class Case {
         // From suspect locations
         Object.values(this.config.evidence.locations).forEach(locs => {
             Object.values(locs).forEach(loc =>
-                locations.add(loc.toLowerCase().replace(/\s+/g, '_'))
+                locations.add(normalizeLocationId(loc))
             );
         });
         return Array.from(locations);
+    }
+
+    /**
+     * Normalize map entry to a connections array (handles both string[] and RoomInfo)
+     */
+    getMapConnections(locationId: string): string[] {
+        if (!this.config.map) return [];
+        const entry = this.config.map[locationId];
+        if (!entry) return [];
+        if (Array.isArray(entry)) return entry;
+        return entry.connects_to;
+    }
+
+    /**
+     * Get rich room info if available, otherwise null
+     */
+    getRoomInfo(locationId: string): RoomInfo | null {
+        if (!this.config.map) return null;
+        const entry = this.config.map[locationId];
+        if (!entry || Array.isArray(entry)) return null;
+        return entry;
+    }
+
+    /**
+     * Find an interactable by fuzzy name match in a specific room (or all rooms)
+     */
+    findInteractable(query: string, locationId?: string): { interactable: RoomInteractable; locationId: string } | null {
+        if (!this.config.map) return null;
+        const q = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        const searchRooms = locationId ? [locationId] : Object.keys(this.config.map);
+
+        for (const roomId of searchRooms) {
+            const room = this.config.map[roomId];
+            if (!room || Array.isArray(room) || !room.interactables) continue;
+
+            for (const obj of room.interactables) {
+                const normalizedName = obj.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normalizedName === q || normalizedName.includes(q) || q.includes(normalizedName)) {
+                    return { interactable: obj, locationId: roomId };
+                }
+            }
+        }
+        return null;
     }
 
     /**
@@ -429,6 +604,12 @@ export default class Case {
                 votes: { ...this.state.accusations }
             };
 
+            this.logger?.logStatus('Final accusation reached', {
+                accusedId: finalistId,
+                correct,
+                votes: this.state.accusations
+            });
+
             return { finished: true, correct, solution: this.getSolutionId() };
 
         }
@@ -442,6 +623,7 @@ export default class Case {
     end(): void {
         if (this.state) {
             this.state.phase = 'ended';
+            this.logger?.logStatus('Game ended');
         }
     }
 

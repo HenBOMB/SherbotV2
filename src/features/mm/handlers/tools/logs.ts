@@ -37,7 +37,8 @@ export async function handleLogs(
         result.result,
         result.cost,
         result.success,
-        result.error
+        result.error,
+        { hintEngine: activeGame.hints }
     );
 
     // Get all timestamps from digital logs
@@ -100,7 +101,8 @@ export async function handleLogs(
                 newResult.result,
                 0, // Subsequent navigations are free
                 newResult.success,
-                newResult.error
+                newResult.error,
+                { hintEngine: activeGame.hints }
             );
 
             const newRow = manager.createLogsButtons(newIndex, allTimes);
@@ -113,7 +115,7 @@ export async function handleLogs(
             logger.error('Error in logs button collector:', err);
             try {
                 if (!i.replied && !i.deferred) {
-                    await i.reply({ content: '❌ A system error occurred while switching logs.', ephemeral: true });
+                    await i.reply({ content: '❌ An unexpected complication occurred while reviewing correspondence.', ephemeral: true });
                 }
             } catch (e) {
                 // Ignore

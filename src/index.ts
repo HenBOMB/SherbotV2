@@ -3,6 +3,7 @@ import { initializeDatabase, sequelize } from './database.js';
 import Features from './features/index.js';
 import { config } from './config.js';
 import { logger } from './utils/logger.js';
+import { apiServer } from './api.js';
 
 // Define custom client type property
 declare module 'discord.js' {
@@ -28,7 +29,7 @@ client.botcolor = config.bot.color;
 
 let isShuttingDown = false;
 
-async function halt() {
+export async function halt(code: number = 0) {
     if (isShuttingDown) {
         logger.warn('Shutdown already in progress...');
         return;
@@ -43,7 +44,7 @@ async function halt() {
         await client.destroy();
         logger.info('Client destroyed.');
 
-        process.exit(0);
+        process.exit(code);
     } catch (error) {
         logger.error('Error during shutdown:', error);
         process.exit(1);
@@ -74,11 +75,17 @@ async function start() {
         await client.login(config.bot.token);
         logger.info('>>> Sherbot logged in.');
 
+        apiServer.setClient(client);
+        apiServer.start();
+
         await Features.run(client);
     } catch (error) {
         logger.error('Failed to start bot:', error);
         process.exit(1);
     }
 }
+const isMain = process.argv[1] && (process.argv[1].endsWith('index.ts') || process.argv[1].endsWith('index.js'));
 
-start();
+if (isMain || process.env.RUN_BOT === 'true') {
+    start();
+}
